@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>book tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0e0c0a;
+  --bg2: #171410;
+  --bg3: #1f1b17;
+  --bg4: #2a251f;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0ebe4;
+  --text2: #a89f94;
+  --text3: #6b6259;
+  --accent: #c9a96e;
+  --accent2: #e8c99a;
+  --accent-bg: rgba(201,169,110,0.12);
+  --green: #5dbf8a;
+  --green-bg: rgba(93,191,138,0.12);
+  --red: #e07070;
+  --red-bg: rgba(224,112,112,0.1);
+  --blue: #7ab3e0;
+  --blue-bg: rgba(122,179,224,0.12);
+  --purple: #b39ddb;
+  --r: 10px;
+  --r-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); }
+h1,h2,h3 { font-family: 'Playfair Display', serif; font-weight: 500; }
+
+/* layout */
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); padding: 24px 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { flex: 1; padding: 28px 32px; max-width: 860px; overflow-x: hidden; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.logo h1 { font-size: 22px; color: var(--accent); letter-spacing: -0.5px; }
+.logo p { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; color: var(--text2); font-size: 14px; transition: all .15s; border-left: 2px solid transparent; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--accent-bg); color: var(--accent); border-left-color: var(--accent); }
+.nav-icon { font-size: 16px; }
+.sidebar-footer { margin-top: auto; padding: 16px 20px 0; border-top: 1px solid var(--border); }
+.sidebar-footer p { font-size: 11px; color: var(--text3); line-height: 1.6; }
+
+/* pages */
+.page { display: none; }
+.page.active { display: block; }
+.page-title { font-size: 26px; margin-bottom: 6px; color: var(--text); }
+.page-sub { font-size: 14px; color: var(--text3); margin-bottom: 28px; }
+
+/* Metrics */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 24px; }
+.metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; }
+.metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.metric-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 500; color: var(--text); line-height: 1; }
+.metric-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.metric.accent { border-color: rgba(201,169,110,0.3); background: var(--accent-bg); }
+.metric.accent .metric-value { color: var(--accent); }
+.metric.green { border-color: rgba(93,191,138,0.3); background: var(--green-bg); }
+.metric.green .metric-value { color: var(--green); }
+
+/* Cards */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+/* Forms */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; color: var(--text3); margin-bottom: 5px; display: block; }
+input, select, textarea { width: 100%; padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .15s; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+select option { background: var(--bg3); }
+textarea { resize: vertical; line-height: 1.5; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* Buttons */
+.btn { padding: 9px 18px; border-radius: var(--r-sm); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; transition: all .15s; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--accent); color: #1a1209; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: transparent; color: var(--text2); border-color: var(--border2); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: var(--red-bg); color: var(--red); border-color: rgba(224,112,112,0.2); }
+.btn-danger:hover { background: rgba(224,112,112,0.2); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-full { width: 100%; justify-content: center; }
+.btn-icon { padding: 6px; background: transparent; border: none; color: var(--text3); cursor: pointer; border-radius: 4px; font-size: 15px; transition: all .15s; }
+.btn-icon:hover { color: var(--red); background: var(--red-bg); }
+
+/* Book stuff */
+.book-list { display: flex; flex-direction: column; gap: 0; }
+.book-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.book-item:last-child { border-bottom: none; padding-bottom: 0; }
+.book-item:first-child { padding-top: 0; }
+.book-spine { width: 6px; flex-shrink: 0; border-radius: 3px; align-self: stretch; min-height: 44px; }
+.book-cover { width: 36px; height: 50px; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; }
+.book-meta { flex: 1; min-width: 0; }
+.book-title-text { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.book-author-text { font-size: 12px; color: var(--text3); margin-top: 1px; }
+.book-info-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.progress-bar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+.book-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+
+/* pills */
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 400; }
+.pill-reading { background: var(--blue-bg); color: var(--blue); }
+.pill-want { background: var(--bg4); color: var(--text3); }
+.pill-done { background: var(--green-bg); color: var(--green); }
+.pill-genre { background: var(--accent-bg); color: var(--accent); }
+.star-rating { display: flex; gap: 2px; }
+.star { font-size: 13px; cursor: pointer; color: var(--text3); transition: color .1s; }
+.star.filled { color: var(--accent); }
+
+/* Streak */
+.streak-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+.s-dot { width: 14px; height: 14px; border-radius: 3px; cursor: default; transition: transform .1s; }
+.s-dot:hover { transform: scale(1.3); }
+
+/* Session log */
+.log-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.log-item:last-child { border-bottom: none; }
+.log-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px; }
+.log-meta { flex: 1; }
+.log-book-name { font-size: 14px; font-weight: 500; }
+.log-stats { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.log-note { font-size: 12px; color: var(--text2); margin-top: 3px; font-style: italic; }
+.log-date-label { font-size: 11px; color: var(--text3); flex-shrink: 0; padding-top: 2px; }
+
+/* Goals */
+.goal-wrap { display: flex; align-items: center; gap: 24px; }
+.goal-text .big { font-family: 'Playfair Display', serif; font-size: 40px; color: var(--accent); line-height: 1; }
+.goal-text .sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
+.pace-info { font-size: 14px; color: var(--text2); line-height: 1.7; }
+.pace-info strong { color: var(--accent); }
+
+/* Tab bar inside a card */
+.tab-bar { display: flex; gap: 2px; margin-bottom: 16px; background: var(--bg3); border-radius: var(--r-sm); padding: 3px; }
+.tab-btn { flex: 1; padding: 7px; text-align: center; cursor: pointer; font-size: 13px; border-radius: 5px; color: var(--text3); transition: all .15s; border: none; background: transparent; font-family: 'DM Sans', sans-serif; }
+.tab-btn.active { background: var(--bg2); color: var(--text); }
+
+/* Goodreads */
+.import-box { border: 1px dashed var(--border2); border-radius: var(--r); padding: 28px; text-align: center; cursor: pointer; transition: all .15s; }
+.import-box:hover { border-color: var(--accent); background: var(--accent-bg); }
+.import-icon { font-size: 32px; margin-bottom: 10px; }
+.import-desc { font-size: 13px; color: var(--text3); margin-top: 6px; }
+
+/* Share widget */
+.share-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
+.share-preview { background: linear-gradient(135deg, #1a150e 0%, #2a1f0e 100%); border: 1px solid rgba(201,169,110,0.2); border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+
+/* Empty state */
+.empty { text-align: center; padding: 32px 0; color: var(--text3); }
+.empty-icon { font-size: 36px; margin-bottom: 8px; }
+.empty p { font-size: 14px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg4); color: var(--text); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 1000; transition: transform .3s; border: 1px solid var(--border2); white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Mobile nav */
+.mobile-nav { display: none; position: sticky; bottom: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 8px 0 12px; z-index: 100; }
+.mobile-nav-inner { display: flex; justify-content: space-around; }
+.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 11px; padding: 4px 12px; border-radius: var(--r-sm); border: none; background: transparent; font-family: 'DM Sans', sans-serif; transition: color .15s; }
+.mob-btn.active { color: var(--accent); }
+.mob-icon { font-size: 20px; }
+
+/* Shareable widget canvas */
+#share-canvas { display: none; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 680px) {
+  .sidebar { display: none; }
+  .main { padding: 16px 16px 80px; }
+  .mobile-nav { display: block; }
+  .card-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .form-row3 { grid-template-columns: 1fr 1fr; }
+  .goal-wrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+}
+
+/* Chart overrides */
+.chart-wrap { position: relative; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>ReadTracker</h1>
+      <p>Your reading journey</p>
+    </div>
+    <nav>
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-page="library" onclick="showPage('library',this)">
+        <span class="nav-icon">📚</span> Library
+      </div>
+      <div class="nav-item" data-page="log" onclick="showPage('log',this)">
+        <span class="nav-icon">✏️</span> Log session
+      </div>
+      <div class="nav-item" data-page="stats" onclick="showPage('stats',this)">
+        <span class="nav-icon">📈</span> Stats
+      </div>
+      <div class="nav-item" data-page="goals" onclick="showPage('goals',this)">
+        <span class="nav-icon">🎯</span> Goals
+      </div>
+      <div class="nav-item" data-page="share" onclick="showPage('share',this)">
+        <span class="nav-icon">🔗</span> Share
+      </div>
+      <div class="nav-item" data-page="import" onclick="showPage('import',this)">
+        <span class="nav-icon">⬆️</span> Import
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <p>Data saved in your browser. Export anytime from the import page.</p>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <h2 class="page-title">Dashboard</h2>
+      <p class="page-sub" id="dash-date"></p>
+      <div class="metrics" id="dash-metrics"></div>
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Pages this week</div>
+          <div class="chart-wrap" style="height:130px"><canvas id="week-chart" role="img" aria-label="Pages read each day this week">Weekly pages</canvas></div>
+        </div>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Currently reading</div>
+          <div id="dash-reading"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Reading streak — 35 days</div>
+          <div class="streak-grid" id="streak-cal"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div id="page-library" class="page">
+      <h2 class="page-title">Library</h2>
+      <p class="page-sub">All your books in one place</p>
+      <div class="card">
+        <div class="card-title">Add a book</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Title *</label><input id="b-title" placeholder="The Name of the Wind" /></div>
+          <div class="form-group"><label class="form-label">Author</label><input id="b-author" placeholder="Patrick Rothfuss" /></div>
+        </div>
+        <div class="form-row3">
+          <div class="form-group"><label class="form-label">Pages</label><input id="b-pages" type="number" placeholder="662" min="1" /></div>
+          <div class="form-group"><label class="form-label">Genre</label><input id="b-genre" placeholder="Fantasy" /></div>
+          <div class="form-group"><label class="form-label">Status</label>
+            <select id="b-status">
+              <option value="reading">Currently reading</option>
+              <option value="want">Want to read</option>
+              <option value="done">Finished</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Start date</label><input id="b-start" type="date" /></div>
+          <div class="form-group"><label class="form-label">Rating (if finished)</label>
+            <select id="b-rating">
+              <option value="0">No rating</option>
+              <option value="5">★★★★★ — Loved it</option>
+              <option value="4">★★★★☆ — Really good</option>
+              <option value="3">★★★☆☆ — Liked it</option>
+              <option value="2">★★☆☆☆ — It was ok</option>
+              <option value="1">★☆☆☆☆ — Didn't like it</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="addBook()">Add book</button>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="showLibTab('reading',this)">Reading</button>
+        <button class="tab-btn" onclick="showLibTab('want',this)">Want to read</button>
+        <button class="tab-btn" onclick="showLibTab('done',this)">Finished</button>
+        <button class="tab-btn" onclick="showLibTab('all',this)">All</button>
+      </div>
+      <div id="lib-list"></div>
+    </div>
+
+    <!-- LOG SESSION -->
+    <div id="page-log" class="page">
+      <h2 class="page-title">Log a session</h2>
+      <p class="page-sub">Track your reading time and pages</p>
+      <div class="card">
+        <div class="form-group"><label class="form-label">Book *</label>
+          <select id="log-book"><option value="">Select a book...</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Pages read *</label><input id="log-pages" type="number" placeholder="45" min="1" /></div>
+          <div class="form-group"><label class="form-label">Minutes spent</label><input id="log-mins" type="number" placeholder="60" min="1" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Date</label><input id="log-date" type="date" /></div>
+          <div class="form-group"><label class="form-label">Mark as finished?</label>
+            <select id="log-finish"><option value="no">No, still reading</option><option value="yes">Yes, I finished this book!</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Notes (optional)</label>
+          <textarea id="log-notes" rows="2" placeholder="Wow, the ending was unexpected..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="logSession()">Save session</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent sessions</div>
+        <div id="log-recent"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div id="page-stats" class="page">
+      <h2 class="page-title">Stats</h2>
+      <p class="page-sub">Deep dive into your reading data</p>
+      <div class="metrics" id="stats-metrics"></div>
+      <div class="card">
+        <div class="card-title">Books finished by month</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="monthly-chart" role="img" aria-label="Books finished per month">Monthly books</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pages per day — last 30 days</div>
+        <div class="chart-wrap" style="height:160px"><canvas id="daily30-chart" role="img" aria-label="Pages per day over last 30 days">Daily pages</canvas></div>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Top genres</div>
+          <div class="chart-wrap" style="height:160px"><canvas id="genre-chart" role="img" aria-label="Books by genre">Genres</canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Reading by day of week</div>
+          <div class="chart-wrap" style="height:160px"><canvas id="dow-chart" role="img" aria-label="Reading activity by day of week">Day of week</canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">All finished books</div>
+        <div id="stats-finished-list"></div>
+      </div>
+    </div>
+
+    <!-- GOALS -->
+    <div id="page-goals" class="page">
+      <h2 class="page-title">Goals</h2>
+      <p class="page-sub">Set targets and track your pace</p>
+      <div class="card">
+        <div class="card-title">Annual reading goal</div>
+        <div class="goal-wrap">
+          <canvas id="goal-donut" width="100" height="100" role="img" aria-label="Annual goal progress">Goal progress</canvas>
+          <div class="goal-text">
+            <div class="big" id="goal-pct">0%</div>
+            <div class="sub" id="goal-desc">0 of 0 books finished</div>
+          </div>
+        </div>
+        <div style="margin-top:16px; display:flex; gap:10px; align-items:flex-end">
+          <div style="flex:1"><label class="form-label">Books this year</label><input id="goal-in" type="number" placeholder="24" min="1" /></div>
+          <button class="btn btn-primary" onclick="setGoal()">Save</button>
+        </div>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Daily page goal</div>
+          <div class="form-group"><label class="form-label">Pages per day</label><input id="daily-goal-in" type="number" placeholder="30" min="1" /></div>
+          <button class="btn btn-primary btn-full" onclick="setDailyGoal()">Save</button>
+          <div id="daily-goal-status" style="margin-top:12px; font-size:13px; color:var(--text2);"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Weekly page goal</div>
+          <div class="form-group"><label class="form-label">Pages per week</label><input id="weekly-goal-in" type="number" placeholder="200" min="1" /></div>
+          <button class="btn btn-primary btn-full" onclick="setWeeklyGoal()">Save</button>
+          <div id="weekly-goal-status" style="margin-top:12px; font-size:13px; color:var(--text2);"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pace analysis</div>
+        <div class="pace-info" id="pace-info">Log some sessions to see your pace.</div>
+      </div>
+    </div>
+
+    <!-- SHARE -->
+    <div id="page-share" class="page">
+      <h2 class="page-title">Share your progress</h2>
+      <p class="page-sub">Generate a shareable reading widget</p>
+      <div class="card">
+        <div class="card-title">Reading card preview</div>
+        <div class="share-preview" id="share-preview"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="copyShareText()">Copy as text</button>
+          <button class="btn btn-ghost" onclick="downloadShareImage()">Save as image</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Currently reading widget</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">Embed this on your website or blog:</p>
+        <textarea id="embed-code" rows="4" style="font-family:monospace; font-size:12px;" readonly></textarea>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="copyEmbed()">Copy embed code</button>
+      </div>
+    </div>
+
+    <!-- IMPORT / EXPORT -->
+    <div id="page-import" class="page">
+      <h2 class="page-title">Import &amp; Export</h2>
+      <p class="page-sub">Bring in your books or back up your data</p>
+      <div class="card">
+        <div class="card-title">Import from Goodreads</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:16px; line-height:1.7">
+          In Goodreads: go to <strong style="color:var(--text)">My Books</strong> → <strong style="color:var(--text)">Import and export</strong> → <strong style="color:var(--text)">Export Library</strong>. Then drop the CSV here.
+        </p>
+        <label class="import-box" for="goodreads-file">
+          <div class="import-icon">📥</div>
+          <div style="font-size:15px; color:var(--text)">Drop Goodreads CSV here</div>
+          <div class="import-desc">or click to select file</div>
+        </label>
+        <input type="file" id="goodreads-file" accept=".csv" style="display:none" onchange="importGoodreads(this)" />
+        <div id="import-status" style="margin-top:12px; font-size:13px; color:var(--green);"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add books manually from CSV</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">CSV format: <code style="color:var(--accent); font-size:12px">Title,Author,Pages,Status,Genre</code></p>
+        <label class="import-box" for="manual-csv">
+          <div class="import-icon">📄</div>
+          <div style="font-size:15px; color:var(--text)">Drop custom CSV here</div>
+          <div class="import-desc">Title, Author, Pages, Status (reading/want/done), Genre</div>
+        </label>
+        <input type="file" id="manual-csv" accept=".csv" style="display:none" onchange="importManualCSV(this)" />
+      </div>
+      <div class="card">
+        <div class="card-title">Export your data</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="exportJSON()">Export as JSON backup</button>
+          <button class="btn btn-ghost" onclick="exportCSV()">Export books as CSV</button>
+          <button class="btn btn-ghost" onclick="importJSONBackup()">Restore from JSON</button>
+        </div>
+        <input type="file" id="json-restore" accept=".json" style="display:none" onchange="restoreJSON(this)" />
+      </div>
+      <div class="card" style="border-color:rgba(224,112,112,0.2)">
+        <div class="card-title" style="color:var(--red)">Danger zone</div>
+        <button class="btn btn-danger" onclick="clearAll()">Clear all data</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Mobile nav -->
+<div class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mob-btn active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="mob-icon">📊</span>Home</button>
+    <button class="mob-btn" onclick="showPage('library',this)" data-page="library"><span class="mob-icon">📚</span>Library</button>
+    <button class="mob-btn" onclick="showPage('log',this)" data-page="log"><span class="mob-icon">✏️</span>Log</button>
+    <button class="mob-btn" onclick="showPage('stats',this)" data-page="stats"><span class="mob-icon">📈</span>Stats</button>
+    <button class="mob-btn" onclick="showPage('goals',this)" data-page="goals"><span class="mob-icon">🎯</span>Goals</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#7ec8b0','#d4a5c9'];
+const SPINE_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#f0c060','#80c0a0','#d08080'];
+
+let db = { books:[], logs:[], goal:24, dailyGoal:30, weeklyGoal:200 };
+let charts = {};
+let currentLibTab = 'reading';
+
+function save() { try { localStorage.setItem('readtracker_v2', JSON.stringify(db)); } catch(e){} }
+function load() {
+  try {
+    const d = localStorage.getItem('readtracker_v2');
+    if (d) db = JSON.parse(d);
+    // migrate old format
+    db.books = (db.books||[]).map(b => ({ color: SPINE_COLORS[db.books.indexOf(b)%SPINE_COLORS.length], ...b }));
+  } catch(e) {}
+  document.getElementById('log-date').value = todayStr();
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  renderAll();
+}
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function fmtDate(s) { if(!s) return ''; const [y,m,d] = s.split('-'); return `${m}/${d}/${y}`; }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function stars(n) {
+  return [1,2,3,4,5].map(i=>`<span style="color:${i<=n?'#c9a96e':'#6b6259'}">★</span>`).join('');
+}
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mob-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) {
+    if (el.classList.contains('nav-item')) el.classList.add('active');
+    else {
+      document.querySelectorAll('.mob-btn').forEach(b => { if(b.dataset.page===id) b.classList.add('active'); });
+      document.querySelectorAll('.nav-item').forEach(n => { if(n.dataset.page===id) n.classList.add('active'); });
+    }
+  }
+  setTimeout(() => {
+    if (id==='dashboard') renderDashboard();
+    if (id==='stats') renderStats();
+    if (id==='goals') renderGoals();
+    if (id==='share') renderShare();
+    if (id==='library') renderLibrary();
+  }, 30);
+}
+
+function showLibTab(tab, el) {
+  currentLibTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderLibrary();
+}
+
+// ── ADD BOOK ──
+function addBook() {
+  const t = document.getElementById('b-title').value.trim();
+  if (!t) { toast('Please enter a title'); return; }
+  const status = document.getElementById('b-status').value;
+  const pages = parseInt(document.getElementById('b-pages').value)||0;
+  const book = {
+    id: Date.now(),
+    title: t,
+    author: document.getElementById('b-author').value.trim(),
+    pages,
+    genre: document.getElementById('b-genre').value.trim(),
+    status,
+    rating: parseInt(document.getElementById('b-rating').value)||0,
+    pagesRead: status==='done' ? pages : 0,
+    startDate: document.getElementById('b-start').value || (status!=='want'?todayStr():''),
+    finishedDate: status==='done' ? todayStr() : '',
+    addedDate: todayStr(),
+    color: SPINE_COLORS[db.books.length % SPINE_COLORS.length]
+  };
+  db.books.push(book);
+  ['b-title','b-author','b-pages','b-genre','b-start'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('b-status').value='reading';
+  document.getElementById('b-rating').value='0';
+  save(); renderAll(); toast('Book added!');
+}
+
+function deleteBook(id) {
+  if (!confirm('Remove this book and all its sessions?')) return;
+  db.books = db.books.filter(b => b.id !== id);
+  db.logs = db.logs.filter(l => l.bookId !== id);
+  save(); renderAll(); toast('Book removed');
+}
+
+function setRating(bookId, r) {
+  const b = db.books.find(x => x.id === bookId);
+  if (b) { b.rating = r; save(); renderLibrary(); }
+}
+
+// ── LOG SESSION ──
+function logSession() {
+  const bid = parseInt(document.getElementById('log-book').value);
+  const pages = parseInt(document.getElementById('log-pages').value)||0;
+  if (!bid || !pages) { toast('Select a book and enter pages read'); return; }
+  const mins = parseInt(document.getElementById('log-mins').value)||0;
+  const date = document.getElementById('log-date').value || todayStr();
+  const finish = document.getElementById('log-finish').value === 'yes';
+  const notes = document.getElementById('log-notes').value.trim();
+  db.logs.push({ id: Date.now(), bookId: bid, pages, minutes: mins, date, notes });
+  const book = db.books.find(b => b.id === bid);
+  if (book) {
+    book.pagesRead = (book.pagesRead||0) + pages;
+    if (book.pages) book.pagesRead = Math.min(book.pagesRead, book.pages);
+    if (finish || (book.pages && book.pagesRead >= book.pages)) {
+      book.status = 'done';
+      book.finishedDate = date;
+      toast('🎉 Book finished! Congrats!');
+    } else { toast('Session saved!'); }
+  }
+  document.getElementById('log-pages').value='';
+  document.getElementById('log-mins').value='';
+  document.getElementById('log-notes').value='';
+  document.getElementById('log-finish').value='no';
+  save(); renderAll();
+}
+
+// ── GOALS ──
+function setGoal() { const v=parseInt(document.getElementById('goal-in').value); if(v>0){db.goal=v;save();renderGoals();toast('Goal set!');} }
+function setDailyGoal() { const v=parseInt(document.getElementById('daily-goal-in').value); if(v>0){db.dailyGoal=v;save();renderGoals();toast('Daily goal set!');} }
+function setWeeklyGoal() { const v=parseInt(document.getElementById('weekly-goal-in').value); if(v>0){db.weeklyGoal=v;save();renderGoals();toast('Weekly goal set!');} }
+
+// ── RENDER ALL ──
+function renderAll() { renderDashboard(); renderLibrary(); renderLogPage(); renderGoals(); renderShare(); }
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  const streak = calcStreak();
+  const pw = pagesInDays(7), pl = pagesInRange(14,7);
+  const diff = pw - pl;
+  const diffStr = diff===0 ? 'same as last week' : (diff>0?'+':'')+diff+' vs last week';
+  const done = db.books.filter(b=>b.status==='done').length;
+  const avgSpeed = calcAvgSpeed();
+
+  document.getElementById('dash-metrics').innerHTML = `
+    <div class="metric accent"><div class="metric-label">Reading streak</div><div class="metric-value">${streak}</div><div class="metric-sub">days in a row 🔥</div></div>
+    <div class="metric"><div class="metric-label">Pages this week</div><div class="metric-value">${pw.toLocaleString()}</div><div class="metric-sub">${diffStr}</div></div>
+    <div class="metric green"><div class="metric-label">Books finished</div><div class="metric-value">${done}</div><div class="metric-sub">of ${db.goal} goal</div></div>
+    <div class="metric"><div class="metric-label">Avg speed</div><div class="metric-value">${avgSpeed||'—'}</div><div class="metric-sub">pages / hour</div></div>
+  `;
+
+  const reading = db.books.filter(b=>b.status==='reading');
+  document.getElementById('dash-reading').innerHTML = reading.length ? reading.map(b => {
+    const pct = b.pages ? Math.round((b.pagesRead||0)/b.pages*100) : 0;
+    return `<div class="book-item">
+      <div class="book-spine" style="background:${b.color}"></div>
+      <div class="book-meta">
+        <div class="book-title-text">${esc(b.title)}</div>
+        <div class="book-author-text">${esc(b.author)}</div>
+        ${b.pages ? `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">${b.pagesRead||0}/${b.pages} · ${pct}%</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty"><div class="empty-icon">📖</div><p>No books in progress</p></div>';
+
+  renderWeekChart();
+  renderStreakCal();
+}
+
+function renderWeekChart() {
+  const labels=[], data=[];
+  for(let i=6;i>=0;i--) {
+    const d=new Date(); d.setDate(d.getDate()-i);
+    labels.push(['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]);
+    data.push(db.logs.filter(l=>l.date===d.toISOString().slice(0,10)).reduce((s,l)=>s+l.pages,0));
+  }
+  destroyChart('week-chart');
+  charts['week-chart'] = new Chart(document.getElementById('week-chart'), {
+    type:'bar', data:{labels, datasets:[{data, backgroundColor:'#c9a96e', borderRadius:4}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false}, ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#6b6259',font:{size:11},maxTicksLimit:4}}}}
+  });
+}
+
+function renderStreakCal() {
+  const days = new Set(db.logs.map(l=>l.date));
+  const el = document.getElementById('streak-cal');
+  let html='';
+  for(let i=34;i>=0;i--) {
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const s=d.toISOString().slice(0,10);
+    const has=days.has(s);
+    html+=`<div class="s-dot" style="background:${has?'#c9a96e':'rgba(255,255,255,0.06)'}" title="${fmtDate(s)}"></div>`;
+  }
+  el.innerHTML=html;
+}
+
+// ── LIBRARY ──
+function renderLibrary() {
+  const sel = document.getElementById('log-book');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Select a book...</option>';
+  db.books.forEach(b => {
+    const o = document.createElement('option');
+    o.value=b.id; o.textContent=b.title+(b.status==='done'?' ✓':'');
+    sel.appendChild(o);
+  });
+  if(prev) sel.value=prev;
+
+  let books = db.books;
+  if(currentLibTab !== 'all') books = books.filter(b=>b.status===currentLibTab);
+
+  const el = document.getElementById('lib-list');
+  if(!books.length) { el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">📚</div><p>No books here yet</p></div></div>'; return; }
+
+  el.innerHTML = `<div class="card"><div class="book-list">${books.map(b => {
+    const pct = b.pages ? Math.round((b.pagesRead||0)/b.pages*100) : 0;
+    const starsHtml = [1,2,3,4,5].map(i=>`<span class="star ${i<=(b.rating||0)?'filled':''}" onclick="setRating(${b.id},${i})">★</span>`).join('');
+    return `<div class="book-item">
+      <div class="book-spine" style="background:${b.color}; min-height:52px"></div>
+      <div class="book-meta">
+        <div class="book-title-text">${esc(b.title)}</div>
+        <div class="book-author-text">${esc(b.author)}</div>
+        <div class="book-info-row">
+          <span class="pill pill-${b.status}">${b.status==='reading'?'reading':b.status==='want'?'want to read':'finished'}</span>
+          ${b.genre?`<span class="pill pill-genre">${esc(b.genre)}</span>`:''}
+          ${b.pages?`<span style="font-size:11px;color:var(--text3)">${b.pages}p</span>`:''}
+          ${b.finishedDate?`<span style="font-size:11px;color:var(--text3)">done ${fmtDate(b.finishedDate)}</span>`:''}
+        </div>
+        ${b.status==='reading'&&b.pages?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div>`:''} 
+        <div class="star-rating" style="margin-top:4px">${starsHtml}</div>
+      </div>
+      <div class="book-actions">
+        <button class="btn-icon" onclick="deleteBook(${b.id})" title="Remove">×</button>
+      </div>
+    </div>`;
+  }).join('')}</div></div>`;
+}
+
+// ── LOG PAGE ──
+function renderLogPage() {
+  const sorted = [...db.logs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+  const el = document.getElementById('log-recent');
+  if(!sorted.length) { el.innerHTML='<div class="empty"><div class="empty-icon">✏️</div><p>No sessions yet</p></div>'; return; }
+  el.innerHTML = sorted.map(l => {
+    const book = db.books.find(b=>b.id===l.bookId);
+    return `<div class="log-item">
+      <div class="log-dot" style="background:${book?book.color:'#c9a96e'}"></div>
+      <div class="log-meta">
+        <div class="log-book-name">${esc(book?book.title:'Unknown')}</div>
+        <div class="log-stats">${l.pages} pages${l.minutes?' · '+l.minutes+' min':''}</div>
+        ${l.notes?`<div class="log-note">${esc(l.notes.slice(0,80))}</div>`:''}
+      </div>
+      <div class="log-date-label">${fmtDate(l.date)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── STATS ──
+function renderStats() {
+  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
+  const totalMins = db.logs.reduce((s,l)=>s+l.minutes,0);
+  const done = db.books.filter(b=>b.status==='done').length;
+  const byDay = {}; db.logs.forEach(l=>{byDay[l.date]=(byDay[l.date]||0)+l.pages;});
+  const best = Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
+  const avgPerSession = db.logs.length ? Math.round(totalPages/db.logs.length) : 0;
+
+  document.getElementById('stats-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Total pages</div><div class="metric-value">${totalPages.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">Total hours</div><div class="metric-value">${Math.round(totalMins/60)}</div></div>
+    <div class="metric"><div class="metric-label">Books finished</div><div class="metric-value">${done}</div></div>
+    <div class="metric"><div class="metric-label">Best day</div><div class="metric-value">${best?best[1]:'—'}</div><div class="metric-sub">${best?fmtDate(best[0]):''}</div></div>
+    <div class="metric"><div class="metric-label">Avg / session</div><div class="metric-value">${avgPerSession}</div><div class="metric-sub">pages</div></div>
+    <div class="metric"><div class="metric-label">Sessions</div><div class="metric-value">${db.logs.length}</div></div>
+  `;
+
+  // Monthly books finished
+  const mc={};
+  db.books.filter(b=>b.status==='done'&&b.finishedDate).forEach(b=>{
+    const m=b.finishedDate.slice(0,7); mc[m]=(mc[m]||0)+1;
+  });
+  const months=Object.keys(mc).sort().slice(-10);
+  destroyChart('monthly-chart');
+  charts['monthly-chart'] = new Chart(document.getElementById('monthly-chart'),{
+    type:'bar', data:{labels:months.map(m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1]+(y!==new Date().getFullYear().toString()?' '+y.slice(2):'');})||['No data'],
+      datasets:[{data:months.length?months.map(m=>mc[m]):[0], backgroundColor:'#5dbf8a', borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6259',font:{size:11},stepSize:1,maxTicksLimit:5}}}}
+  });
+
+  // Daily 30
+  const d30l=[], d30d=[];
+  for(let i=29;i>=0;i--) {
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const s=d.toISOString().slice(0,10);
+    d30l.push(i%5===0?d.getDate()+'':'');
+    d30d.push(db.logs.filter(l=>l.date===s).reduce((a,l)=>a+l.pages,0));
+  }
+  destroyChart('daily30-chart');
+  charts['daily30-chart'] = new Chart(document.getElementById('daily30-chart'),{
+    type:'line', data:{labels:d30l, datasets:[{data:d30d, borderColor:'#7ab3e0', backgroundColor:'rgba(122,179,224,0.08)', fill:true, tension:0.4, pointRadius:2, pointBackgroundColor:'#7ab3e0'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6259',font:{size:11},maxTicksLimit:4}}}}
+  });
+
+  // Genre chart
+  const gc={};
+  db.books.filter(b=>b.genre).forEach(b=>{gc[b.genre]=(gc[b.genre]||0)+1;});
+  const genres=Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  destroyChart('genre-chart');
+  if(genres.length) {
+    charts['genre-chart'] = new Chart(document.getElementById('genre-chart'),{
+      type:'doughnut', data:{labels:genres.map(g=>g[0]), datasets:[{data:genres.map(g=>g[1]), backgroundColor:COLORS.slice(0,genres.length), borderWidth:0, hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#a89f94',font:{size:11},boxWidth:10,padding:8}}}}
+    });
+  }
+
+  // Day of week
+  const dow=[0,0,0,0,0,0,0];
+  db.logs.forEach(l=>{const d=new Date(l.date+'T12:00:00'); dow[d.getDay()]+=l.pages;});
+  destroyChart('dow-chart');
+  charts['dow-chart'] = new Chart(document.getElementById('dow-chart'),{
+    type:'bar', data:{labels:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], datasets:[{data:dow, backgroundColor:'#b39ddb', borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6259',font:{size:11},maxTicksLimit:4}}}}
+  });
+
+  // Finished books list
+  const finished = db.books.filter(b=>b.status==='done').sort((a,b)=>(b.finishedDate||'').localeCompare(a.finishedDate||''));
+  document.getElementById('stats-finished-list').innerHTML = finished.length ?
+    `<div class="book-list">${finished.map(b=>`<div class="book-item">
+      <div class="book-spine" style="background:${b.color}"></div>
+      <div class="book-meta">
+        <div class="book-title-text">${esc(b.title)}</div>
+        <div class="book-author-text">${esc(b.author)}${b.finishedDate?' · finished '+fmtDate(b.finishedDate):''}</div>
+      </div>
+      <div style="font-size:14px">${stars(b.rating||0)}</div>
+    </div>`).join('')}</div>` :
+    '<div class="empty"><p>No finished books yet</p></div>';
+}
+
+// ── GOALS ──
+function renderGoals() {
+  const done = db.books.filter(b=>b.status==='done').length;
+  const pct = db.goal ? Math.min(100, Math.round(done/db.goal*100)) : 0;
+  document.getElementById('goal-pct').textContent = pct+'%';
+  document.getElementById('goal-desc').textContent = done+' of '+db.goal+' books finished';
+  document.getElementById('goal-in').placeholder = 'Goal: '+db.goal;
+  document.getElementById('daily-goal-in').placeholder = 'Goal: '+db.dailyGoal+' pages/day';
+  document.getElementById('weekly-goal-in').placeholder = 'Goal: '+db.weeklyGoal+' pages/wk';
+
+  const todayP = db.logs.filter(l=>l.date===todayStr()).reduce((s,l)=>s+l.pages,0);
+  const weekP = pagesInDays(7);
+  const dpct = Math.min(100,Math.round(todayP/db.dailyGoal*100));
+  const wpct = Math.min(100,Math.round(weekP/db.weeklyGoal*100));
+  document.getElementById('daily-goal-status').innerHTML = `Today: <strong style="color:${dpct>=100?'var(--green)':'var(--accent)'}">${todayP}/${db.dailyGoal} pages (${dpct}%)</strong>`;
+  document.getElementById('weekly-goal-status').innerHTML = `This week: <strong style="color:${wpct>=100?'var(--green)':'var(--accent)'}">${weekP}/${db.weeklyGoal} pages (${wpct}%)</strong>`;
+
+  destroyChart('goal-donut');
+  charts['goal-donut'] = new Chart(document.getElementById('goal-donut'),{
+    type:'doughnut', data:{datasets:[{data:[pct,100-pct], backgroundColor:['#c9a96e','rgba(255,255,255,0.05)'], borderWidth:0}]},
+    options:{responsive:false, cutout:'72%', plugins:{legend:{display:false},tooltip:{enabled:false}}}
+  });
+
+  const daysLeft = Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000));
+  const bLeft = Math.max(0,db.goal-done);
+  const el = document.getElementById('pace-info');
+  if(!bLeft) { el.innerHTML='<strong style="color:var(--green)">🎉 Annual goal complete!</strong> Incredible work.'; return; }
+  const daysPerBook = bLeft>0 ? Math.ceil(daysLeft/bLeft) : 0;
+  const avgDays = calcAvgDaysPerBook();
+  const onTrack = avgDays && avgDays <= daysPerBook;
+  el.innerHTML = `${bLeft} book${bLeft!==1?'s':''} left · ${daysLeft} days remaining in ${new Date().getFullYear()}.<br>
+    Finish a book every <strong>${daysPerBook}</strong> days to hit your goal.<br>
+    ${avgDays?`Your average: <strong>${avgDays} days/book</strong> · <strong style="color:${onTrack?'var(--green)':'var(--red)'}">${onTrack?'On track ✓':'Behind pace — push it!'}</strong>`:'Log more books to see pace analysis.'}`;
+}
+
+// ── SHARE ──
+function renderShare() {
+  const done = db.books.filter(b=>b.status==='done').length;
+  const reading = db.books.filter(b=>b.status==='reading');
+  const streak = calcStreak();
+  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
+  const pct = db.goal ? Math.min(100,Math.round(done/db.goal*100)) : 0;
+
+  document.getElementById('share-preview').innerHTML = `
+    <div style="font-family:'Playfair Display',serif; font-size:20px; color:#c9a96e; margin-bottom:12px">📚 ReadTracker</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px">
+      <div><div style="font-size:10px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">Streak</div><div style="font-size:22px;color:#f0ebe4;font-family:'Playfair Display',serif">${streak}d</div></div>
+      <div><div style="font-size:10px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">Books done</div><div style="font-size:22px;color:#f0ebe4;font-family:'Playfair Display',serif">${done}</div></div>
+      <div><div style="font-size:10px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">Pages read</div><div style="font-size:22px;color:#f0ebe4;font-family:'Playfair Display',serif">${totalPages.toLocaleString()}</div></div>
+    </div>
+    <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-bottom:8px"><div style="height:4px;background:#c9a96e;border-radius:2px;width:${pct}%"></div></div>
+    <div style="font-size:12px;color:#a89f94">${done}/${db.goal} books · ${pct}% of ${new Date().getFullYear()} goal</div>
+    ${reading.length?`<div style="margin-top:12px;font-size:12px;color:#6b6259">Currently reading: <span style="color:#f0ebe4">${reading.slice(0,2).map(b=>b.title).join(', ')}</span></div>`:''}
+  `;
+
+  // Embed code
+  const readingBooks = reading.slice(0,3);
+  const embedCode = readingBooks.length ? `<!-- ReadTracker Widget -->
+<div style="font-family:sans-serif;background:#1a1510;color:#f0ebe4;padding:16px;border-radius:10px;border:1px solid rgba(201,169,110,0.2);max-width:300px">
+  <div style="font-size:13px;color:#c9a96e;margin-bottom:10px">📚 Currently reading</div>
+  ${readingBooks.map(b=>`<div style="margin-bottom:8px"><div style="font-size:14px;font-weight:500">${esc(b.title)}</div><div style="font-size:12px;color:#a89f94">${esc(b.author)}</div>${b.pages?`<div style="height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px"><div style="height:3px;background:${b.color};border-radius:2px;width:${Math.round((b.pagesRead||0)/b.pages*100)}%"></div></div>`:''}
+  </div>`).join('')}
+</div>` : '<!-- No books currently reading -->';
+  document.getElementById('embed-code').value = embedCode;
+}
+
+function copyShareText() {
+  const done = db.books.filter(b=>b.status==='done').length;
+  const streak = calcStreak();
+  const pages = db.logs.reduce((s,l)=>s+l.pages,0);
+  const reading = db.books.filter(b=>b.status==='reading').slice(0,2).map(b=>b.title).join(', ');
+  const text = `📚 Reading update — ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}\n\n🔥 ${streak}-day streak\n📖 ${done} books finished (${Math.round(done/db.goal*100)}% of my ${db.goal}-book goal)\n📄 ${pages.toLocaleString()} pages read\n\nCurrently reading: ${reading||'taking a break'}\n\n#ReadTracker #reading`;
+  navigator.clipboard.writeText(text).then(()=>toast('Copied to clipboard!')).catch(()=>toast('Could not copy'));
+}
+
+function copyEmbed() {
+  navigator.clipboard.writeText(document.getElementById('embed-code').value).then(()=>toast('Embed code copied!')).catch(()=>toast('Could not copy'));
+}
+
+function downloadShareImage() {
+  toast('Right-click the preview card → Save as image, or take a screenshot!');
+}
+
+// ── IMPORT / EXPORT ──
+function importGoodreads(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const lines = e.target.result.split('\n');
+      const headers = lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+      let count = 0;
+      for(let i=1;i<lines.length;i++) {
+        const row = parseCSVRow(lines[i]);
+        if(!row.length) continue;
+        const get = (name) => { const idx=headers.findIndex(h=>h.includes(name)); return idx>=0?(row[idx]||'').replace(/"/g,'').trim():''; };
+        const title = get('title'); if(!title) continue;
+        const shelf = get('shelf') || get('exclusive shelf') || get('bookshelves');
+        let status = 'want';
+        if(shelf.includes('read') && !shelf.includes('to-read') && !shelf.includes('currently')) status='done';
+        if(shelf.includes('currently')) status='reading';
+        if(db.books.find(b=>b.title.toLowerCase()===title.toLowerCase())) continue;
+        db.books.push({
+          id: Date.now()+i, title, author: get('author'), pages: parseInt(get('pages'))||0,
+          genre: '', status, rating: Math.round(parseFloat(get('my rating'))||0),
+          pagesRead: status==='done'?(parseInt(get('pages'))||0):0,
+          startDate: get('date started') || (status!=='want'?todayStr():''),
+          finishedDate: get('date read') || (status==='done'?todayStr():''),
+          addedDate: todayStr(), color: SPINE_COLORS[(db.books.length)%SPINE_COLORS.length]
+        });
+        count++;
+      }
+      save(); renderAll();
+      document.getElementById('import-status').textContent = `✓ Imported ${count} books from Goodreads!`;
+      toast(`Imported ${count} books!`);
+    } catch(err) { document.getElementById('import-status').textContent = 'Error parsing file: '+err.message; }
+  };
+  reader.readAsText(file);
+}
+
+function importManualCSV(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').slice(1);
+    let count=0;
+    lines.forEach((line,i) => {
+      const cols = parseCSVRow(line).map(c=>c.replace(/"/g,'').trim());
+      if(!cols[0]) return;
+      const status = (cols[3]||'want').toLowerCase();
+      db.books.push({
+        id:Date.now()+i, title:cols[0], author:cols[1]||'', pages:parseInt(cols[2])||0,
+        genre:cols[4]||'', status: ['reading','want','done'].includes(status)?status:'want',
+        rating:0, pagesRead:status==='done'?(parseInt(cols[2])||0):0,
+        startDate:'', finishedDate:status==='done'?todayStr():'', addedDate:todayStr(),
+        color:SPINE_COLORS[db.books.length%SPINE_COLORS.length]
+      }); count++;
+    });
+    save(); renderAll(); toast(`Imported ${count} books!`);
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVRow(row) {
+  const result=[]; let cur='', inQ=false;
+  for(let c of row) {
+    if(c==='"') inQ=!inQ;
+    else if(c===','&&!inQ){result.push(cur);cur='';}
+    else cur+=c;
+  }
+  result.push(cur); return result;
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`readtracker-backup-${todayStr()}.json`; a.click(); toast('JSON backup downloaded!');
+}
+
+function exportCSV() {
+  const rows = [['Title','Author','Pages','Status','Genre','Rating','Started','Finished']];
+  db.books.forEach(b=>rows.push([b.title,b.author,b.pages,b.status,b.genre,b.rating,b.startDate,b.finishedDate]));
+  const csv = rows.map(r=>r.map(c=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`readtracker-books-${todayStr()}.csv`; a.click(); toast('CSV downloaded!');
+}
+
+function importJSONBackup() { document.getElementById('json-restore').click(); }
+function restoreJSON(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ try{db=JSON.parse(e.target.result);save();renderAll();toast('Data restored!');} catch(err){toast('Error reading file');} };
+  reader.readAsText(file);
+}
+
+function clearAll() {
+  if(!confirm('Delete ALL data? This cannot be undone.')) return;
+  db={books:[],logs:[],goal:24,dailyGoal:30,weeklyGoal:200};
+  save(); renderAll(); toast('All data cleared');
+}
+
+// ── HELPERS ──
+function calcStreak() {
+  const days=new Set(db.logs.map(l=>l.date));
+  let streak=0, d=new Date();
+  for(let i=0;i<365;i++) {
+    const s=d.toISOString().slice(0,10);
+    if(days.has(s)) { streak++; d.setDate(d.getDate()-1); }
+    else if(i===0) { d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+function pagesInDays(n) {
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-n);
+  return db.logs.filter(l=>new Date(l.date+'T12:00:00')>=cutoff).reduce((s,l)=>s+l.pages,0);
+}
+function pagesInRange(from,to) {
+  const now=new Date();
+  const a=new Date(now); a.setDate(now.getDate()-from);
+  const b=new Date(now); b.setDate(now.getDate()-to);
+  return db.logs.filter(l=>{const d=new Date(l.date+'T12:00:00');return d>=a&&d<b;}).reduce((s,l)=>s+l.pages,0);
+}
+function calcAvgSpeed() {
+  const p=db.logs.reduce((s,l)=>s+l.pages,0);
+  const m=db.logs.reduce((s,l)=>s+l.minutes,0);
+  return m>0?Math.round(p/(m/60)):0;
+}
+function calcAvgDaysPerBook() {
+  const books=db.books.filter(b=>b.status==='done'&&b.startDate&&b.finishedDate);
+  if(!books.length) return 0;
+  const avg=books.reduce((s,b)=>{
+    const diff=Math.max(1,(new Date(b.finishedDate)-new Date(b.startDate))/86400000);
+    return s+diff;
+  },0)/books.length;
+  return Math.round(avg);
+}
+function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+load();
+</script>
+</body>
+</html>
