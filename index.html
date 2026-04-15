@@ -1,616 +1,1014 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-case="lower" data-density="normal">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>book tracker</title>
+<title>readtracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
+/* ── THEME TOKENS ── */
 :root {
-  --bg: #0e0c0a;
-  --bg2: #171410;
-  --bg3: #1f1b17;
-  --bg4: #2a251f;
-  --border: rgba(255,255,255,0.08);
-  --border2: rgba(255,255,255,0.14);
-  --text: #f0ebe4;
-  --text2: #a89f94;
-  --text3: #6b6259;
   --accent: #c9a96e;
   --accent2: #e8c99a;
-  --accent-bg: rgba(201,169,110,0.12);
-  --green: #5dbf8a;
-  --green-bg: rgba(93,191,138,0.12);
-  --red: #e07070;
-  --red-bg: rgba(224,112,112,0.1);
-  --blue: #7ab3e0;
-  --blue-bg: rgba(122,179,224,0.12);
-  --purple: #b39ddb;
-  --r: 10px;
-  --r-sm: 6px;
+  --accent-bg: rgba(201,169,110,0.1);
+  --accent-rgb: 201,169,110;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.5; }
-a { color: var(--accent); }
-h1,h2,h3 { font-family: 'Playfair Display', serif; font-weight: 500; }
+[data-theme="dark"] {
+  --bg: #0d0b09; --bg2: #141210; --bg3: #1c1915; --bg4: #252118;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --text: #ede8e1; --text2: #a09690; --text3: #5e5850;
+  --green: #5dbf8a; --green-bg: rgba(93,191,138,0.1);
+  --red: #e07070; --red-bg: rgba(224,112,112,0.08);
+  --blue: #7ab3e0; --blue-bg: rgba(122,179,224,0.1);
+  --shadow: rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg: #faf8f5; --bg2: #f0ece6; --bg3: #e8e2da; --bg4: #ddd6cc;
+  --border: rgba(0,0,0,0.07); --border2: rgba(0,0,0,0.13);
+  --text: #1a1612; --text2: #6b5f54; --text3: #a89f96;
+  --green: #2d7a56; --green-bg: rgba(45,122,86,0.1);
+  --red: #b84040; --red-bg: rgba(184,64,64,0.08);
+  --blue: #2c6fa8; --blue-bg: rgba(44,111,168,0.1);
+  --shadow: rgba(0,0,0,0.12);
+}
+[data-theme="warm"] {
+  --bg: #1a1008; --bg2: #231507; --bg3: #2e1c0c; --bg4: #3a240f;
+  --border: rgba(255,200,120,0.08); --border2: rgba(255,200,120,0.16);
+  --text: #f5e8d0; --text2: #b89870; --text3: #7a6040;
+  --green: #88cc66; --green-bg: rgba(136,204,102,0.1);
+  --red: #e08060; --red-bg: rgba(224,128,96,0.1);
+  --blue: #88b8e0; --blue-bg: rgba(136,184,224,0.1);
+  --shadow: rgba(0,0,0,0.5);
+}
+[data-theme="slate"] {
+  --bg: #0a0d12; --bg2: #111520; --bg3: #181c2a; --bg4: #202434;
+  --border: rgba(120,150,255,0.08); --border2: rgba(120,150,255,0.14);
+  --text: #d8dff0; --text2: #8090b0; --text3: #404860;
+  --green: #60d090; --green-bg: rgba(96,208,144,0.1);
+  --red: #e07080; --red-bg: rgba(224,112,128,0.1);
+  --blue: #80b0ff; --blue-bg: rgba(128,176,255,0.1);
+  --shadow: rgba(0,0,0,0.5);
+}
 
-/* layout */
+/* accent overrides */
+[data-accent="rose"]   { --accent:#e8a0b0; --accent2:#f5c0cc; --accent-bg:rgba(232,160,176,0.1); --accent-rgb:232,160,176; }
+[data-accent="sage"]   { --accent:#88c4a0; --accent2:#aadabb; --accent-bg:rgba(136,196,160,0.1); --accent-rgb:136,196,160; }
+[data-accent="sky"]    { --accent:#7ab8e8; --accent2:#a0ccf4; --accent-bg:rgba(122,184,232,0.1); --accent-rgb:122,184,232; }
+[data-accent="lavender"]{ --accent:#b0a0e0; --accent2:#ccc0f0; --accent-bg:rgba(176,160,224,0.1); --accent-rgb:176,160,224; }
+[data-accent="coral"]  { --accent:#e89070; --accent2:#f4b090; --accent-bg:rgba(232,144,112,0.1); --accent-rgb:232,144,112; }
+[data-accent="gold"]   { --accent:#c9a96e; --accent2:#e8c99a; --accent-bg:rgba(201,169,110,0.1); --accent-rgb:201,169,110; }
+
+/* texture */
+[data-texture="paper"]  { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); }
+[data-texture="dots"]   { background-image: radial-gradient(circle, rgba(var(--accent-rgb),0.12) 1px, transparent 1px); background-size: 24px 24px; }
+[data-texture="lines"]  { background-image: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--accent-rgb),0.06) 39px, rgba(var(--accent-rgb),0.06) 40px); }
+[data-texture="grid"]   { background-image: linear-gradient(rgba(var(--accent-rgb),0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--accent-rgb),0.05) 1px, transparent 1px); background-size: 32px 32px; }
+
+/* density */
+[data-density="compact"] { --pad: 14px; --gap: 10px; --fs: 13px; }
+[data-density="normal"]  { --pad: 20px; --gap: 14px; --fs: 15px; }
+[data-density="spacious"]{ --pad: 28px; --gap: 20px; --fs: 16px; }
+
+/* case */
+[data-case="lower"] .ui-text,
+[data-case="lower"] .nav-label,
+[data-case="lower"] h1, [data-case="lower"] h2, [data-case="lower"] h3,
+[data-case="lower"] .card-title, [data-case="lower"] .metric-label,
+[data-case="lower"] .btn:not(.btn-icon), [data-case="lower"] .tab-btn,
+[data-case="lower"] .pill, [data-case="lower"] label { text-transform: lowercase; }
+[data-case="proper"] .ui-text,
+[data-case="proper"] .nav-label,
+[data-case="proper"] h1, [data-case="proper"] h2, [data-case="proper"] h3,
+[data-case="proper"] .card-title, [data-case="proper"] .metric-label,
+[data-case="proper"] .btn:not(.btn-icon), [data-case="proper"] .tab-btn,
+[data-case="proper"] .pill, [data-case="proper"] label { text-transform: capitalize; }
+
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+/* ── LAYOUT ── */
 .app { display: flex; min-height: 100vh; }
-.sidebar { width: 220px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); padding: 24px 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-.main { flex: 1; padding: 28px 32px; max-width: 860px; overflow-x: hidden; }
-.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
-.logo h1 { font-size: 22px; color: var(--accent); letter-spacing: -0.5px; }
-.logo p { font-size: 12px; color: var(--text3); margin-top: 2px; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; color: var(--text2); font-size: 14px; transition: all .15s; border-left: 2px solid transparent; }
-.nav-item:hover { background: var(--bg3); color: var(--text); }
+.sidebar { width: 210px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main-content { flex: 1; min-width: 0; padding: var(--pad, 20px) calc(var(--pad, 20px) * 1.6); max-width: 900px; }
+
+/* ── SIDEBAR ── */
+.logo-wrap { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+.logo-name { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--accent); letter-spacing: -0.3px; }
+.logo-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.nav-section { padding: 10px 0; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 18px; cursor: pointer; color: var(--text3); font-size: 13px; transition: all .12s; border-left: 2px solid transparent; user-select: none; }
+.nav-item:hover { background: var(--bg3); color: var(--text2); }
 .nav-item.active { background: var(--accent-bg); color: var(--accent); border-left-color: var(--accent); }
-.nav-icon { font-size: 16px; }
-.sidebar-footer { margin-top: auto; padding: 16px 20px 0; border-top: 1px solid var(--border); }
-.sidebar-footer p { font-size: 11px; color: var(--text3); line-height: 1.6; }
+.nav-icon { font-size: 15px; flex-shrink: 0; }
+.nav-label { font-size: 13px; }
+.nav-divider { height: 1px; background: var(--border); margin: 6px 18px; }
+.sidebar-bottom { margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg3); border-radius: 8px; cursor: pointer; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--accent); flex-shrink: 0; }
+.user-name { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-email { font-size: 10px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* pages */
-.page { display: none; }
+/* ── PAGES ── */
+.page { display: none; animation: fadeIn .2s ease; }
 .page.active { display: block; }
-.page-title { font-size: 26px; margin-bottom: 6px; color: var(--text); }
-.page-sub { font-size: 14px; color: var(--text3); margin-bottom: 28px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.page-header { margin-bottom: calc(var(--pad, 20px) * 1.2); }
+.page-title { font-family: 'Instrument Serif', serif; font-size: 30px; color: var(--text); font-weight: 400; line-height: 1.1; }
+.page-sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
 
-/* Metrics */
-.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 24px; }
-.metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; }
-.metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-.metric-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 500; color: var(--text); line-height: 1; }
-.metric-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
-.metric.accent { border-color: rgba(201,169,110,0.3); background: var(--accent-bg); }
-.metric.accent .metric-value { color: var(--accent); }
-.metric.green { border-color: rgba(93,191,138,0.3); background: var(--green-bg); }
-.metric.green .metric-value { color: var(--green); }
+/* ── CARDS ── */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: var(--pad, 20px); margin-bottom: var(--gap, 14px); }
+.card-title { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+.card-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap, 14px); margin-bottom: var(--gap, 14px); }
+.card-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap, 14px); margin-bottom: var(--gap, 14px); }
 
-/* Cards */
-.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 16px; }
-.card-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
-.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+/* ── METRICS ── */
+.metrics-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: var(--gap, 14px); }
+.metric { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.metric.hi { border-color: rgba(var(--accent-rgb),0.25); background: var(--accent-bg); }
+.metric-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+.metric-val { font-family: 'Instrument Serif', serif; font-size: 30px; color: var(--text); line-height: 1; }
+.metric.hi .metric-val { color: var(--accent); }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
-/* Forms */
-.form-group { margin-bottom: 14px; }
-.form-label { font-size: 12px; color: var(--text3); margin-bottom: 5px; display: block; }
-input, select, textarea { width: 100%; padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .15s; }
+/* ── FORMS ── */
+.form-group { margin-bottom: 12px; }
+label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; letter-spacing: 0.3px; }
+input, select, textarea { width: 100%; padding: 8px 11px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-family: 'Geist', sans-serif; font-size: 13px; outline: none; transition: border-color .15s; -webkit-appearance: none; }
 input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 select option { background: var(--bg3); }
 textarea { resize: vertical; line-height: 1.5; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.form-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-/* Buttons */
-.btn { padding: 9px 18px; border-radius: var(--r-sm); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; transition: all .15s; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 6px; }
-.btn-primary { background: var(--accent); color: #1a1209; border-color: var(--accent); }
-.btn-primary:hover { background: var(--accent2); }
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 400; transition: all .12s; border: 1px solid transparent; }
+.btn-primary { background: var(--accent); color: #100c06; border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.1); }
 .btn-ghost { background: transparent; color: var(--text2); border-color: var(--border2); }
 .btn-ghost:hover { background: var(--bg3); color: var(--text); }
-.btn-danger { background: var(--red-bg); color: var(--red); border-color: rgba(224,112,112,0.2); }
-.btn-danger:hover { background: rgba(224,112,112,0.2); }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: var(--red-bg); color: var(--red); border-color: rgba(var(--red),0); }
 .btn-full { width: 100%; justify-content: center; }
-.btn-icon { padding: 6px; background: transparent; border: none; color: var(--text3); cursor: pointer; border-radius: 4px; font-size: 15px; transition: all .15s; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 5px 7px; background: transparent; border: none; color: var(--text3); cursor: pointer; border-radius: 6px; font-size: 14px; transition: all .12s; }
 .btn-icon:hover { color: var(--red); background: var(--red-bg); }
 
-/* Book stuff */
-.book-list { display: flex; flex-direction: column; gap: 0; }
-.book-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.book-item:last-child { border-bottom: none; padding-bottom: 0; }
-.book-item:first-child { padding-top: 0; }
-.book-spine { width: 6px; flex-shrink: 0; border-radius: 3px; align-self: stretch; min-height: 44px; }
-.book-cover { width: 36px; height: 50px; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; }
+/* ── TABS ── */
+.tab-bar { display: flex; gap: 2px; background: var(--bg3); border-radius: 9px; padding: 3px; margin-bottom: 14px; }
+.tab-btn { flex: 1; padding: 6px; text-align: center; cursor: pointer; font-size: 12px; border-radius: 7px; color: var(--text3); border: none; background: transparent; font-family: 'Geist', sans-serif; transition: all .12s; }
+.tab-btn.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px var(--shadow); }
+
+/* ── BOOK ITEMS ── */
+.book-list { display: flex; flex-direction: column; }
+.book-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.book-item:last-child { border-bottom: none; }
+.book-spine { width: 5px; border-radius: 3px; flex-shrink: 0; align-self: stretch; min-height: 46px; cursor: pointer; transition: width .15s; position: relative; }
+.book-spine:hover { width: 9px; }
+.book-spine::after { content: '✎'; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 8px; color: rgba(0,0,0,0.4); opacity: 0; transition: opacity .15s; }
+.book-spine:hover::after { opacity: 1; }
 .book-meta { flex: 1; min-width: 0; }
-.book-title-text { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.book-author-text { font-size: 12px; color: var(--text3); margin-top: 1px; }
-.book-info-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.book-title-t { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.book-author-t { font-size: 12px; color: var(--text3); }
+.book-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; align-items: center; }
 .progress-bar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 5px; overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 2px; transition: width .3s; }
-.book-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+.progress-fill { height: 100%; border-radius: 2px; }
+.book-actions { display: flex; gap: 2px; flex-shrink: 0; align-items: center; }
+.star { font-size: 12px; cursor: pointer; color: var(--text3); transition: color .1s; }
+.star.on { color: var(--accent); }
 
-/* pills */
-.pill { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 400; }
+/* ── PILLS ── */
+.pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
 .pill-reading { background: var(--blue-bg); color: var(--blue); }
-.pill-want { background: var(--bg4); color: var(--text3); }
-.pill-done { background: var(--green-bg); color: var(--green); }
-.pill-genre { background: var(--accent-bg); color: var(--accent); }
-.star-rating { display: flex; gap: 2px; }
-.star { font-size: 13px; cursor: pointer; color: var(--text3); transition: color .1s; }
-.star.filled { color: var(--accent); }
+.pill-want    { background: var(--bg4);    color: var(--text3); }
+.pill-done    { background: var(--green-bg); color: var(--green); }
+.pill-genre   { background: var(--accent-bg); color: var(--accent); }
+.pill-series  { background: rgba(176,160,224,0.1); color: #b0a0e0; }
+.series-badge { font-size: 10px; color: #b0a0e0; display: flex; align-items: center; gap: 3px; }
 
-/* Streak */
-.streak-grid { display: flex; flex-wrap: wrap; gap: 3px; }
-.s-dot { width: 14px; height: 14px; border-radius: 3px; cursor: default; transition: transform .1s; }
-.s-dot:hover { transform: scale(1.3); }
-
-/* Session log */
-.log-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+/* ── LOG ITEMS ── */
+.log-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
 .log-item:last-child { border-bottom: none; }
-.log-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px; }
-.log-meta { flex: 1; }
-.log-book-name { font-size: 14px; font-weight: 500; }
-.log-stats { font-size: 12px; color: var(--text3); margin-top: 2px; }
-.log-note { font-size: 12px; color: var(--text2); margin-top: 3px; font-style: italic; }
-.log-date-label { font-size: 11px; color: var(--text3); flex-shrink: 0; padding-top: 2px; }
+.log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+.log-body { flex: 1; }
+.log-book { font-size: 13px; font-weight: 500; }
+.log-info { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.log-note { font-size: 11px; color: var(--text2); font-style: italic; margin-top: 2px; }
+.log-right { font-size: 11px; color: var(--text3); flex-shrink: 0; padding-top: 2px; }
 
-/* Goals */
-.goal-wrap { display: flex; align-items: center; gap: 24px; }
-.goal-text .big { font-family: 'Playfair Display', serif; font-size: 40px; color: var(--accent); line-height: 1; }
-.goal-text .sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
-.pace-info { font-size: 14px; color: var(--text2); line-height: 1.7; }
-.pace-info strong { color: var(--accent); }
+/* ── STREAK ── */
+.streak-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+.s-dot { width: 13px; height: 13px; border-radius: 3px; cursor: default; }
 
-/* Tab bar inside a card */
-.tab-bar { display: flex; gap: 2px; margin-bottom: 16px; background: var(--bg3); border-radius: var(--r-sm); padding: 3px; }
-.tab-btn { flex: 1; padding: 7px; text-align: center; cursor: pointer; font-size: 13px; border-radius: 5px; color: var(--text3); transition: all .15s; border: none; background: transparent; font-family: 'DM Sans', sans-serif; }
-.tab-btn.active { background: var(--bg2); color: var(--text); }
+/* ── FRIENDS ── */
+.friend-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.friend-item:last-child { border-bottom: none; }
+.friend-av { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: var(--accent); flex-shrink: 0; }
+.friend-info { flex: 1; }
+.friend-name { font-size: 13px; font-weight: 500; }
+.friend-stat { font-size: 11px; color: var(--text3); }
+.friend-reading { font-size: 11px; color: var(--text2); font-style: italic; }
 
-/* Goodreads */
-.import-box { border: 1px dashed var(--border2); border-radius: var(--r); padding: 28px; text-align: center; cursor: pointer; transition: all .15s; }
-.import-box:hover { border-color: var(--accent); background: var(--accent-bg); }
-.import-icon { font-size: 32px; margin-bottom: 10px; }
-.import-desc { font-size: 13px; color: var(--text3); margin-top: 6px; }
+/* ── COLOUR PICKER ── */
+.color-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .12s, border-color .12s; }
+.swatch.active { border-color: var(--text); transform: scale(1.15); }
+.color-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.theme-swatch { width: 44px; height: 32px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; transition: all .12s; position: relative; overflow: hidden; }
+.theme-swatch.active { border-color: var(--accent); }
 
-/* Share widget */
-.share-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
-.share-preview { background: linear-gradient(135deg, #1a150e 0%, #2a1f0e 100%); border: 1px solid rgba(201,169,110,0.2); border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+/* ── AUTH ── */
+.auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.auth-card { width: 100%; max-width: 380px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
+.auth-logo { font-family: 'Instrument Serif', serif; font-size: 28px; color: var(--accent); margin-bottom: 4px; }
+.auth-sub  { font-size: 13px; color: var(--text3); margin-bottom: 24px; }
+.auth-toggle { font-size: 12px; color: var(--text3); margin-top: 14px; text-align: center; }
+.auth-toggle a { color: var(--accent); cursor: pointer; }
+.auth-error { font-size: 12px; color: var(--red); background: var(--red-bg); border-radius: 6px; padding: 8px 10px; margin-top: 10px; display: none; }
+.auth-error.show { display: block; }
+.setup-note { font-size: 12px; color: var(--text3); background: var(--bg3); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; line-height: 1.6; }
+.setup-note code { color: var(--accent); font-size: 11px; }
+.setup-note a { color: var(--accent); }
 
-/* Empty state */
-.empty { text-align: center; padding: 32px 0; color: var(--text3); }
-.empty-icon { font-size: 36px; margin-bottom: 8px; }
-.empty p { font-size: 14px; }
+/* ── GOAL RING ── */
+.goal-wrap { display: flex; align-items: center; gap: 20px; }
+.goal-text .g-big { font-family: 'Instrument Serif', serif; font-size: 42px; color: var(--accent); line-height: 1; }
+.goal-text .g-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
 
-/* Toast */
-.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg4); color: var(--text); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 1000; transition: transform .3s; border: 1px solid var(--border2); white-space: nowrap; }
-.toast.show { transform: translateX(-50%) translateY(0); }
+/* ── IMPORT ZONE ── */
+.drop-zone { border: 1px dashed var(--border2); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all .15s; }
+.drop-zone:hover { border-color: var(--accent); background: var(--accent-bg); }
+.dz-icon { font-size: 28px; margin-bottom: 8px; }
+.dz-label { font-size: 14px; color: var(--text); }
+.dz-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
 
-/* Mobile nav */
-.mobile-nav { display: none; position: sticky; bottom: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 8px 0 12px; z-index: 100; }
-.mobile-nav-inner { display: flex; justify-content: space-around; }
-.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 11px; padding: 4px 12px; border-radius: var(--r-sm); border: none; background: transparent; font-family: 'DM Sans', sans-serif; transition: color .15s; }
+/* ── SHARE PREVIEW ── */
+.share-pre { background: linear-gradient(135deg, #1a140a 0%, #261b08 100%); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+
+/* ── MOBILE NAV ── */
+.mobile-nav { display: none; position: sticky; bottom: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 0 10px; z-index: 100; }
+.mob-inner { display: flex; justify-content: space-around; }
+.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 10px; padding: 4px 10px; border-radius: 8px; border: none; background: transparent; font-family: 'Geist', sans-serif; transition: color .12s; }
 .mob-btn.active { color: var(--accent); }
-.mob-icon { font-size: 20px; }
+.mob-icon { font-size: 19px; }
 
-/* Shareable widget canvas */
-#share-canvas { display: none; }
+/* ── MISC ── */
+.empty { text-align: center; padding: 28px; color: var(--text3); }
+.empty-icon { font-size: 32px; margin-bottom: 8px; }
+.empty p { font-size: 13px; }
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--bg4); color: var(--text); padding: 9px 18px; border-radius: 20px; font-size: 12px; z-index: 9999; transition: transform .25s; border: 1px solid var(--border2); white-space: nowrap; pointer-events: none; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.chart-wrap { position: relative; }
+.section-gap { height: var(--gap, 14px); }
+.inline-flex { display: flex; align-items: center; gap: 8px; }
+.color-picker-inline { width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 2px solid var(--border2); cursor: pointer; background: none; }
+.series-group-header { font-size: 11px; color: var(--text3); font-style: italic; padding: 8px 0 4px; letter-spacing: 0.3px; border-top: 1px solid var(--border); margin-top: 6px; }
+.series-group-header:first-child { border-top: none; margin-top: 0; }
+.order-controls { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.order-controls label { margin-bottom: 0; }
+.pending-chip { font-size: 10px; background: var(--accent-bg); color: var(--accent); padding: 2px 7px; border-radius: 10px; }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
-
-/* Responsive */
 @media (max-width: 680px) {
   .sidebar { display: none; }
-  .main { padding: 16px 16px 80px; }
+  .main-content { padding: 14px 14px 80px; }
   .mobile-nav { display: block; }
-  .card-grid { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr; }
-  .form-row3 { grid-template-columns: 1fr 1fr; }
-  .goal-wrap { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .metrics { grid-template-columns: 1fr 1fr; }
+  .metrics-row { grid-template-columns: 1fr 1fr; }
+  .card-grid2, .card-grid3 { grid-template-columns: 1fr; }
+  .form-row2, .form-row3 { grid-template-columns: 1fr; }
+  .goal-wrap { flex-direction: column; align-items: flex-start; }
 }
-
-/* Chart overrides */
-.chart-wrap { position: relative; }
 </style>
 </head>
 <body>
 
-<div class="app">
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="logo">
-      <h1>ReadTracker</h1>
-      <p>Your reading journey</p>
-    </div>
-    <nav>
-      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
-        <span class="nav-icon">📊</span> Dashboard
-      </div>
-      <div class="nav-item" data-page="library" onclick="showPage('library',this)">
-        <span class="nav-icon">📚</span> Library
-      </div>
-      <div class="nav-item" data-page="log" onclick="showPage('log',this)">
-        <span class="nav-icon">✏️</span> Log session
-      </div>
-      <div class="nav-item" data-page="stats" onclick="showPage('stats',this)">
-        <span class="nav-icon">📈</span> Stats
-      </div>
-      <div class="nav-item" data-page="goals" onclick="showPage('goals',this)">
-        <span class="nav-icon">🎯</span> Goals
-      </div>
-      <div class="nav-item" data-page="share" onclick="showPage('share',this)">
-        <span class="nav-icon">🔗</span> Share
-      </div>
-      <div class="nav-item" data-page="import" onclick="showPage('import',this)">
-        <span class="nav-icon">⬆️</span> Import
-      </div>
-    </nav>
-    <div class="sidebar-footer">
-      <p>Data saved in your browser. Export anytime from the import page.</p>
-    </div>
-  </aside>
+<!-- AUTH SCREEN -->
+<div id="auth-screen" style="display:none">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">readtracker</div>
+      <div class="auth-sub ui-text" id="auth-mode-sub">your reading journey, everywhere</div>
 
-  <!-- Main -->
-  <main class="main">
-
-    <!-- DASHBOARD -->
-    <div id="page-dashboard" class="page active">
-      <h2 class="page-title">Dashboard</h2>
-      <p class="page-sub" id="dash-date"></p>
-      <div class="metrics" id="dash-metrics"></div>
-      <div class="card-grid">
-        <div class="card" style="grid-column:1/-1">
-          <div class="card-title">Pages this week</div>
-          <div class="chart-wrap" style="height:130px"><canvas id="week-chart" role="img" aria-label="Pages read each day this week">Weekly pages</canvas></div>
-        </div>
-      </div>
-      <div class="card-grid">
-        <div class="card">
-          <div class="card-title">Currently reading</div>
-          <div id="dash-reading"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Reading streak — 35 days</div>
-          <div class="streak-grid" id="streak-cal"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- LIBRARY -->
-    <div id="page-library" class="page">
-      <h2 class="page-title">Library</h2>
-      <p class="page-sub">All your books in one place</p>
-      <div class="card">
-        <div class="card-title">Add a book</div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Title *</label><input id="b-title" placeholder="The Name of the Wind" /></div>
-          <div class="form-group"><label class="form-label">Author</label><input id="b-author" placeholder="Patrick Rothfuss" /></div>
-        </div>
-        <div class="form-row3">
-          <div class="form-group"><label class="form-label">Pages</label><input id="b-pages" type="number" placeholder="662" min="1" /></div>
-          <div class="form-group"><label class="form-label">Genre</label><input id="b-genre" placeholder="Fantasy" /></div>
-          <div class="form-group"><label class="form-label">Status</label>
-            <select id="b-status">
-              <option value="reading">Currently reading</option>
-              <option value="want">Want to read</option>
-              <option value="done">Finished</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">start date</label><input id="b-start" type="date" /></div>
-          <div class="form-group"><label class="form-label">rating (if finished)</label>
-            <select id="b-rating">
-              <option value="0">no rating</option>
-              <option value="5">★★★★★ loved it</option>
-              <option value="4">★★★★☆ really good</option>
-              <option value="3">★★★☆☆ liked it</option>
-              <option value="2">★★☆☆☆ it was ok</option>
-              <option value="1">★☆☆☆☆ didn't like it</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-full" onclick="addBook()">add book</button>
+      <div id="supabase-setup-note" class="setup-note" style="display:none">
+        ⚙️ <strong>Setup required:</strong> Replace <code>https://sfeyjounvjqrsnsjsmtj.supabase.co</code> and <code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmZXlqb3VudmpxcnNuc2pzbXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyOTU1NDMsImV4cCI6MjA5MTg3MTU0M30.OCy-G39ru6A-IodtNb01pqzag8XRW_Mwdvw19IaYK0w</code> at the top of the &lt;script&gt; in index.html with your project values from <a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a> → Settings → API.
       </div>
 
-      <div class="tab-bar">
-        <button class="tab-btn active" onclick="showLibTab('reading',this)">reading</button>
-        <button class="tab-btn" onclick="showLibTab('want',this)">want to read</button>
-        <button class="tab-btn" onclick="showLibTab('done',this)">finished</button>
-        <button class="tab-btn" onclick="showLibTab('all',this)">all books</button>
-      </div>
-      <div id="lib-list"></div>
+      <div class="form-group"><label>email</label><input id="auth-email" type="email" placeholder="you@example.com" /></div>
+      <div class="form-group"><label>password</label><input id="auth-pw" type="password" placeholder="••••••••" /></div>
+      <div class="form-group" id="auth-username-wrap" style="display:none"><label>username</label><input id="auth-username" placeholder="bookworm42" /></div>
+      <button class="btn btn-primary btn-full" onclick="doAuth()" id="auth-btn">sign in</button>
+      <div class="auth-error" id="auth-err"></div>
+      <div class="auth-toggle" id="auth-toggle">no account? <a onclick="toggleAuthMode()">sign up</a></div>
+      <div style="margin-top:10px;text-align:center"><a style="font-size:11px;color:var(--text3);cursor:pointer" onclick="continueOffline()">continue without account →</a></div>
     </div>
-
-    <!-- LOG SESSION -->
-    <div id="page-log" class="page">
-      <h2 class="page-title">log a session</h2>
-      <p class="page-sub">track your reading time and pages</p>
-      <div class="card">
-        <div class="form-group"><label class="form-label">book *</label>
-          <select id="log-book"><option value="">select a book...</option></select>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">pages read *</label><input id="log-pages" type="number" placeholder="45" min="1" /></div>
-          <div class="form-group"><label class="form-label">minutes spent</label><input id="log-mins" type="number" placeholder="60" min="1" /></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">date</label><input id="log-date" type="date" /></div>
-          <div class="form-group"><label class="form-label">mark as finished?</label>
-            <select id="log-finish"><option value="no">no, still reading</option><option value="yes">yes, i finished this book!</option></select>
-          </div>
-        </div>
-        <div class="form-group"><label class="form-label">notes (optional)</label>
-          <textarea id="log-notes" rows="2" placeholder="wow, the ending was like sooo unexpected..."></textarea>
-        </div>
-        <button class="btn btn-primary btn-full" onclick="logSession()">save session</button>
-      </div>
-      <div class="card">
-        <div class="card-title">recent sessions</div>
-        <div id="log-recent"></div>
-      </div>
-    </div>
-
-    <!-- STATS -->
-    <div id="page-stats" class="page">
-      <h2 class="page-title">stats</h2>
-      <p class="page-sub">deep dive into your reading data</p>
-      <div class="metrics" id="stats-metrics"></div>
-      <div class="card">
-        <div class="card-title">books finished by month</div>
-        <div class="chart-wrap" style="height:180px"><canvas id="monthly-chart" role="img" aria-label="books finished per month">Monthly books</canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">pages per day: last 30 days</div>
-        <div class="chart-wrap" style="height:160px"><canvas id="daily30-chart" role="img" aria-label="pages per day over last 30 days">Daily pages</canvas></div>
-      </div>
-      <div class="card-grid">
-        <div class="card">
-          <div class="card-title">top genres</div>
-          <div class="chart-wrap" style="height:160px"><canvas id="genre-chart" role="img" aria-label="books by genre">Genres</canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">reading by day of week</div>
-          <div class="chart-wrap" style="height:160px"><canvas id="dow-chart" role="img" aria-label="reading activity by day of week">Day of week</canvas></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">all finished books</div>
-        <div id="stats-finished-list"></div>
-      </div>
-    </div>
-
-    <!-- GOALS -->
-    <div id="page-goals" class="page">
-      <h2 class="page-title">goals</h2>
-      <p class="page-sub">set targets and track your pace</p>
-      <div class="card">
-        <div class="card-title">annual reading goal</div>
-        <div class="goal-wrap">
-          <canvas id="goal-donut" width="100" height="100" role="img" aria-label="Annual goal progress">goal progress</canvas>
-          <div class="goal-text">
-            <div class="big" id="goal-pct">0%</div>
-            <div class="sub" id="goal-desc">0 of 0 books finished</div>
-          </div>
-        </div>
-        <div style="margin-top:16px; display:flex; gap:10px; align-items:flex-end">
-          <div style="flex:1"><label class="form-label">books this year</label><input id="goal-in" type="number" placeholder="24" min="1" /></div>
-          <button class="btn btn-primary" onclick="setGoal()">save</button>
-        </div>
-      </div> 
-      <div class="card-grid">
-        <div class="card">
-          <div class="card-title">daily page goal</div>
-          <div class="form-group"><label class="form-label">pages per day</label><input id="daily-goal-in" type="number" placeholder="30" min="1" /></div>
-          <button class="btn btn-primary btn-full" onclick="setDailyGoal()">Save</button>
-          <div id="daily-goal-status" style="margin-top:12px; font-size:13px; color:var(--text2);"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">weekly page goal</div>
-          <div class="form-group"><label class="form-label">pages per week</label><input id="weekly-goal-in" type="number" placeholder="200" min="1" /></div>
-          <button class="btn btn-primary btn-full" onclick="setWeeklyGoal()">Save</button>
-          <div id="weekly-goal-status" style="margin-top:12px; font-size:13px; color:var(--text2);"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">pace analysis</div>
-        <div class="pace-info" id="pace-info">log some sessions to see your pace!</div>
-      </div>
-    </div>
-
-    <!-- SHARE -->
-    <div id="page-share" class="page">
-      <h2 class="page-title">share your progress</h2>
-      <p class="page-sub">create a shareable reading widget</p>
-      <div class="card">
-        <div class="card-title">reading card preview</div>
-        <div class="share-preview" id="share-preview"></div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="copyShareText()">copy as text</button>
-          <button class="btn btn-ghost" onclick="downloadShareImage()">save as image</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">currently reading widget</div>
-        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">embed this on your website or blog:</p>
-        <textarea id="embed-code" rows="4" style="font-family:monospace; font-size:12px;" readonly></textarea>
-        <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="copyEmbed()">copy embed code</button>
-      </div>
-    </div>
-
-    <!-- IMPORT / EXPORT -->
-    <div id="page-import" class="page">
-      <h2 class="page-title">import &amp; export</h2>
-      <p class="page-sub">bring in your books or back up your data</p>
-      <div class="card">
-        <div class="card-title">import from Goodreads!</div>
-        <p style="font-size:13px; color:var(--text2); margin-bottom:16px; line-height:1.7">
-          in Goodreads: go to <strong style="color:var(--text)">My Books</strong> → <strong style="color:var(--text)">Import and export</strong> → <strong style="color:var(--text)">Export Library</strong>. then drop the CSV here!
-        </p>
-        <label class="import-box" for="goodreads-file">
-          <div class="import-icon">📥</div>
-          <div style="font-size:15px; color:var(--text)">drop Goodreads CSV here</div>
-          <div class="import-desc">or click to select file</div>
-        </label>
-        <input type="file" id="goodreads-file" accept=".csv" style="display:none" onchange="importGoodreads(this)" />
-        <div id="import-status" style="margin-top:12px; font-size:13px; color:var(--green);"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">add books manually from CSV</div>
-        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">CSV format: <code style="color:var(--accent); font-size:12px">title,author,pages,status,genre</code></p>
-        <label class="import-box" for="manual-csv">
-          <div class="import-icon">📄</div>
-          <div style="font-size:15px; color:var(--text)">drop custom CSV here</div>
-          <div class="import-desc">title, author, pages, status (reading/want/done), genre</div>
-        </label>
-        <input type="file" id="manual-csv" accept=".csv" style="display:none" onchange="importManualCSV(this)" />
-      </div>
-      <div class="card">
-        <div class="card-title">export your data</div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="exportJSON()">export as JSON backup</button>
-          <button class="btn btn-ghost" onclick="exportCSV()">export books as CSV</button>
-          <button class="btn btn-ghost" onclick="importJSONBackup()">restore from JSON</button>
-        </div>
-        <input type="file" id="json-restore" accept=".json" style="display:none" onchange="restoreJSON(this)" />
-      </div>
-      <div class="card" style="border-color:rgba(224,112,112,0.2)">
-        <div class="card-title" style="color:var(--red)">danger zone!!!</div>
-        <button class="btn btn-danger" onclick="clearAll()">clear all data</button>
-      </div>
-    </div>
-***
-  </main>
+  </div>
 </div>
 
-<!-- Mobile nav -->
-<div class="mobile-nav">
-  <div class="mobile-nav-inner">
-    <button class="mob-btn active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="mob-icon">📊</span>home</button>
-    <button class="mob-btn" onclick="showPage('library',this)" data-page="library"><span class="mob-icon">📚</span>library</button>
-    <button class="mob-btn" onclick="showPage('log',this)" data-page="log"><span class="mob-icon">✏️</span>log</button>
-    <button class="mob-btn" onclick="showPage('stats',this)" data-page="stats"><span class="mob-icon">📈</span>stats</button>
-    <button class="mob-btn" onclick="showPage('goals',this)" data-page="goals"><span class="mob-icon">🎯</span>goals</button>
+<!-- MAIN APP -->
+<div id="app-screen" style="display:none">
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-wrap">
+        <div class="logo-name">readtracker</div>
+        <div class="logo-sub ui-text">your reading journey</div>
+      </div>
+      <nav class="nav-section">
+        <div class="nav-item active" data-page="dashboard" onclick="nav('dashboard',this)"><span class="nav-icon">◈</span><span class="nav-label">dashboard</span></div>
+        <div class="nav-item" data-page="library" onclick="nav('library',this)"><span class="nav-icon">◫</span><span class="nav-label">library</span></div>
+        <div class="nav-item" data-page="log" onclick="nav('log',this)"><span class="nav-icon">◎</span><span class="nav-label">log session</span></div>
+        <div class="nav-item" data-page="series" onclick="nav('series',this)"><span class="nav-icon">◧</span><span class="nav-label">series</span></div>
+        <div class="nav-item" data-page="stats" onclick="nav('stats',this)"><span class="nav-icon">◉</span><span class="nav-label">stats</span></div>
+        <div class="nav-item" data-page="goals" onclick="nav('goals',this)"><span class="nav-icon">◌</span><span class="nav-label">goals</span></div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" data-page="friends" onclick="nav('friends',this)"><span class="nav-icon">◑</span><span class="nav-label">friends</span></div>
+        <div class="nav-item" data-page="share" onclick="nav('share',this)"><span class="nav-icon">◐</span><span class="nav-label">share</span></div>
+        <div class="nav-item" data-page="import" onclick="nav('import',this)"><span class="nav-icon">◒</span><span class="nav-label">import</span></div>
+        <div class="nav-item" data-page="settings" onclick="nav('settings',this)"><span class="nav-icon">◓</span><span class="nav-label">settings</span></div>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="user-chip" onclick="nav('settings')">
+          <div class="user-avatar" id="sidebar-av">?</div>
+          <div style="min-width:0">
+            <div class="user-name" id="sidebar-uname">offline</div>
+            <div class="user-email" id="sidebar-email">local only</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header">
+          <h1 class="page-title">dashboard</h1>
+          <p class="page-sub ui-text" id="dash-date"></p>
+        </div>
+        <div class="metrics-row" id="dash-metrics"></div>
+        <div class="card">
+          <div class="card-title">pages this week</div>
+          <div class="chart-wrap" style="height:120px"><canvas id="week-chart" role="img" aria-label="Pages per day this week">weekly pages</canvas></div>
+        </div>
+        <div class="card-grid2">
+          <div class="card"><div class="card-title">currently reading</div><div id="dash-reading"></div></div>
+          <div class="card"><div class="card-title">streak — 35 days</div><div class="streak-grid" id="streak-cal"></div></div>
+        </div>
+      </div>
+
+      <!-- LIBRARY -->
+      <div id="page-library" class="page">
+        <div class="page-header"><h1 class="page-title">library</h1><p class="page-sub ui-text">all your books</p></div>
+        <div class="card">
+          <div class="card-title">add a book</div>
+          <div class="form-row2">
+            <div class="form-group"><label>title *</label><input id="b-title" placeholder="The Name of the Wind" /></div>
+            <div class="form-group"><label>author</label><input id="b-author" placeholder="Patrick Rothfuss" /></div>
+          </div>
+          <div class="form-row3">
+            <div class="form-group"><label>pages</label><input id="b-pages" type="number" placeholder="662" min="1" /></div>
+            <div class="form-group"><label>genre</label><input id="b-genre" placeholder="Fantasy" /></div>
+            <div class="form-group"><label>series</label><input id="b-series" placeholder="Kingkiller Chronicle" /></div>
+          </div>
+          <div class="form-row3">
+            <div class="form-group"><label>series #</label><input id="b-series-num" type="number" placeholder="1" min="1" /></div>
+            <div class="form-group"><label>status</label>
+              <select id="b-status">
+                <option value="reading">currently reading</option>
+                <option value="want">want to read</option>
+                <option value="done">finished</option>
+              </select>
+            </div>
+            <div class="form-group"><label>rating</label>
+              <select id="b-rating">
+                <option value="0">no rating</option>
+                <option value="5">★★★★★</option>
+                <option value="4">★★★★☆</option>
+                <option value="3">★★★☆☆</option>
+                <option value="2">★★☆☆☆</option>
+                <option value="1">★☆☆☆☆</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row2">
+            <div class="form-group"><label>start date</label><input id="b-start" type="date" /></div>
+            <div class="form-group"><label>spine colour</label>
+              <div class="inline-flex" style="margin-top:4px">
+                <input type="color" id="b-color" value="#c9a96e" class="color-picker-inline" />
+                <div class="color-swatches" id="quick-swatches"></div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="addBook()">add book</button>
+        </div>
+
+        <div class="order-controls">
+          <label>sort by:</label>
+          <select id="lib-sort" onchange="renderLibrary()" style="width:auto">
+            <option value="added">date added</option>
+            <option value="title">title</option>
+            <option value="author">author</option>
+            <option value="rating">rating ↓</option>
+            <option value="pages">pages ↓</option>
+            <option value="progress">progress</option>
+          </select>
+        </div>
+
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="libTab('reading',this)">reading</button>
+          <button class="tab-btn" onclick="libTab('want',this)">want to read</button>
+          <button class="tab-btn" onclick="libTab('done',this)">finished</button>
+          <button class="tab-btn" onclick="libTab('all',this)">all</button>
+        </div>
+        <div id="lib-list"></div>
+      </div>
+
+      <!-- LOG -->
+      <div id="page-log" class="page">
+        <div class="page-header"><h1 class="page-title">log a session</h1><p class="page-sub ui-text">track time and pages</p></div>
+        <div class="card">
+          <div class="form-group"><label>book *</label><select id="log-book"><option value="">select a book...</option></select></div>
+          <div class="form-row2">
+            <div class="form-group"><label>pages read *</label><input id="log-pages" type="number" placeholder="45" min="1" /></div>
+            <div class="form-group"><label>minutes spent</label><input id="log-mins" type="number" placeholder="60" min="1" /></div>
+          </div>
+          <div class="form-row2">
+            <div class="form-group"><label>date</label><input id="log-date" type="date" /></div>
+            <div class="form-group"><label>mark as finished?</label>
+              <select id="log-finish"><option value="no">no, still reading</option><option value="yes">yes, finished!</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label>notes</label><textarea id="log-notes" rows="2" placeholder="thoughts on this session..."></textarea></div>
+          <button class="btn btn-primary btn-full" onclick="logSession()">save session</button>
+        </div>
+        <div class="card"><div class="card-title">recent sessions</div><div id="log-recent"></div></div>
+      </div>
+
+      <!-- SERIES -->
+      <div id="page-series" class="page">
+        <div class="page-header"><h1 class="page-title">series</h1><p class="page-sub ui-text">track multi-book series</p></div>
+        <div class="card">
+          <div class="card-title">add a series</div>
+          <div class="form-row2">
+            <div class="form-group"><label>series name *</label><input id="ser-name" placeholder="The Stormlight Archive" /></div>
+            <div class="form-group"><label>total books (if known)</label><input id="ser-total" type="number" placeholder="10" min="1" /></div>
+          </div>
+          <div class="form-row2">
+            <div class="form-group"><label>author</label><input id="ser-author" placeholder="Brandon Sanderson" /></div>
+            <div class="form-group"><label>genre</label><input id="ser-genre" placeholder="Epic Fantasy" /></div>
+          </div>
+          <button class="btn btn-primary" onclick="addSeries()">add series</button>
+        </div>
+        <div id="series-list"></div>
+      </div>
+
+      <!-- STATS -->
+      <div id="page-stats" class="page">
+        <div class="page-header"><h1 class="page-title">stats</h1><p class="page-sub ui-text">deep dive</p></div>
+        <div class="metrics-row" id="stats-metrics"></div>
+        <div class="card"><div class="card-title">books finished by month</div><div class="chart-wrap" style="height:170px"><canvas id="monthly-chart" role="img" aria-label="Books per month">monthly</canvas></div></div>
+        <div class="card"><div class="card-title">pages per day — last 30 days</div><div class="chart-wrap" style="height:150px"><canvas id="daily30-chart" role="img" aria-label="Daily pages 30d">daily30</canvas></div></div>
+        <div class="card-grid2">
+          <div class="card"><div class="card-title">by genre</div><div class="chart-wrap" style="height:150px"><canvas id="genre-chart" role="img" aria-label="By genre">genre</canvas></div></div>
+          <div class="card"><div class="card-title">by day of week</div><div class="chart-wrap" style="height:150px"><canvas id="dow-chart" role="img" aria-label="Day of week">dow</canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">finished books — sorted by rating</div>
+          <div id="stats-done-list"></div>
+        </div>
+      </div>
+
+      <!-- GOALS -->
+      <div id="page-goals" class="page">
+        <div class="page-header"><h1 class="page-title">goals</h1><p class="page-sub ui-text">set targets, track pace</p></div>
+        <div class="card">
+          <div class="card-title">annual reading goal</div>
+          <div class="goal-wrap">
+            <canvas id="goal-donut" width="96" height="96" role="img" aria-label="Annual goal donut">goal</canvas>
+            <div class="goal-text"><div class="g-big" id="g-pct">0%</div><div class="g-sub" id="g-desc">0 of 0 books</div></div>
+          </div>
+          <div class="form-row2" style="margin-top:14px">
+            <div class="form-group"><label>books this year</label><input id="goal-in" type="number" placeholder="24" min="1" /></div>
+            <div style="display:flex;align-items:flex-end;padding-bottom:12px"><button class="btn btn-primary" onclick="setGoal()">save</button></div>
+          </div>
+        </div>
+        <div class="card-grid2">
+          <div class="card"><div class="card-title">daily page goal</div>
+            <div class="form-group"><label>pages per day</label><input id="daily-g-in" type="number" placeholder="30" /></div>
+            <button class="btn btn-primary btn-full" onclick="setDailyGoal()">save</button>
+            <div id="daily-g-status" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+          </div>
+          <div class="card"><div class="card-title">weekly page goal</div>
+            <div class="form-group"><label>pages per week</label><input id="weekly-g-in" type="number" placeholder="200" /></div>
+            <button class="btn btn-primary btn-full" onclick="setWeeklyGoal()">save</button>
+            <div id="weekly-g-status" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">pace analysis</div><div id="pace-info" style="font-size:13px;color:var(--text2);line-height:1.8"></div></div>
+      </div>
+
+      <!-- FRIENDS -->
+      <div id="page-friends" class="page">
+        <div class="page-header"><h1 class="page-title">friends</h1><p class="page-sub ui-text">see what others are reading</p></div>
+        <div class="card">
+          <div class="card-title">add a friend</div>
+          <div class="inline-flex">
+            <input id="friend-username" placeholder="their username" style="flex:1" />
+            <button class="btn btn-primary" onclick="sendFriendRequest()">send request</button>
+          </div>
+          <div id="friend-req-status" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
+        </div>
+        <div class="card"><div class="card-title">pending requests <span class="pending-chip" id="pending-count" style="display:none"></span></div><div id="pending-list"></div></div>
+        <div class="card"><div class="card-title">friends</div><div id="friends-list"></div></div>
+      </div>
+
+      <!-- SHARE -->
+      <div id="page-share" class="page">
+        <div class="page-header"><h1 class="page-title">share</h1><p class="page-sub ui-text">show off your progress</p></div>
+        <div class="card"><div class="card-title">reading card</div><div class="share-pre" id="share-pre"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="copyShareText()">copy as text</button>
+            <button class="btn btn-ghost" onclick="copyEmbed()">copy embed code</button>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">embed widget</div>
+          <textarea id="embed-code" rows="5" style="font-family:monospace;font-size:11px" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- IMPORT -->
+      <div id="page-import" class="page">
+        <div class="page-header"><h1 class="page-title">import & export</h1></div>
+        <div class="card">
+          <div class="card-title">import from goodreads</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7">Goodreads → My Books → Import and export → Export Library CSV</p>
+          <label class="drop-zone" for="gr-file"><div class="dz-icon">📥</div><div class="dz-label">drop goodreads CSV</div><div class="dz-sub">or click to browse</div></label>
+          <input type="file" id="gr-file" accept=".csv" style="display:none" onchange="importGoodreads(this)">
+          <div id="gr-status" style="margin-top:10px;font-size:12px;color:var(--green)"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">import custom CSV</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Format: <code style="color:var(--accent);font-size:11px">Title, Author, Pages, Status, Genre, Series, SeriesNum</code></p>
+          <label class="drop-zone" for="csv-file"><div class="dz-icon">📄</div><div class="dz-label">drop custom CSV</div><div class="dz-sub">Title, Author, Pages, Status, Genre, Series, SeriesNum</div></label>
+          <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="importCSV(this)">
+        </div>
+        <div class="card"><div class="card-title">export data</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="exportJSON()">JSON backup</button>
+            <button class="btn btn-ghost" onclick="exportCSV()">books CSV</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('restore-file').click()">restore JSON</button>
+          </div>
+          <input type="file" id="restore-file" accept=".json" style="display:none" onchange="restoreJSON(this)">
+        </div>
+        <div class="card" style="border-color:rgba(224,112,112,0.2)">
+          <div class="card-title" style="color:var(--red)">danger zone</div>
+          <button class="btn btn-danger" onclick="clearAll()">clear all data</button>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page">
+        <div class="page-header"><h1 class="page-title">settings</h1></div>
+        <div class="card">
+          <div class="card-title">account</div>
+          <div id="account-info" style="font-size:13px;color:var(--text2);margin-bottom:12px"></div>
+          <button class="btn btn-ghost btn-sm" onclick="doSignOut()" id="signout-btn">sign out</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">theme</div>
+          <label style="margin-bottom:8px">colour scheme</label>
+          <div class="color-row" id="theme-swatches">
+            <div class="theme-swatch" data-theme="dark" onclick="setTheme('dark',this)" style="background:linear-gradient(135deg,#0d0b09,#252118)" title="dark"></div>
+            <div class="theme-swatch active" data-theme="light" onclick="setTheme('light',this)" style="background:linear-gradient(135deg,#faf8f5,#e8e2da)" title="light"></div>
+            <div class="theme-swatch" data-theme="warm" onclick="setTheme('warm',this)" style="background:linear-gradient(135deg,#1a1008,#3a240f)" title="warm"></div>
+            <div class="theme-swatch" data-theme="slate" onclick="setTheme('slate',this)" style="background:linear-gradient(135deg,#0a0d12,#202434)" title="slate"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">accent colour</div>
+          <div class="color-swatches" id="accent-swatches">
+            <div class="swatch active" data-accent="gold"    style="background:#c9a96e" onclick="setAccent('gold',this)"></div>
+            <div class="swatch" data-accent="rose"      style="background:#e8a0b0" onclick="setAccent('rose',this)"></div>
+            <div class="swatch" data-accent="sage"      style="background:#88c4a0" onclick="setAccent('sage',this)"></div>
+            <div class="swatch" data-accent="sky"       style="background:#7ab8e8" onclick="setAccent('sky',this)"></div>
+            <div class="swatch" data-accent="lavender"  style="background:#b0a0e0" onclick="setAccent('lavender',this)"></div>
+            <div class="swatch" data-accent="coral"     style="background:#e89070" onclick="setAccent('coral',this)"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">background texture</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap" id="texture-btns">
+            <button class="btn btn-ghost btn-sm active-texture" onclick="setTexture('none',this)">none</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('paper',this)">paper</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('dots',this)">dots</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('lines',this)">lines</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('grid',this)">grid</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">density</div>
+          <div style="display:flex;gap:8px" id="density-btns">
+            <button class="btn btn-ghost btn-sm" onclick="setDensity('compact',this)">compact</button>
+            <button class="btn btn-ghost btn-sm active-density" onclick="setDensity('normal',this)">normal</button>
+            <button class="btn btn-ghost btn-sm" onclick="setDensity('spacious',this)">spacious</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">text case</div>
+          <div style="display:flex;gap:8px" id="case-btns">
+            <button class="btn btn-ghost btn-sm active-case" onclick="setCase('lower',this)">lowercase everything</button>
+            <button class="btn btn-ghost btn-sm" onclick="setCase('proper',this)">Proper Case</button>
+          </div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">applies to UI labels — book titles always keep their original casing</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <div class="mobile-nav">
+    <div class="mob-inner">
+      <button class="mob-btn active" onclick="nav('dashboard',this)" data-p="dashboard"><span class="mob-icon">◈</span>home</button>
+      <button class="mob-btn" onclick="nav('library',this)" data-p="library"><span class="mob-icon">◫</span>library</button>
+      <button class="mob-btn" onclick="nav('log',this)" data-p="log"><span class="mob-icon">◎</span>log</button>
+      <button class="mob-btn" onclick="nav('stats',this)" data-p="stats"><span class="mob-icon">◉</span>stats</button>
+      <button class="mob-btn" onclick="nav('goals',this)" data-p="goals"><span class="mob-icon">◌</span>goals</button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
+<!-- colour picker modal for book spine -->
+<div id="color-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:260px">
+    <div style="font-size:13px;font-weight:500;margin-bottom:14px">pick spine colour</div>
+    <input type="color" id="modal-color-picker" style="width:100%;height:44px;border:none;background:none;cursor:pointer;border-radius:8px" />
+    <div class="color-swatches" style="margin-top:12px" id="modal-swatches"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="applySpineColor()">apply</button>
+      <button class="btn btn-ghost" onclick="closeColorModal()">cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#7ec8b0','#d4a5c9'];
-const SPINE_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#f0c060','#80c0a0','#d08080'];
+// ════════════════════════════════════════════════
+// CONFIG — replace these with your Supabase values
+// ════════════════════════════════════════════════
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';
+// ════════════════════════════════════════════════
 
-let db = { books:[], logs:[], goal:24, dailyGoal:30, weeklyGoal:200 };
-let charts = {};
-let currentLibTab = 'reading';
+const SPINE_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#88c4a0','#d4a0b8','#f0c060','#80b8c0'];
+const CHART_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#88c4a0','#d4a0b8'];
 
-function save() { try { localStorage.setItem('readtracker_v2', JSON.stringify(db)); } catch(e){} }
-function load() {
-  try {
-    const d = localStorage.getItem('readtracker_v2');
-    if (d) db = JSON.parse(d);
-    // migrate old format
-    db.books = (db.books||[]).map(b => ({ color: SPINE_COLORS[db.books.indexOf(b)%SPINE_COLORS.length], ...b }));
-  } catch(e) {}
+let sb = null, currentUser = null, isOffline = false;
+let db = { books:[], logs:[], series:[], friends:[], friendReqs:[], goal:24, dailyGoal:30, weeklyGoal:200 };
+let prefs = { theme:'dark', accent:'gold', texture:'none', density:'normal', textCase:'lower' };
+let charts = {}, libTabCurrent = 'reading', colorModalTarget = null;
+
+// ── SUPABASE INIT ──
+function initSupabase() {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return null;
+  try { return supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+  catch(e) { return null; }
+}
+
+async function boot() {
+  sb = initSupabase();
+  loadPrefs();
+  if (!sb) {
+    document.getElementById('supabase-setup-note').style.display = 'block';
+    showAuth();
+    return;
+  }
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { currentUser = session.user; await loadFromCloud(); showApp(); }
+  else showAuth();
+}
+
+// ── AUTH ──
+let authMode = 'signin';
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'block';
+  document.getElementById('app-screen').style.display = 'none';
+}
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  if (currentUser) {
+    const meta = currentUser.user_metadata || {};
+    const uname = meta.username || currentUser.email.split('@')[0];
+    document.getElementById('sidebar-av').textContent = uname[0].toUpperCase();
+    document.getElementById('sidebar-uname').textContent = uname;
+    document.getElementById('sidebar-email').textContent = currentUser.email;
+    document.getElementById('account-info').textContent = `signed in as ${currentUser.email}`;
+  } else {
+    document.getElementById('account-info').textContent = 'offline mode — data saved locally only';
+    document.getElementById('signout-btn').textContent = 'sign in';
+    document.getElementById('signout-btn').onclick = () => { showAuth(); };
+  }
   document.getElementById('log-date').value = todayStr();
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   renderAll();
+  loadFriends();
 }
-
-function todayStr() { return new Date().toISOString().slice(0,10); }
-function fmtDate(s) { if(!s) return ''; const [y,m,d] = s.split('-'); return `${m}/${d}/${y}`; }
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+function toggleAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  document.getElementById('auth-btn').textContent = authMode === 'signin' ? 'sign in' : 'create account';
+  document.getElementById('auth-toggle').innerHTML = authMode === 'signin' ? 'no account? <a onclick="toggleAuthMode()">sign up</a>' : 'have an account? <a onclick="toggleAuthMode()">sign in</a>';
+  document.getElementById('auth-mode-sub').textContent = authMode === 'signin' ? 'your reading journey, everywhere' : 'join readtracker';
+  document.getElementById('auth-username-wrap').style.display = authMode === 'signup' ? 'block' : 'none';
+  document.getElementById('auth-err').classList.remove('show');
 }
-function stars(n) {
-  return [1,2,3,4,5].map(i=>`<span style="color:${i<=n?'#c9a96e':'#6b6259'}">★</span>`).join('');
-}
-
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.mob-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  if (el) {
-    if (el.classList.contains('nav-item')) el.classList.add('active');
-    else {
-      document.querySelectorAll('.mob-btn').forEach(b => { if(b.dataset.page===id) b.classList.add('active'); });
-      document.querySelectorAll('.nav-item').forEach(n => { if(n.dataset.page===id) n.classList.add('active'); });
-    }
+async function doAuth() {
+  if (!sb) { continueOffline(); return; }
+  const email = document.getElementById('auth-email').value.trim();
+  const pw    = document.getElementById('auth-pw').value;
+  const errEl = document.getElementById('auth-err');
+  errEl.classList.remove('show');
+  if (!email || !pw) { errEl.textContent='please fill in all fields'; errEl.classList.add('show'); return; }
+  document.getElementById('auth-btn').textContent = '...';
+  let res;
+  if (authMode === 'signin') {
+    res = await sb.auth.signInWithPassword({ email, password: pw });
+  } else {
+    const username = document.getElementById('auth-username').value.trim() || email.split('@')[0];
+    res = await sb.auth.signUp({ email, password: pw, options: { data: { username } } });
   }
-  setTimeout(() => {
-    if (id==='dashboard') renderDashboard();
-    if (id==='stats') renderStats();
-    if (id==='goals') renderGoals();
-    if (id==='share') renderShare();
-    if (id==='library') renderLibrary();
+  document.getElementById('auth-btn').textContent = authMode === 'signin' ? 'sign in' : 'create account';
+  if (res.error) { errEl.textContent = res.error.message; errEl.classList.add('show'); return; }
+  currentUser = res.data.user;
+  if (authMode === 'signup') toast('welcome! check email to verify if needed');
+  await loadFromCloud();
+  showApp();
+}
+function continueOffline() { isOffline = true; loadLocal(); showApp(); }
+async function doSignOut() {
+  if (sb) await sb.auth.signOut();
+  currentUser = null; isOffline = false;
+  db = { books:[], logs:[], series:[], friends:[], friendReqs:[], goal:24, dailyGoal:30, weeklyGoal:200 };
+  showAuth();
+}
+
+// ── DATA ──
+function loadLocal() { try { const d = localStorage.getItem('rt_db'); if(d) db = {...db,...JSON.parse(d)}; } catch(e){} }
+function saveLocal() { try { localStorage.setItem('rt_db', JSON.stringify(db)); } catch(e){} }
+
+async function loadFromCloud() {
+  if (!sb || !currentUser) { loadLocal(); return; }
+  try {
+    const { data, error } = await sb.from('userdata').select('data').eq('user_id', currentUser.id).single();
+    if (data && data.data) db = { ...db, ...data.data };
+    else loadLocal();
+  } catch(e) { loadLocal(); }
+}
+
+async function save() {
+  saveLocal();
+  if (!sb || !currentUser) return;
+  try {
+    await sb.from('userdata').upsert({ user_id: currentUser.id, data: db, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  } catch(e) {}
+}
+
+// ── PREFS ──
+function loadPrefs() {
+  try { const p = localStorage.getItem('rt_prefs'); if(p) prefs = {...prefs,...JSON.parse(p)}; } catch(e){}
+  applyPrefs();
+}
+function savePrefs() { try { localStorage.setItem('rt_prefs', JSON.stringify(prefs)); } catch(e){} }
+function applyPrefs() {
+  const h = document.documentElement;
+  h.setAttribute('data-theme',   prefs.theme);
+  h.setAttribute('data-accent',  prefs.accent);
+  h.setAttribute('data-texture', prefs.texture);
+  h.setAttribute('data-density', prefs.density);
+  h.setAttribute('data-case',    prefs.textCase);
+}
+function setTheme(t, el) {
+  prefs.theme = t; savePrefs(); applyPrefs();
+  document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+function setAccent(a, el) {
+  prefs.accent = a; savePrefs(); applyPrefs();
+  document.querySelectorAll('#accent-swatches .swatch').forEach(s => s.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+function setTexture(t, el) {
+  prefs.texture = t; savePrefs(); applyPrefs();
+  document.querySelectorAll('#texture-btns .btn').forEach(b => b.classList.remove('active-texture'));
+  if(el) el.classList.add('active-texture');
+}
+function setDensity(d, el) {
+  prefs.density = d; savePrefs(); applyPrefs();
+  document.querySelectorAll('#density-btns .btn').forEach(b => b.classList.remove('active-density'));
+  if(el) el.classList.add('active-density');
+}
+function setCase(c, el) {
+  prefs.textCase = c; savePrefs(); applyPrefs();
+  document.querySelectorAll('#case-btns .btn').forEach(b => b.classList.remove('active-case'));
+  if(el) el.classList.add('active-case');
+}
+
+// ── HELPERS ──
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function fmtDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return `${m}/${d}/${y}`; }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+function stars(n) { return [1,2,3,4,5].map(i=>`<span class="star ${i<=n?'on':''}" onclick="setRating(event,${n},${i})">★</span>`).join(''); }
+function starsFixed(n) { return [1,2,3,4,5].map(i=>`<span style="color:${i<=n?'var(--accent)':'var(--text3)'}">★</span>`).join(''); }
+function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+function chartColors() { return CHART_COLORS; }
+
+// colour swatches (quick picks)
+function buildSwatches(containerId, onPick) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = SPINE_COLORS.map(c => `<div class="swatch" style="background:${c};width:20px;height:20px" onclick="(${onPick})('${c}',this)"></div>`).join('');
+}
+
+buildSwatches('quick-swatches', (c)=>`document.getElementById('b-color').value='${c}'`);
+
+// ── NAV ──
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .mob-btn').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll(`[data-page="${id}"], [data-p="${id}"]`).forEach(n=>n.classList.add('active'));
+  if(el) el.classList.add('active');
+  setTimeout(()=>{
+    if(id==='stats') renderStats();
+    if(id==='goals') renderGoals();
+    if(id==='share') renderShare();
+    if(id==='series') renderSeriesPage();
+    if(id==='settings') syncSettingsUI();
   }, 30);
 }
 
-function showLibTab(tab, el) {
-  currentLibTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  renderLibrary();
+function syncSettingsUI() {
+  document.querySelectorAll('#theme-swatches .theme-swatch').forEach(s=>s.classList.toggle('active', s.dataset.theme===prefs.theme));
+  document.querySelectorAll('#accent-swatches .swatch').forEach(s=>s.classList.toggle('active', s.dataset.accent===prefs.accent));
 }
 
 // ── ADD BOOK ──
 function addBook() {
-  const t = document.getElementById('b-title').value.trim();
-  if (!t) { toast('Please enter a title'); return; }
+  const title = document.getElementById('b-title').value.trim();
+  if(!title){toast('please enter a title');return;}
   const status = document.getElementById('b-status').value;
-  const pages = parseInt(document.getElementById('b-pages').value)||0;
-  const book = {
-    id: Date.now(),
-    title: t,
-    author: document.getElementById('b-author').value.trim(),
-    pages,
-    genre: document.getElementById('b-genre').value.trim(),
-    status,
+  const pages  = parseInt(document.getElementById('b-pages').value)||0;
+  const seriesName = document.getElementById('b-series').value.trim();
+  const seriesNum  = parseInt(document.getElementById('b-series-num').value)||0;
+  const color = document.getElementById('b-color').value || SPINE_COLORS[db.books.length%SPINE_COLORS.length];
+
+  // auto-create series if named
+  if(seriesName && !db.series.find(s=>s.name.toLowerCase()===seriesName.toLowerCase())) {
+    db.series.push({ id: Date.now(), name: seriesName, author: document.getElementById('b-author').value.trim(), genre: document.getElementById('b-genre').value.trim(), total: 0 });
+  }
+
+  db.books.push({
+    id: Date.now(), title, author: document.getElementById('b-author').value.trim(),
+    pages, genre: document.getElementById('b-genre').value.trim(),
+    series: seriesName, seriesNum, status, color,
     rating: parseInt(document.getElementById('b-rating').value)||0,
-    pagesRead: status==='done' ? pages : 0,
-    startDate: document.getElementById('b-start').value || (status!=='want'?todayStr():''),
-    finishedDate: status==='done' ? todayStr() : '',
-    addedDate: todayStr(),
-    color: SPINE_COLORS[db.books.length % SPINE_COLORS.length]
-  };
-  db.books.push(book);
-  ['b-title','b-author','b-pages','b-genre','b-start'].forEach(id => document.getElementById(id).value='');
+    pagesRead: status==='done'?pages:0,
+    startDate: document.getElementById('b-start').value||(status!=='want'?todayStr():''),
+    finishedDate: status==='done'?todayStr():'', addedDate: todayStr()
+  });
+  ['b-title','b-author','b-pages','b-genre','b-series','b-series-num','b-start'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('b-status').value='reading';
   document.getElementById('b-rating').value='0';
-  save(); renderAll(); toast('Book added!');
+  document.getElementById('b-color').value='#c9a96e';
+  save(); renderAll(); toast('book added!');
 }
 
 function deleteBook(id) {
-  if (!confirm('Remove this book and all its sessions?')) return;
-  db.books = db.books.filter(b => b.id !== id);
-  db.logs = db.logs.filter(l => l.bookId !== id);
-  save(); renderAll(); toast('Book removed');
+  if(!confirm('remove this book and its sessions?'))return;
+  db.books = db.books.filter(b=>b.id!==id);
+  db.logs  = db.logs.filter(l=>l.bookId!==id);
+  save(); renderAll(); toast('removed');
 }
 
-function setRating(bookId, r) {
-  const b = db.books.find(x => x.id === bookId);
-  if (b) { b.rating = r; save(); renderLibrary(); }
+function setRating(e, bookId, r) {
+  e.stopPropagation();
+  const b = db.books.find(x=>x.id===bookId);
+  if(b){b.rating=r;save();renderLibrary();}
+}
+
+// ── SPINE COLOR MODAL ──
+function openColorModal(bookId) {
+  colorModalTarget = bookId;
+  const book = db.books.find(b=>b.id===bookId);
+  if(book) document.getElementById('modal-color-picker').value = book.color || '#c9a96e';
+  buildSwatches('modal-swatches', (c)=>`document.getElementById('modal-color-picker').value='${c}'`);
+  document.getElementById('color-modal').style.display='flex';
+}
+function closeColorModal() { document.getElementById('color-modal').style.display='none'; colorModalTarget=null; }
+function applySpineColor() {
+  const c = document.getElementById('modal-color-picker').value;
+  if(colorModalTarget) {
+    const b = db.books.find(x=>x.id===colorModalTarget);
+    if(b){b.color=c;save();renderLibrary();}
+  }
+  closeColorModal();
 }
 
 // ── LOG SESSION ──
 function logSession() {
   const bid = parseInt(document.getElementById('log-book').value);
   const pages = parseInt(document.getElementById('log-pages').value)||0;
-  if (!bid || !pages) { toast('Select a book and enter pages read'); return; }
-  const mins = parseInt(document.getElementById('log-mins').value)||0;
-  const date = document.getElementById('log-date').value || todayStr();
-  const finish = document.getElementById('log-finish').value === 'yes';
-  const notes = document.getElementById('log-notes').value.trim();
-  db.logs.push({ id: Date.now(), bookId: bid, pages, minutes: mins, date, notes });
-  const book = db.books.find(b => b.id === bid);
-  if (book) {
-    book.pagesRead = (book.pagesRead||0) + pages;
-    if (book.pages) book.pagesRead = Math.min(book.pagesRead, book.pages);
-    if (finish || (book.pages && book.pagesRead >= book.pages)) {
-      book.status = 'done';
-      book.finishedDate = date;
-      toast('🎉 Book finished! Congrats!');
-    } else { toast('Session saved!'); }
+  if(!bid||!pages){toast('select a book and enter pages');return;}
+  const mins   = parseInt(document.getElementById('log-mins').value)||0;
+  const date   = document.getElementById('log-date').value||todayStr();
+  const finish = document.getElementById('log-finish').value==='yes';
+  const notes  = document.getElementById('log-notes').value.trim();
+  db.logs.push({id:Date.now(),bookId:bid,pages,minutes:mins,date,notes});
+  const book = db.books.find(b=>b.id===bid);
+  if(book){
+    book.pagesRead = Math.min((book.pagesRead||0)+pages, book.pages||99999);
+    if(finish||(book.pages&&book.pagesRead>=book.pages)){
+      book.status='done'; book.finishedDate=date; toast('🎉 book finished!');
+    } else toast('session saved!');
   }
-  document.getElementById('log-pages').value='';
-  document.getElementById('log-mins').value='';
-  document.getElementById('log-notes').value='';
+  ['log-pages','log-mins','log-notes'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('log-finish').value='no';
   save(); renderAll();
 }
 
+// ── SERIES ──
+function addSeries() {
+  const name = document.getElementById('ser-name').value.trim();
+  if(!name){toast('enter a series name');return;}
+  if(db.series.find(s=>s.name.toLowerCase()===name.toLowerCase())){toast('series already exists');return;}
+  db.series.push({ id:Date.now(), name, author:document.getElementById('ser-author').value.trim(), genre:document.getElementById('ser-genre').value.trim(), total:parseInt(document.getElementById('ser-total').value)||0 });
+  ['ser-name','ser-author','ser-genre','ser-total'].forEach(i=>document.getElementById(i).value='');
+  save(); renderSeriesPage(); toast('series added!');
+}
+function deleteSeries(id) {
+  db.series = db.series.filter(s=>s.id!==id); save(); renderSeriesPage();
+}
+
 // ── GOALS ──
-function setGoal() { const v=parseInt(document.getElementById('goal-in').value); if(v>0){db.goal=v;save();renderGoals();toast('Goal set!');} }
-function setDailyGoal() { const v=parseInt(document.getElementById('daily-goal-in').value); if(v>0){db.dailyGoal=v;save();renderGoals();toast('Daily goal set!');} }
-function setWeeklyGoal() { const v=parseInt(document.getElementById('weekly-goal-in').value); if(v>0){db.weeklyGoal=v;save();renderGoals();toast('Weekly goal set!');} }
+function setGoal()       { const v=parseInt(document.getElementById('goal-in').value); if(v>0){db.goal=v;save();renderGoals();toast('goal set!');} }
+function setDailyGoal()  { const v=parseInt(document.getElementById('daily-g-in').value); if(v>0){db.dailyGoal=v;save();renderGoals();toast('daily goal set!');} }
+function setWeeklyGoal() { const v=parseInt(document.getElementById('weekly-g-in').value); if(v>0){db.weeklyGoal=v;save();renderGoals();toast('weekly goal set!');} }
+
+// ── FRIENDS (Supabase only) ──
+async function sendFriendRequest() {
+  if(!sb||!currentUser){toast('sign in to add friends');return;}
+  const username = document.getElementById('friend-username').value.trim();
+  if(!username){return;}
+  const {data:profiles,error} = await sb.from('profiles').select('id,username').eq('username',username).single();
+  const statusEl = document.getElementById('friend-req-status');
+  if(error||!profiles){statusEl.textContent='user not found';return;}
+  if(profiles.id===currentUser.id){statusEl.textContent='that\'s you!';return;}
+  const {error:e2} = await sb.from('friendships').insert({requester_id:currentUser.id, addressee_id:profiles.id, status:'pending'});
+  if(e2){statusEl.textContent='could not send (may already be friends)';return;}
+  statusEl.textContent='friend request sent!'; document.getElementById('friend-username').value='';
+  setTimeout(()=>statusEl.textContent='',3000);
+}
+
+async function loadFriends() {
+  if(!sb||!currentUser) { renderFriends(); return; }
+  try {
+    const {data:sent}    = await sb.from('friendships').select('addressee_id,status').eq('requester_id',currentUser.id);
+    const {data:received}= await sb.from('friendships').select('requester_id,status').eq('addressee_id',currentUser.id);
+    const acceptedIds = [...(sent||[]).filter(r=>r.status==='accepted').map(r=>r.addressee_id),
+                         ...(received||[]).filter(r=>r.status==='accepted').map(r=>r.requester_id)];
+    const pendingIds  = (received||[]).filter(r=>r.status==='pending').map(r=>r.requester_id);
+    db.friendReqs = pendingIds;
+    if(acceptedIds.length) {
+      const {data:profiles} = await sb.from('profiles').select('id,username').in('id',acceptedIds);
+      db.friends = (profiles||[]).map(p=>({id:p.id,username:p.username}));
+    }
+    // load friend data
+    for(const f of db.friends) {
+      const {data:fd} = await sb.from('userdata').select('data').eq('user_id',f.id).single();
+      if(fd&&fd.data) { f.booksRead=(fd.data.books||[]).filter(b=>b.status==='done').length; f.reading=(fd.data.books||[]).filter(b=>b.status==='reading').map(b=>b.title); }
+    }
+    renderFriends();
+  } catch(e){ renderFriends(); }
+}
+
+async function acceptFriend(uid) {
+  if(!sb||!currentUser)return;
+  await sb.from('friendships').update({status:'accepted'}).eq('requester_id',uid).eq('addressee_id',currentUser.id);
+  loadFriends();
+}
+async function declineFriend(uid) {
+  if(!sb||!currentUser)return;
+  await sb.from('friendships').delete().eq('requester_id',uid).eq('addressee_id',currentUser.id);
+  db.friendReqs=db.friendReqs.filter(i=>i!==uid); renderFriends();
+}
 
 // ── RENDER ALL ──
 function renderAll() { renderDashboard(); renderLibrary(); renderLogPage(); renderGoals(); renderShare(); }
@@ -619,429 +1017,285 @@ function renderAll() { renderDashboard(); renderLibrary(); renderLogPage(); rend
 function renderDashboard() {
   const streak = calcStreak();
   const pw = pagesInDays(7), pl = pagesInRange(14,7);
-  const diff = pw - pl;
-  const diffStr = diff===0 ? 'same as last week' : (diff>0?'+':'')+diff+' vs last week';
+  const diff = pw-pl;
   const done = db.books.filter(b=>b.status==='done').length;
-  const avgSpeed = calcAvgSpeed();
-
+  const spd  = calcSpeed();
   document.getElementById('dash-metrics').innerHTML = `
-    <div class="metric accent"><div class="metric-label">Reading streak</div><div class="metric-value">${streak}</div><div class="metric-sub">days in a row 🔥</div></div>
-    <div class="metric"><div class="metric-label">Pages this week</div><div class="metric-value">${pw.toLocaleString()}</div><div class="metric-sub">${diffStr}</div></div>
-    <div class="metric green"><div class="metric-label">Books finished</div><div class="metric-value">${done}</div><div class="metric-sub">of ${db.goal} goal</div></div>
-    <div class="metric"><div class="metric-label">Avg speed</div><div class="metric-value">${avgSpeed||'—'}</div><div class="metric-sub">pages / hour</div></div>
-  `;
-
+    <div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">${streak}</div><div class="metric-sub">days 🔥</div></div>
+    <div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">${pw.toLocaleString()}</div><div class="metric-sub">${diff===0?'same':(diff>0?'+':'')+diff} vs last wk</div></div>
+    <div class="metric"><div class="metric-label">books done</div><div class="metric-val">${done}</div><div class="metric-sub">of ${db.goal} goal</div></div>
+    <div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">${spd||'—'}</div><div class="metric-sub">pages/hr</div></div>`;
   const reading = db.books.filter(b=>b.status==='reading');
-  document.getElementById('dash-reading').innerHTML = reading.length ? reading.map(b => {
-    const pct = b.pages ? Math.round((b.pagesRead||0)/b.pages*100) : 0;
-    return `<div class="book-item">
-      <div class="book-spine" style="background:${b.color}"></div>
-      <div class="book-meta">
-        <div class="book-title-text">${esc(b.title)}</div>
-        <div class="book-author-text">${esc(b.author)}</div>
-        ${b.pages ? `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:3px">${b.pagesRead||0}/${b.pages} · ${pct}%</div>` : ''}
-      </div>
-    </div>`;
-  }).join('') : '<div class="empty"><div class="empty-icon">📖</div><p>No books in progress</p></div>';
-
-  renderWeekChart();
-  renderStreakCal();
+  document.getElementById('dash-reading').innerHTML = reading.length ?
+    reading.map(b=>{const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;return`<div class="book-item">
+      <div class="book-spine" style="background:${b.color}" onclick="openColorModal(${b.id})"></div>
+      <div class="book-meta"><div class="book-title-t">${esc(b.title)}</div><div class="book-author-t">${esc(b.author)}</div>
+      ${b.pages?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">${b.pagesRead||0}/${b.pages} · ${pct}%</div>`:''}</div></div>`;}).join('') :
+    '<div class="empty"><p>no books in progress</p></div>';
+  renderWeekChart(); renderStreakCal();
 }
 
 function renderWeekChart() {
-  const labels=[], data=[];
-  for(let i=6;i>=0;i--) {
-    const d=new Date(); d.setDate(d.getDate()-i);
-    labels.push(['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]);
-    data.push(db.logs.filter(l=>l.date===d.toISOString().slice(0,10)).reduce((s,l)=>s+l.pages,0));
-  }
+  const labels=[],data=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);labels.push(['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]);data.push(db.logs.filter(l=>l.date===d.toISOString().slice(0,10)).reduce((s,l)=>s+l.pages,0));}
   destroyChart('week-chart');
-  charts['week-chart'] = new Chart(document.getElementById('week-chart'), {
-    type:'bar', data:{labels, datasets:[{data, backgroundColor:'#c9a96e', borderRadius:4}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false}, ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#6b6259',font:{size:11},maxTicksLimit:4}}}}
-  });
+  const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
+  charts['week-chart']=new Chart(document.getElementById('week-chart'),{type:'bar',data:{labels,datasets:[{data,backgroundColor:acc+'cc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
 }
 
 function renderStreakCal() {
-  const days = new Set(db.logs.map(l=>l.date));
-  const el = document.getElementById('streak-cal');
+  const days=new Set(db.logs.map(l=>l.date));
+  const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
   let html='';
-  for(let i=34;i>=0;i--) {
-    const d=new Date(); d.setDate(d.getDate()-i);
-    const s=d.toISOString().slice(0,10);
-    const has=days.has(s);
-    html+=`<div class="s-dot" style="background:${has?'#c9a96e':'rgba(255,255,255,0.06)'}" title="${fmtDate(s)}"></div>`;
-  }
-  el.innerHTML=html;
+  for(let i=34;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);html+=`<div class="s-dot" style="background:${days.has(s)?acc:'rgba(128,128,128,0.1)'}" title="${fmtDate(s)}"></div>`;}
+  document.getElementById('streak-cal').innerHTML=html;
 }
 
 // ── LIBRARY ──
+function libTab(t, el) { libTabCurrent=t; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); if(el)el.classList.add('active'); renderLibrary(); }
+
 function renderLibrary() {
-  const sel = document.getElementById('log-book');
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">Select a book...</option>';
-  db.books.forEach(b => {
-    const o = document.createElement('option');
-    o.value=b.id; o.textContent=b.title+(b.status==='done'?' ✓':'');
-    sel.appendChild(o);
-  });
+  // populate log book select
+  const sel=document.getElementById('log-book'), prev=sel.value;
+  sel.innerHTML='<option value="">select a book...</option>';
+  db.books.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.title+(b.status==='done'?' ✓':'');sel.appendChild(o);});
   if(prev) sel.value=prev;
 
-  let books = db.books;
-  if(currentLibTab !== 'all') books = books.filter(b=>b.status===currentLibTab);
+  let books = [...db.books];
+  if(libTabCurrent!=='all') books=books.filter(b=>b.status===libTabCurrent);
 
-  const el = document.getElementById('lib-list');
-  if(!books.length) { el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">📚</div><p>No books here yet</p></div></div>'; return; }
+  const sortBy = document.getElementById('lib-sort')?.value||'added';
+  books.sort((a,b)=>{
+    if(sortBy==='title')    return a.title.localeCompare(b.title);
+    if(sortBy==='author')   return (a.author||'').localeCompare(b.author||'');
+    if(sortBy==='rating')   return (b.rating||0)-(a.rating||0);
+    if(sortBy==='pages')    return (b.pages||0)-(a.pages||0);
+    if(sortBy==='progress') return ((b.pagesRead||0)/(b.pages||1))-((a.pagesRead||0)/(a.pages||1));
+    return b.id-a.id; // added
+  });
 
-  el.innerHTML = `<div class="card"><div class="book-list">${books.map(b => {
-    const pct = b.pages ? Math.round((b.pagesRead||0)/b.pages*100) : 0;
-    const starsHtml = [1,2,3,4,5].map(i=>`<span class="star ${i<=(b.rating||0)?'filled':''}" onclick="setRating(${b.id},${i})">★</span>`).join('');
-    return `<div class="book-item">
-      <div class="book-spine" style="background:${b.color}; min-height:52px"></div>
-      <div class="book-meta">
-        <div class="book-title-text">${esc(b.title)}</div>
-        <div class="book-author-text">${esc(b.author)}</div>
-        <div class="book-info-row">
-          <span class="pill pill-${b.status}">${b.status==='reading'?'reading':b.status==='want'?'want to read':'finished'}</span>
-          ${b.genre?`<span class="pill pill-genre">${esc(b.genre)}</span>`:''}
-          ${b.pages?`<span style="font-size:11px;color:var(--text3)">${b.pages}p</span>`:''}
-          ${b.finishedDate?`<span style="font-size:11px;color:var(--text3)">done ${fmtDate(b.finishedDate)}</span>`:''}
+  const el=document.getElementById('lib-list');
+  if(!books.length){el.innerHTML='<div class="card"><div class="empty"><p>nothing here yet</p></div></div>';return;}
+
+  // group by series if series sort
+  const grouped={};
+  books.forEach(b=>{const key=b.series||'__none__';if(!grouped[key])grouped[key]=[];grouped[key].push(b);});
+
+  let html='<div class="card"><div class="book-list">';
+  Object.entries(grouped).forEach(([serKey,grp])=>{
+    if(serKey!=='__none__') html+=`<div class="series-group-header">📚 ${esc(serKey)}</div>`;
+    grp.forEach(b=>{
+      const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;
+      const starHtml=[1,2,3,4,5].map(i=>`<span class="star ${i<=(b.rating||0)?'on':''}" onclick="setRating(event,${b.id},${i})">★</span>`).join('');
+      html+=`<div class="book-item">
+        <div class="book-spine" style="background:${b.color}" onclick="openColorModal(${b.id})" title="click to change colour"></div>
+        <div class="book-meta">
+          <div class="book-title-t">${esc(b.title)}</div>
+          <div class="book-author-t">${esc(b.author)}</div>
+          <div class="book-tags">
+            <span class="pill pill-${b.status}">${b.status==='reading'?'reading':b.status==='want'?'want to read':'finished'}</span>
+            ${b.genre?`<span class="pill pill-genre">${esc(b.genre)}</span>`:''}
+            ${b.series?`<span class="series-badge">◧ ${esc(b.series)}${b.seriesNum?' #'+b.seriesNum:''}</span>`:''}
+            ${b.pages?`<span style="font-size:10px;color:var(--text3)">${b.pages}p</span>`:''}
+            ${b.finishedDate?`<span style="font-size:10px;color:var(--text3)">done ${fmtDate(b.finishedDate)}</span>`:''}
+          </div>
+          ${b.status==='reading'&&b.pages?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div>`:''}
+          <div style="margin-top:4px">${starHtml}</div>
         </div>
-        ${b.status==='reading'&&b.pages?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div>`:''} 
-        <div class="star-rating" style="margin-top:4px">${starsHtml}</div>
-      </div>
-      <div class="book-actions">
-        <button class="btn-icon" onclick="deleteBook(${b.id})" title="Remove">×</button>
-      </div>
-    </div>`;
-  }).join('')}</div></div>`;
+        <div class="book-actions"><button class="btn-icon" onclick="deleteBook(${b.id})">×</button></div>
+      </div>`;
+    });
+  });
+  html+='</div></div>';
+  el.innerHTML=html;
 }
 
 // ── LOG PAGE ──
 function renderLogPage() {
-  const sorted = [...db.logs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
-  const el = document.getElementById('log-recent');
-  if(!sorted.length) { el.innerHTML='<div class="empty"><div class="empty-icon">✏️</div><p>No sessions yet</p></div>'; return; }
-  el.innerHTML = sorted.map(l => {
-    const book = db.books.find(b=>b.id===l.bookId);
-    return `<div class="log-item">
-      <div class="log-dot" style="background:${book?book.color:'#c9a96e'}"></div>
-      <div class="log-meta">
-        <div class="log-book-name">${esc(book?book.title:'Unknown')}</div>
-        <div class="log-stats">${l.pages} pages${l.minutes?' · '+l.minutes+' min':''}</div>
-        ${l.notes?`<div class="log-note">${esc(l.notes.slice(0,80))}</div>`:''}
+  const sorted=[...db.logs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
+  const el=document.getElementById('log-recent');
+  if(!sorted.length){el.innerHTML='<div class="empty"><p>no sessions yet</p></div>';return;}
+  el.innerHTML=sorted.map(l=>{const b=db.books.find(x=>x.id===l.bookId);return`<div class="log-item"><div class="log-dot" style="background:${b?b.color:'var(--accent)'}"></div><div class="log-body"><div class="log-book">${esc(b?b.title:'unknown')}</div><div class="log-info">${l.pages} pages${l.minutes?' · '+l.minutes+' min':''}</div>${l.notes?`<div class="log-note">${esc(l.notes.slice(0,80))}</div>`:''}</div><div class="log-right">${fmtDate(l.date)}</div></div>`;}).join('');
+}
+
+// ── SERIES PAGE ──
+function renderSeriesPage() {
+  const el=document.getElementById('series-list');
+  if(!db.series.length){el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">📚</div><p>no series tracked yet</p></div></div>';return;}
+  el.innerHTML=db.series.map(s=>{
+    const books=db.books.filter(b=>b.series&&b.series.toLowerCase()===s.name.toLowerCase());
+    const done=books.filter(b=>b.status==='done').length;
+    const reading=books.filter(b=>b.status==='reading').length;
+    const total=s.total||books.length;
+    const pct=total?Math.round(done/total*100):0;
+    return`<div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-size:15px;font-weight:500">${esc(s.name)}</div>
+          <div style="font-size:12px;color:var(--text3)">${esc(s.author)}${s.genre?' · '+esc(s.genre):''}</div>
+        </div>
+        <button class="btn-icon" onclick="deleteSeries(${s.id})">×</button>
       </div>
-      <div class="log-date-label">${fmtDate(l.date)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${done}${s.total?' of '+s.total:''} books done${reading?' · '+reading+' in progress':''}</div>
+      ${total?`<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:${pct}%;background:var(--accent)"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">${pct}%</div>`:''}
+      <div class="book-list" style="margin-top:10px">
+        ${books.sort((a,b)=>(a.seriesNum||99)-(b.seriesNum||99)).map(b=>`<div class="book-item">
+          <div class="book-spine" style="background:${b.color};cursor:pointer" onclick="openColorModal(${b.id})"></div>
+          <div class="book-meta"><div class="book-title-t">${esc(b.title)}</div>
+          <div class="book-tags"><span class="pill pill-${b.status}">${b.status==='reading'?'reading':b.status==='want'?'want to read':'done'}</span>${b.seriesNum?`<span style="font-size:10px;color:var(--text3)">book ${b.seriesNum}</span>`:''}</div></div>
+        </div>`).join('')}
+      </div>
     </div>`;
   }).join('');
 }
 
 // ── STATS ──
 function renderStats() {
-  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
-  const totalMins = db.logs.reduce((s,l)=>s+l.minutes,0);
-  const done = db.books.filter(b=>b.status==='done').length;
-  const byDay = {}; db.logs.forEach(l=>{byDay[l.date]=(byDay[l.date]||0)+l.pages;});
-  const best = Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
-  const avgPerSession = db.logs.length ? Math.round(totalPages/db.logs.length) : 0;
+  const tp=db.logs.reduce((s,l)=>s+l.pages,0);
+  const tm=db.logs.reduce((s,l)=>s+l.minutes,0);
+  const done=db.books.filter(b=>b.status==='done').length;
+  const byDay={};db.logs.forEach(l=>{byDay[l.date]=(byDay[l.date]||0)+l.pages;});
+  const best=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('stats-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">total pages</div><div class="metric-val">${tp.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">total hours</div><div class="metric-val">${Math.round(tm/60)}</div></div>
+    <div class="metric"><div class="metric-label">books done</div><div class="metric-val">${done}</div></div>
+    <div class="metric"><div class="metric-label">best day</div><div class="metric-val">${best?best[1]:'—'}</div><div class="metric-sub">${best?fmtDate(best[0]):''}</div></div>`;
 
-  document.getElementById('stats-metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">Total pages</div><div class="metric-value">${totalPages.toLocaleString()}</div></div>
-    <div class="metric"><div class="metric-label">Total hours</div><div class="metric-value">${Math.round(totalMins/60)}</div></div>
-    <div class="metric"><div class="metric-label">Books finished</div><div class="metric-value">${done}</div></div>
-    <div class="metric"><div class="metric-label">Best day</div><div class="metric-value">${best?best[1]:'—'}</div><div class="metric-sub">${best?fmtDate(best[0]):''}</div></div>
-    <div class="metric"><div class="metric-label">Avg / session</div><div class="metric-value">${avgPerSession}</div><div class="metric-sub">pages</div></div>
-    <div class="metric"><div class="metric-label">Sessions</div><div class="metric-value">${db.logs.length}</div></div>
-  `;
-
-  // Monthly books finished
-  const mc={};
-  db.books.filter(b=>b.status==='done'&&b.finishedDate).forEach(b=>{
-    const m=b.finishedDate.slice(0,7); mc[m]=(mc[m]||0)+1;
-  });
+  const mc={};db.books.filter(b=>b.status==='done'&&b.finishedDate).forEach(b=>{const m=b.finishedDate.slice(0,7);mc[m]=(mc[m]||0)+1;});
   const months=Object.keys(mc).sort().slice(-10);
   destroyChart('monthly-chart');
-  charts['monthly-chart'] = new Chart(document.getElementById('monthly-chart'),{
-    type:'bar', data:{labels:months.map(m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1]+(y!==new Date().getFullYear().toString()?' '+y.slice(2):'');})||['No data'],
-      datasets:[{data:months.length?months.map(m=>mc[m]):[0], backgroundColor:'#5dbf8a', borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6259',font:{size:11},stepSize:1,maxTicksLimit:5}}}}
-  });
+  charts['monthly-chart']=new Chart(document.getElementById('monthly-chart'),{type:'bar',data:{labels:months.map(m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1];})||['none'],datasets:[{data:months.map(m=>mc[m]),backgroundColor:'#5dbf8acc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},stepSize:1,maxTicksLimit:5}}}}});
 
-  // Daily 30
-  const d30l=[], d30d=[];
-  for(let i=29;i>=0;i--) {
-    const d=new Date(); d.setDate(d.getDate()-i);
-    const s=d.toISOString().slice(0,10);
-    d30l.push(i%5===0?d.getDate()+'':'');
-    d30d.push(db.logs.filter(l=>l.date===s).reduce((a,l)=>a+l.pages,0));
-  }
+  const d30l=[],d30d=[];
+  for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);d30l.push(i%5===0?d.getDate()+'':'');d30d.push(db.logs.filter(l=>l.date===s).reduce((a,l)=>a+l.pages,0));}
   destroyChart('daily30-chart');
-  charts['daily30-chart'] = new Chart(document.getElementById('daily30-chart'),{
-    type:'line', data:{labels:d30l, datasets:[{data:d30d, borderColor:'#7ab3e0', backgroundColor:'rgba(122,179,224,0.08)', fill:true, tension:0.4, pointRadius:2, pointBackgroundColor:'#7ab3e0'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6259',font:{size:11},maxTicksLimit:4}}}}
-  });
+  charts['daily30-chart']=new Chart(document.getElementById('daily30-chart'),{type:'line',data:{labels:d30l,datasets:[{data:d30d,borderColor:'#7ab3e0',backgroundColor:'rgba(122,179,224,0.07)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#7ab3e0'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
 
-  // Genre chart
-  const gc={};
-  db.books.filter(b=>b.genre).forEach(b=>{gc[b.genre]=(gc[b.genre]||0)+1;});
+  const gc={};db.books.filter(b=>b.genre).forEach(b=>{gc[b.genre]=(gc[b.genre]||0)+1;});
   const genres=Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,6);
   destroyChart('genre-chart');
-  if(genres.length) {
-    charts['genre-chart'] = new Chart(document.getElementById('genre-chart'),{
-      type:'doughnut', data:{labels:genres.map(g=>g[0]), datasets:[{data:genres.map(g=>g[1]), backgroundColor:COLORS.slice(0,genres.length), borderWidth:0, hoverOffset:4}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#a89f94',font:{size:11},boxWidth:10,padding:8}}}}
-    });
-  }
+  if(genres.length)charts['genre-chart']=new Chart(document.getElementById('genre-chart'),{type:'doughnut',data:{labels:genres.map(g=>g[0]),datasets:[{data:genres.map(g=>g[1]),backgroundColor:CHART_COLORS.slice(0,genres.length),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#a09690',font:{size:10},boxWidth:8,padding:6}}}}});
 
-  // Day of week
-  const dow=[0,0,0,0,0,0,0];
-  db.logs.forEach(l=>{const d=new Date(l.date+'T12:00:00'); dow[d.getDay()]+=l.pages;});
+  const dow=[0,0,0,0,0,0,0];db.logs.forEach(l=>{const d=new Date(l.date+'T12:00:00');dow[d.getDay()]+=l.pages;});
   destroyChart('dow-chart');
-  charts['dow-chart'] = new Chart(document.getElementById('dow-chart'),{
-    type:'bar', data:{labels:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], datasets:[{data:dow, backgroundColor:'#b39ddb', borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6259',font:{size:11},maxTicksLimit:4}}}}
-  });
+  charts['dow-chart']=new Chart(document.getElementById('dow-chart'),{type:'bar',data:{labels:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],datasets:[{data:dow,backgroundColor:'#b39ddbcc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
 
-  // Finished books list
-  const finished = db.books.filter(b=>b.status==='done').sort((a,b)=>(b.finishedDate||'').localeCompare(a.finishedDate||''));
-  document.getElementById('stats-finished-list').innerHTML = finished.length ?
-    `<div class="book-list">${finished.map(b=>`<div class="book-item">
-      <div class="book-spine" style="background:${b.color}"></div>
-      <div class="book-meta">
-        <div class="book-title-text">${esc(b.title)}</div>
-        <div class="book-author-text">${esc(b.author)}${b.finishedDate?' · finished '+fmtDate(b.finishedDate):''}</div>
-      </div>
-      <div style="font-size:14px">${stars(b.rating||0)}</div>
-    </div>`).join('')}</div>` :
-    '<div class="empty"><p>No finished books yet</p></div>';
+  const finished=[...db.books.filter(b=>b.status==='done')].sort((a,b)=>(b.rating||0)-(a.rating||0));
+  document.getElementById('stats-done-list').innerHTML=finished.length?`<div class="book-list">${finished.map(b=>`<div class="book-item"><div class="book-spine" style="background:${b.color}"></div><div class="book-meta"><div class="book-title-t">${esc(b.title)}</div><div class="book-author-t">${esc(b.author)}${b.finishedDate?' · '+fmtDate(b.finishedDate):''}</div></div><div style="font-size:12px;white-space:nowrap">${starsFixed(b.rating||0)}</div></div>`).join('')}</div>`:'<div class="empty"><p>no finished books yet</p></div>';
 }
 
 // ── GOALS ──
 function renderGoals() {
-  const done = db.books.filter(b=>b.status==='done').length;
-  const pct = db.goal ? Math.min(100, Math.round(done/db.goal*100)) : 0;
-  document.getElementById('goal-pct').textContent = pct+'%';
-  document.getElementById('goal-desc').textContent = done+' of '+db.goal+' books finished';
-  document.getElementById('goal-in').placeholder = 'Goal: '+db.goal;
-  document.getElementById('daily-goal-in').placeholder = 'Goal: '+db.dailyGoal+' pages/day';
-  document.getElementById('weekly-goal-in').placeholder = 'Goal: '+db.weeklyGoal+' pages/wk';
-
-  const todayP = db.logs.filter(l=>l.date===todayStr()).reduce((s,l)=>s+l.pages,0);
-  const weekP = pagesInDays(7);
-  const dpct = Math.min(100,Math.round(todayP/db.dailyGoal*100));
-  const wpct = Math.min(100,Math.round(weekP/db.weeklyGoal*100));
-  document.getElementById('daily-goal-status').innerHTML = `Today: <strong style="color:${dpct>=100?'var(--green)':'var(--accent)'}">${todayP}/${db.dailyGoal} pages (${dpct}%)</strong>`;
-  document.getElementById('weekly-goal-status').innerHTML = `This week: <strong style="color:${wpct>=100?'var(--green)':'var(--accent)'}">${weekP}/${db.weeklyGoal} pages (${wpct}%)</strong>`;
-
+  const done=db.books.filter(b=>b.status==='done').length;
+  const pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
+  document.getElementById('g-pct').textContent=pct+'%';
+  document.getElementById('g-desc').textContent=`${done} of ${db.goal} books`;
+  document.getElementById('goal-in').placeholder=db.goal;
+  document.getElementById('daily-g-in').placeholder=db.dailyGoal;
+  document.getElementById('weekly-g-in').placeholder=db.weeklyGoal;
+  const todayP=db.logs.filter(l=>l.date===todayStr()).reduce((s,l)=>s+l.pages,0);
+  const weekP=pagesInDays(7);
+  const dpct=Math.min(100,Math.round(todayP/db.dailyGoal*100));
+  const wpct=Math.min(100,Math.round(weekP/db.weeklyGoal*100));
+  document.getElementById('daily-g-status').innerHTML=`today: <strong style="color:${dpct>=100?'var(--green)':'var(--accent)'}">${todayP}/${db.dailyGoal} (${dpct}%)</strong>`;
+  document.getElementById('weekly-g-status').innerHTML=`this week: <strong style="color:${wpct>=100?'var(--green)':'var(--accent)'}">${weekP}/${db.weeklyGoal} (${wpct}%)</strong>`;
   destroyChart('goal-donut');
-  charts['goal-donut'] = new Chart(document.getElementById('goal-donut'),{
-    type:'doughnut', data:{datasets:[{data:[pct,100-pct], backgroundColor:['#c9a96e','rgba(255,255,255,0.05)'], borderWidth:0}]},
-    options:{responsive:false, cutout:'72%', plugins:{legend:{display:false},tooltip:{enabled:false}}}
-  });
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
+  charts['goal-donut']=new Chart(document.getElementById('goal-donut'),{type:'doughnut',data:{datasets:[{data:[pct,100-pct],backgroundColor:[acc,'rgba(128,128,128,0.08)'],borderWidth:0}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+  const dLeft=Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000));
+  const bLeft=Math.max(0,db.goal-done);
+  const avgD=calcAvgDays();
+  const dpb=bLeft>0?Math.ceil(dLeft/bLeft):0;
+  const ontrack=avgD&&avgD<=dpb;
+  document.getElementById('pace-info').innerHTML=bLeft===0?'<strong style="color:var(--green)">🎉 annual goal complete!</strong>':
+    `${bLeft} book${bLeft!==1?'s':''} left · ${dLeft} days remaining<br>finish a book every <strong>${dpb}</strong> days to hit your goal<br>${avgD?`your average: <strong>${avgD} days/book</strong> · <span style="color:${ontrack?'var(--green)':'var(--red)'}">${ontrack?'on track ✓':'behind — pick up the pace!'}</span>`:' log more books for pace analysis'}`;
+}
 
-  const daysLeft = Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000));
-  const bLeft = Math.max(0,db.goal-done);
-  const el = document.getElementById('pace-info');
-  if(!bLeft) { el.innerHTML='<strong style="color:var(--green)">🎉 Annual goal complete!</strong> Incredible work.'; return; }
-  const daysPerBook = bLeft>0 ? Math.ceil(daysLeft/bLeft) : 0;
-  const avgDays = calcAvgDaysPerBook();
-  const onTrack = avgDays && avgDays <= daysPerBook;
-  el.innerHTML = `${bLeft} book${bLeft!==1?'s':''} left · ${daysLeft} days remaining in ${new Date().getFullYear()}.<br>
-    Finish a book every <strong>${daysPerBook}</strong> days to hit your goal.<br>
-    ${avgDays?`Your average: <strong>${avgDays} days/book</strong> · <strong style="color:${onTrack?'var(--green)':'var(--red)'}">${onTrack?'On track ✓':'Behind pace — push it!'}</strong>`:'Log more books to see pace analysis.'}`;
+// ── FRIENDS ──
+function renderFriends() {
+  const pendingEl=document.getElementById('pending-list');
+  const friendsEl=document.getElementById('friends-list');
+  const countEl=document.getElementById('pending-count');
+  if(!sb||!currentUser){
+    pendingEl.innerHTML='<div class="empty"><p>sign in to connect with friends</p></div>';
+    friendsEl.innerHTML='<div class="empty"><p>sign in to see friends</p></div>';
+    return;
+  }
+  const reqs=db.friendReqs||[];
+  if(reqs.length){countEl.style.display='inline';countEl.textContent=reqs.length;pendingEl.innerHTML=reqs.map(uid=>`<div class="friend-item"><div class="friend-av">?</div><div class="friend-info"><div class="friend-name">${uid.slice(0,8)}...</div><div class="friend-stat">wants to be friends</div></div><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="acceptFriend('${uid}')">accept</button><button class="btn btn-ghost btn-sm" onclick="declineFriend('${uid}')">decline</button></div></div>`).join('');}
+  else {countEl.style.display='none';pendingEl.innerHTML='<div class="empty"><p>no pending requests</p></div>';}
+  const fr=db.friends||[];
+  friendsEl.innerHTML=fr.length?fr.map(f=>`<div class="friend-item"><div class="friend-av">${(f.username||'?')[0].toUpperCase()}</div><div class="friend-info"><div class="friend-name">${esc(f.username)}</div><div class="friend-stat">${f.booksRead||0} books done</div>${f.reading&&f.reading.length?`<div class="friend-reading">reading: ${f.reading.slice(0,2).map(t=>esc(t)).join(', ')}</div>`:''}</div></div>`).join(''):'<div class="empty"><p>no friends yet — send a request!</p></div>';
 }
 
 // ── SHARE ──
 function renderShare() {
-  const done = db.books.filter(b=>b.status==='done').length;
-  const reading = db.books.filter(b=>b.status==='reading');
-  const streak = calcStreak();
-  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
-  const pct = db.goal ? Math.min(100,Math.round(done/db.goal*100)) : 0;
-
-  document.getElementById('share-preview').innerHTML = `
-    <div style="font-family:'Playfair Display',serif; font-size:20px; color:#c9a96e; margin-bottom:12px">📚 ReadTracker</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px">
-      <div><div style="font-size:10px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">Streak</div><div style="font-size:22px;color:#f0ebe4;font-family:'Playfair Display',serif">${streak}d</div></div>
-      <div><div style="font-size:10px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">Books done</div><div style="font-size:22px;color:#f0ebe4;font-family:'Playfair Display',serif">${done}</div></div>
-      <div><div style="font-size:10px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">Pages read</div><div style="font-size:22px;color:#f0ebe4;font-family:'Playfair Display',serif">${totalPages.toLocaleString()}</div></div>
+  const done=db.books.filter(b=>b.status==='done').length;
+  const streak=calcStreak();
+  const pages=db.logs.reduce((s,l)=>s+l.pages,0);
+  const reading=db.books.filter(b=>b.status==='reading');
+  const pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
+  document.getElementById('share-pre').innerHTML=`
+    <div style="font-family:'Instrument Serif',serif;font-size:18px;color:${acc};margin-bottom:12px">readtracker</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+      <div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">streak</div><div style="font-size:22px;color:#ede8e1;font-family:'Instrument Serif',serif">${streak}d</div></div>
+      <div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">books done</div><div style="font-size:22px;color:#ede8e1;font-family:'Instrument Serif',serif">${done}</div></div>
+      <div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">pages</div><div style="font-size:22px;color:#ede8e1;font-family:'Instrument Serif',serif">${pages.toLocaleString()}</div></div>
     </div>
-    <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-bottom:8px"><div style="height:4px;background:#c9a96e;border-radius:2px;width:${pct}%"></div></div>
-    <div style="font-size:12px;color:#a89f94">${done}/${db.goal} books · ${pct}% of ${new Date().getFullYear()} goal</div>
-    ${reading.length?`<div style="margin-top:12px;font-size:12px;color:#6b6259">Currently reading: <span style="color:#f0ebe4">${reading.slice(0,2).map(b=>b.title).join(', ')}</span></div>`:''}
-  `;
+    <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:6px"><div style="height:3px;background:${acc};border-radius:2px;width:${pct}%"></div></div>
+    <div style="font-size:11px;color:#a09690">${done}/${db.goal} books · ${pct}% of ${new Date().getFullYear()} goal</div>
+    ${reading.length?`<div style="margin-top:10px;font-size:11px;color:#6b6259">reading now: <span style="color:#ede8e1">${reading.slice(0,2).map(b=>b.title).join(', ')}</span></div>`:''}`;
 
-  // Embed code
-  const readingBooks = reading.slice(0,3);
-  const embedCode = readingBooks.length ? `<!-- ReadTracker Widget -->
-<div style="font-family:sans-serif;background:#1a1510;color:#f0ebe4;padding:16px;border-radius:10px;border:1px solid rgba(201,169,110,0.2);max-width:300px">
-  <div style="font-size:13px;color:#c9a96e;margin-bottom:10px">📚 Currently reading</div>
-  ${readingBooks.map(b=>`<div style="margin-bottom:8px"><div style="font-size:14px;font-weight:500">${esc(b.title)}</div><div style="font-size:12px;color:#a89f94">${esc(b.author)}</div>${b.pages?`<div style="height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px"><div style="height:3px;background:${b.color};border-radius:2px;width:${Math.round((b.pagesRead||0)/b.pages*100)}%"></div></div>`:''}
-  </div>`).join('')}
-</div>` : '<!-- No books currently reading -->';
-  document.getElementById('embed-code').value = embedCode;
+  document.getElementById('embed-code').value=reading.length?`<!-- readtracker widget -->
+<div style="font-family:sans-serif;background:#141210;color:#ede8e1;padding:14px;border-radius:10px;border:1px solid rgba(201,169,110,0.15);max-width:280px">
+  <div style="font-size:11px;color:${acc};margin-bottom:8px">currently reading</div>
+  ${reading.slice(0,3).map(b=>`<div style="margin-bottom:7px"><div style="font-size:13px;font-weight:500">${esc(b.title)}</div><div style="font-size:11px;color:#a09690">${esc(b.author)}</div>${b.pages?`<div style="height:2px;background:rgba(255,255,255,0.07);border-radius:1px;margin-top:5px"><div style="height:2px;background:${b.color};border-radius:1px;width:${Math.round((b.pagesRead||0)/(b.pages)*100)}%"></div></div>`:''}</div>`).join('')}
+</div>`:'<!-- no books currently reading -->';
 }
 
 function copyShareText() {
-  const done = db.books.filter(b=>b.status==='done').length;
-  const streak = calcStreak();
-  const pages = db.logs.reduce((s,l)=>s+l.pages,0);
-  const reading = db.books.filter(b=>b.status==='reading').slice(0,2).map(b=>b.title).join(', ');
-  const text = `📚 Reading update — ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}\n\n🔥 ${streak}-day streak\n📖 ${done} books finished (${Math.round(done/db.goal*100)}% of my ${db.goal}-book goal)\n📄 ${pages.toLocaleString()} pages read\n\nCurrently reading: ${reading||'taking a break'}\n\n#ReadTracker #reading`;
-  navigator.clipboard.writeText(text).then(()=>toast('Copied to clipboard!')).catch(()=>toast('Could not copy'));
+  const done=db.books.filter(b=>b.status==='done').length,streak=calcStreak(),pages=db.logs.reduce((s,l)=>s+l.pages,0),reading=db.books.filter(b=>b.status==='reading').slice(0,2).map(b=>b.title).join(', ');
+  navigator.clipboard.writeText(`📚 reading update — ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}\n\n🔥 ${streak}-day streak\n📖 ${done} books done (${Math.round(done/db.goal*100)}% of ${db.goal}-book goal)\n📄 ${pages.toLocaleString()} pages read\n\nreading: ${reading||'nothing right now'}\n\n#readtracker`).then(()=>toast('copied!')).catch(()=>toast('could not copy'));
 }
-
-function copyEmbed() {
-  navigator.clipboard.writeText(document.getElementById('embed-code').value).then(()=>toast('Embed code copied!')).catch(()=>toast('Could not copy'));
-}
-
-function downloadShareImage() {
-  toast('Right-click the preview card → Save as image, or take a screenshot!');
-}
+function copyEmbed() { navigator.clipboard.writeText(document.getElementById('embed-code').value).then(()=>toast('embed code copied!')).catch(()=>toast('could not copy')); }
 
 // ── IMPORT / EXPORT ──
 function importGoodreads(input) {
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const lines = e.target.result.split('\n');
-      const headers = lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
-      let count = 0;
-      for(let i=1;i<lines.length;i++) {
-        const row = parseCSVRow(lines[i]);
-        if(!row.length) continue;
-        const get = (name) => { const idx=headers.findIndex(h=>h.includes(name)); return idx>=0?(row[idx]||'').replace(/"/g,'').trim():''; };
-        const title = get('title'); if(!title) continue;
-        const shelf = get('shelf') || get('exclusive shelf') || get('bookshelves');
-        let status = 'want';
-        if(shelf.includes('read') && !shelf.includes('to-read') && !shelf.includes('currently')) status='done';
-        if(shelf.includes('currently')) status='reading';
-        if(db.books.find(b=>b.title.toLowerCase()===title.toLowerCase())) continue;
-        db.books.push({
-          id: Date.now()+i, title, author: get('author'), pages: parseInt(get('pages'))||0,
-          genre: '', status, rating: Math.round(parseFloat(get('my rating'))||0),
-          pagesRead: status==='done'?(parseInt(get('pages'))||0):0,
-          startDate: get('date started') || (status!=='want'?todayStr():''),
-          finishedDate: get('date read') || (status==='done'?todayStr():''),
-          addedDate: todayStr(), color: SPINE_COLORS[(db.books.length)%SPINE_COLORS.length]
-        });
-        count++;
-      }
-      save(); renderAll();
-      document.getElementById('import-status').textContent = `✓ Imported ${count} books from Goodreads!`;
-      toast(`Imported ${count} books!`);
-    } catch(err) { document.getElementById('import-status').textContent = 'Error parsing file: '+err.message; }
-  };
-  reader.readAsText(file);
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();r.onload=e=>{
+    try{const lines=e.target.result.split('\n'),headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());let count=0;
+    for(let i=1;i<lines.length;i++){const row=parseCSVRow(lines[i]);if(!row.length)continue;const get=n=>{const idx=headers.findIndex(h=>h.includes(n));return idx>=0?(row[idx]||'').replace(/"/g,'').trim():'';};const title=get('title');if(!title)continue;const shelf=(get('shelf')||get('exclusive shelf')||get('bookshelves')||'').toLowerCase();let status='want';if(shelf.includes('currently'))status='reading';else if(shelf.includes('read')&&!shelf.includes('to-read'))status='done';if(db.books.find(b=>b.title.toLowerCase()===title.toLowerCase()))continue;
+    db.books.push({id:Date.now()+i,title,author:get('author'),pages:parseInt(get('pages'))||0,genre:'',series:'',seriesNum:0,status,color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:Math.round(parseFloat(get('my rating'))||0),pagesRead:status==='done'?(parseInt(get('pages'))||0):0,startDate:get('date started')||(status!=='want'?todayStr():''),finishedDate:get('date read')||(status==='done'?todayStr():''),addedDate:todayStr()});count++;}
+    save();renderAll();document.getElementById('gr-status').textContent=`✓ imported ${count} books`;toast(`imported ${count} books!`);
+    }catch(err){document.getElementById('gr-status').textContent='error: '+err.message;}
+  };r.readAsText(file);
 }
 
-function importManualCSV(input) {
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const lines = e.target.result.split('\n').slice(1);
-    let count=0;
-    lines.forEach((line,i) => {
-      const cols = parseCSVRow(line).map(c=>c.replace(/"/g,'').trim());
-      if(!cols[0]) return;
-      const status = (cols[3]||'want').toLowerCase();
-      db.books.push({
-        id:Date.now()+i, title:cols[0], author:cols[1]||'', pages:parseInt(cols[2])||0,
-        genre:cols[4]||'', status: ['reading','want','done'].includes(status)?status:'want',
-        rating:0, pagesRead:status==='done'?(parseInt(cols[2])||0):0,
-        startDate:'', finishedDate:status==='done'?todayStr():'', addedDate:todayStr(),
-        color:SPINE_COLORS[db.books.length%SPINE_COLORS.length]
-      }); count++;
-    });
-    save(); renderAll(); toast(`Imported ${count} books!`);
-  };
-  reader.readAsText(file);
+function importCSV(input) {
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();r.onload=e=>{
+    const lines=e.target.result.split('\n').slice(1);let count=0;
+    lines.forEach((line,i)=>{const c=parseCSVRow(line).map(x=>x.replace(/"/g,'').trim());if(!c[0])return;const status=(c[3]||'want').toLowerCase();db.books.push({id:Date.now()+i,title:c[0],author:c[1]||'',pages:parseInt(c[2])||0,status:['reading','want','done'].includes(status)?status:'want',genre:c[4]||'',series:c[5]||'',seriesNum:parseInt(c[6])||0,color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:status==='done'?(parseInt(c[2])||0):0,startDate:'',finishedDate:status==='done'?todayStr():'',addedDate:todayStr()});count++;});
+    save();renderAll();toast(`imported ${count} books!`);
+  };r.readAsText(file);
 }
 
-function parseCSVRow(row) {
-  const result=[]; let cur='', inQ=false;
-  for(let c of row) {
-    if(c==='"') inQ=!inQ;
-    else if(c===','&&!inQ){result.push(cur);cur='';}
-    else cur+=c;
-  }
-  result.push(cur); return result;
-}
+function parseCSVRow(row){const r=[];let cur='',inQ=false;for(const c of row){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){r.push(cur);cur='';}else cur+=c;}r.push(cur);return r;}
+function exportJSON(){const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`readtracker-${todayStr()}.json`;a.click();toast('backup downloaded!');}
+function exportCSV(){const rows=[['Title','Author','Pages','Status','Genre','Series','SeriesNum','Rating','Started','Finished']];db.books.forEach(b=>rows.push([b.title,b.author,b.pages,b.status,b.genre,b.series,b.seriesNum,b.rating,b.startDate,b.finishedDate]));const csv=rows.map(r=>r.map(c=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`readtracker-books-${todayStr()}.csv`;a.click();toast('CSV downloaded!');}
+function restoreJSON(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{db={...db,...JSON.parse(e.target.result)};save();renderAll();toast('data restored!');}catch(e){toast('error reading file');}};r.readAsText(f);}
+function clearAll(){if(!confirm('delete ALL data?'))return;db={books:[],logs:[],series:[],friends:[],friendReqs:[],goal:24,dailyGoal:30,weeklyGoal:200};save();renderAll();toast('cleared');}
 
-function exportJSON() {
-  const blob = new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`readtracker-backup-${todayStr()}.json`; a.click(); toast('JSON backup downloaded!');
-}
+// ── CALC HELPERS ──
+function calcStreak(){const days=new Set(db.logs.map(l=>l.date));let s=0,d=new Date();for(let i=0;i<365;i++){const k=d.toISOString().slice(0,10);if(days.has(k)){s++;d.setDate(d.getDate()-1);}else if(i===0){d.setDate(d.getDate()-1);}else break;}return s;}
+function pagesInDays(n){const c=new Date();c.setDate(c.getDate()-n);return db.logs.filter(l=>new Date(l.date+'T12:00:00')>=c).reduce((s,l)=>s+l.pages,0);}
+function pagesInRange(from,to){const now=new Date();const a=new Date(now);a.setDate(now.getDate()-from);const b=new Date(now);b.setDate(now.getDate()-to);return db.logs.filter(l=>{const d=new Date(l.date+'T12:00:00');return d>=a&&d<b;}).reduce((s,l)=>s+l.pages,0);}
+function calcSpeed(){const p=db.logs.reduce((s,l)=>s+l.pages,0),m=db.logs.reduce((s,l)=>s+l.minutes,0);return m>0?Math.round(p/(m/60)):0;}
+function calcAvgDays(){const books=db.books.filter(b=>b.status==='done'&&b.startDate&&b.finishedDate);if(!books.length)return 0;const avg=books.reduce((s,b)=>s+Math.max(1,(new Date(b.finishedDate)-new Date(b.startDate))/86400000),0)/books.length;return Math.round(avg);}
 
-function exportCSV() {
-  const rows = [['Title','Author','Pages','Status','Genre','Rating','Started','Finished']];
-  db.books.forEach(b=>rows.push([b.title,b.author,b.pages,b.status,b.genre,b.rating,b.startDate,b.finishedDate]));
-  const csv = rows.map(r=>r.map(c=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`readtracker-books-${todayStr()}.csv`; a.click(); toast('CSV downloaded!');
-}
-
-function importJSONBackup() { document.getElementById('json-restore').click(); }
-function restoreJSON(input) {
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{ try{db=JSON.parse(e.target.result);save();renderAll();toast('Data restored!');} catch(err){toast('Error reading file');} };
-  reader.readAsText(file);
-}
-
-function clearAll() {
-  if(!confirm('Delete ALL data? This cannot be undone.')) return;
-  db={books:[],logs:[],goal:24,dailyGoal:30,weeklyGoal:200};
-  save(); renderAll(); toast('All data cleared');
-}
-
-// ── HELPERS ──
-function calcStreak() {
-  const days=new Set(db.logs.map(l=>l.date));
-  let streak=0, d=new Date();
-  for(let i=0;i<365;i++) {
-    const s=d.toISOString().slice(0,10);
-    if(days.has(s)) { streak++; d.setDate(d.getDate()-1); }
-    else if(i===0) { d.setDate(d.getDate()-1); }
-    else break;
-  }
-  return streak;
-}
-function pagesInDays(n) {
-  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-n);
-  return db.logs.filter(l=>new Date(l.date+'T12:00:00')>=cutoff).reduce((s,l)=>s+l.pages,0);
-}
-function pagesInRange(from,to) {
-  const now=new Date();
-  const a=new Date(now); a.setDate(now.getDate()-from);
-  const b=new Date(now); b.setDate(now.getDate()-to);
-  return db.logs.filter(l=>{const d=new Date(l.date+'T12:00:00');return d>=a&&d<b;}).reduce((s,l)=>s+l.pages,0);
-}
-function calcAvgSpeed() {
-  const p=db.logs.reduce((s,l)=>s+l.pages,0);
-  const m=db.logs.reduce((s,l)=>s+l.minutes,0);
-  return m>0?Math.round(p/(m/60)):0;
-}
-function calcAvgDaysPerBook() {
-  const books=db.books.filter(b=>b.status==='done'&&b.startDate&&b.finishedDate);
-  if(!books.length) return 0;
-  const avg=books.reduce((s,b)=>{
-    const diff=Math.max(1,(new Date(b.finishedDate)-new Date(b.startDate))/86400000);
-    return s+diff;
-  },0)/books.length;
-  return Math.round(avg);
-}
-function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
-
-load();
+boot();
 </script>
 </body>
 </html>
