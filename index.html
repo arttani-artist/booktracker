@@ -282,106 +282,106 @@ textarea { resize: vertical; line-height: 1.5; }
           </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Start date</label><input id="b-start" type="date" /></div>
-          <div class="form-group"><label class="form-label">Rating (if finished)</label>
+          <div class="form-group"><label class="form-label">start date</label><input id="b-start" type="date" /></div>
+          <div class="form-group"><label class="form-label">rating (if finished)</label>
             <select id="b-rating">
-              <option value="0">No rating</option>
-              <option value="5">★★★★★ — Loved it</option>
-              <option value="4">★★★★☆ — Really good</option>
-              <option value="3">★★★☆☆ — Liked it</option>
-              <option value="2">★★☆☆☆ — It was ok</option>
-              <option value="1">★☆☆☆☆ — Didn't like it</option>
+              <option value="0">no rating</option>
+              <option value="5">★★★★★ loved it</option>
+              <option value="4">★★★★☆ really good</option>
+              <option value="3">★★★☆☆ liked it</option>
+              <option value="2">★★☆☆☆ it was ok</option>
+              <option value="1">★☆☆☆☆ didn't like it</option>
             </select>
           </div>
         </div>
-        <button class="btn btn-primary btn-full" onclick="addBook()">Add book</button>
+        <button class="btn btn-primary btn-full" onclick="addBook()">add book</button>
       </div>
 
       <div class="tab-bar">
-        <button class="tab-btn active" onclick="showLibTab('reading',this)">Reading</button>
-        <button class="tab-btn" onclick="showLibTab('want',this)">Want to read</button>
-        <button class="tab-btn" onclick="showLibTab('done',this)">Finished</button>
-        <button class="tab-btn" onclick="showLibTab('all',this)">All</button>
+        <button class="tab-btn active" onclick="showLibTab('reading',this)">reading</button>
+        <button class="tab-btn" onclick="showLibTab('want',this)">want to read</button>
+        <button class="tab-btn" onclick="showLibTab('done',this)">finished</button>
+        <button class="tab-btn" onclick="showLibTab('all',this)">all books</button>
       </div>
       <div id="lib-list"></div>
     </div>
 
     <!-- LOG SESSION -->
     <div id="page-log" class="page">
-      <h2 class="page-title">Log a session</h2>
-      <p class="page-sub">Track your reading time and pages</p>
+      <h2 class="page-title">log a session</h2>
+      <p class="page-sub">track your reading time and pages</p>
       <div class="card">
-        <div class="form-group"><label class="form-label">Book *</label>
-          <select id="log-book"><option value="">Select a book...</option></select>
+        <div class="form-group"><label class="form-label">book *</label>
+          <select id="log-book"><option value="">select a book...</option></select>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Pages read *</label><input id="log-pages" type="number" placeholder="45" min="1" /></div>
-          <div class="form-group"><label class="form-label">Minutes spent</label><input id="log-mins" type="number" placeholder="60" min="1" /></div>
+          <div class="form-group"><label class="form-label">pages read *</label><input id="log-pages" type="number" placeholder="45" min="1" /></div>
+          <div class="form-group"><label class="form-label">minutes spent</label><input id="log-mins" type="number" placeholder="60" min="1" /></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Date</label><input id="log-date" type="date" /></div>
-          <div class="form-group"><label class="form-label">Mark as finished?</label>
-            <select id="log-finish"><option value="no">No, still reading</option><option value="yes">Yes, I finished this book!</option></select>
+          <div class="form-group"><label class="form-label">date</label><input id="log-date" type="date" /></div>
+          <div class="form-group"><label class="form-label">mark as finished?</label>
+            <select id="log-finish"><option value="no">no, still reading</option><option value="yes">yes, i finished this book!</option></select>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Notes (optional)</label>
-          <textarea id="log-notes" rows="2" placeholder="Wow, the ending was unexpected..."></textarea>
+        <div class="form-group"><label class="form-label">notes (optional)</label>
+          <textarea id="log-notes" rows="2" placeholder="wow, the ending was like sooo unexpected..."></textarea>
         </div>
-        <button class="btn btn-primary btn-full" onclick="logSession()">Save session</button>
+        <button class="btn btn-primary btn-full" onclick="logSession()">save session</button>
       </div>
       <div class="card">
-        <div class="card-title">Recent sessions</div>
+        <div class="card-title">recent sessions</div>
         <div id="log-recent"></div>
       </div>
     </div>
 
     <!-- STATS -->
     <div id="page-stats" class="page">
-      <h2 class="page-title">Stats</h2>
-      <p class="page-sub">Deep dive into your reading data</p>
+      <h2 class="page-title">stats</h2>
+      <p class="page-sub">deep dive into your reading data</p>
       <div class="metrics" id="stats-metrics"></div>
       <div class="card">
-        <div class="card-title">Books finished by month</div>
-        <div class="chart-wrap" style="height:180px"><canvas id="monthly-chart" role="img" aria-label="Books finished per month">Monthly books</canvas></div>
+        <div class="card-title">books finished by month</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="monthly-chart" role="img" aria-label="books finished per month">Monthly books</canvas></div>
       </div>
       <div class="card">
-        <div class="card-title">Pages per day — last 30 days</div>
-        <div class="chart-wrap" style="height:160px"><canvas id="daily30-chart" role="img" aria-label="Pages per day over last 30 days">Daily pages</canvas></div>
+        <div class="card-title">pages per day: last 30 days</div>
+        <div class="chart-wrap" style="height:160px"><canvas id="daily30-chart" role="img" aria-label="pages per day over last 30 days">Daily pages</canvas></div>
       </div>
       <div class="card-grid">
         <div class="card">
-          <div class="card-title">Top genres</div>
-          <div class="chart-wrap" style="height:160px"><canvas id="genre-chart" role="img" aria-label="Books by genre">Genres</canvas></div>
+          <div class="card-title">top genres</div>
+          <div class="chart-wrap" style="height:160px"><canvas id="genre-chart" role="img" aria-label="books by genre">Genres</canvas></div>
         </div>
         <div class="card">
-          <div class="card-title">Reading by day of week</div>
-          <div class="chart-wrap" style="height:160px"><canvas id="dow-chart" role="img" aria-label="Reading activity by day of week">Day of week</canvas></div>
+          <div class="card-title">reading by day of week</div>
+          <div class="chart-wrap" style="height:160px"><canvas id="dow-chart" role="img" aria-label="reading activity by day of week">Day of week</canvas></div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">All finished books</div>
+        <div class="card-title">all finished books</div>
         <div id="stats-finished-list"></div>
       </div>
     </div>
 
     <!-- GOALS -->
     <div id="page-goals" class="page">
-      <h2 class="page-title">Goals</h2>
-      <p class="page-sub">Set targets and track your pace</p>
+      <h2 class="page-title">goals</h2>
+      <p class="page-sub">set targets and track your pace</p>
       <div class="card">
-        <div class="card-title">Annual reading goal</div>
+        <div class="card-title">annual reading goal</div>
         <div class="goal-wrap">
-          <canvas id="goal-donut" width="100" height="100" role="img" aria-label="Annual goal progress">Goal progress</canvas>
+          <canvas id="goal-donut" width="100" height="100" role="img" aria-label="Annual goal progress">goal progress</canvas>
           <div class="goal-text">
             <div class="big" id="goal-pct">0%</div>
             <div class="sub" id="goal-desc">0 of 0 books finished</div>
           </div>
         </div>
         <div style="margin-top:16px; display:flex; gap:10px; align-items:flex-end">
-          <div style="flex:1"><label class="form-label">Books this year</label><input id="goal-in" type="number" placeholder="24" min="1" /></div>
-          <button class="btn btn-primary" onclick="setGoal()">Save</button>
+          <div style="flex:1"><label class="form-label">books this year</label><input id="goal-in" type="number" placeholder="24" min="1" /></div>
+          <button class="btn btn-primary" onclick="setGoal()">save</button>
         </div>
-      </div>
+      </div> ***
       <div class="card-grid">
         <div class="card">
           <div class="card-title">Daily page goal</div>
