@@ -381,100 +381,100 @@ textarea { resize: vertical; line-height: 1.5; }
           <div style="flex:1"><label class="form-label">books this year</label><input id="goal-in" type="number" placeholder="24" min="1" /></div>
           <button class="btn btn-primary" onclick="setGoal()">save</button>
         </div>
-      </div> ***
+      </div> 
       <div class="card-grid">
         <div class="card">
-          <div class="card-title">Daily page goal</div>
-          <div class="form-group"><label class="form-label">Pages per day</label><input id="daily-goal-in" type="number" placeholder="30" min="1" /></div>
+          <div class="card-title">daily page goal</div>
+          <div class="form-group"><label class="form-label">pages per day</label><input id="daily-goal-in" type="number" placeholder="30" min="1" /></div>
           <button class="btn btn-primary btn-full" onclick="setDailyGoal()">Save</button>
           <div id="daily-goal-status" style="margin-top:12px; font-size:13px; color:var(--text2);"></div>
         </div>
         <div class="card">
-          <div class="card-title">Weekly page goal</div>
-          <div class="form-group"><label class="form-label">Pages per week</label><input id="weekly-goal-in" type="number" placeholder="200" min="1" /></div>
+          <div class="card-title">weekly page goal</div>
+          <div class="form-group"><label class="form-label">pages per week</label><input id="weekly-goal-in" type="number" placeholder="200" min="1" /></div>
           <button class="btn btn-primary btn-full" onclick="setWeeklyGoal()">Save</button>
           <div id="weekly-goal-status" style="margin-top:12px; font-size:13px; color:var(--text2);"></div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Pace analysis</div>
-        <div class="pace-info" id="pace-info">Log some sessions to see your pace.</div>
+        <div class="card-title">pace analysis</div>
+        <div class="pace-info" id="pace-info">log some sessions to see your pace!</div>
       </div>
     </div>
 
     <!-- SHARE -->
     <div id="page-share" class="page">
-      <h2 class="page-title">Share your progress</h2>
-      <p class="page-sub">Generate a shareable reading widget</p>
+      <h2 class="page-title">share your progress</h2>
+      <p class="page-sub">create a shareable reading widget</p>
       <div class="card">
-        <div class="card-title">Reading card preview</div>
+        <div class="card-title">reading card preview</div>
         <div class="share-preview" id="share-preview"></div>
         <div style="display:flex; gap:10px; flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="copyShareText()">Copy as text</button>
-          <button class="btn btn-ghost" onclick="downloadShareImage()">Save as image</button>
+          <button class="btn btn-primary" onclick="copyShareText()">copy as text</button>
+          <button class="btn btn-ghost" onclick="downloadShareImage()">save as image</button>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Currently reading widget</div>
-        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">Embed this on your website or blog:</p>
+        <div class="card-title">currently reading widget</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">embed this on your website or blog:</p>
         <textarea id="embed-code" rows="4" style="font-family:monospace; font-size:12px;" readonly></textarea>
-        <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="copyEmbed()">Copy embed code</button>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="copyEmbed()">copy embed code</button>
       </div>
     </div>
 
     <!-- IMPORT / EXPORT -->
     <div id="page-import" class="page">
-      <h2 class="page-title">Import &amp; Export</h2>
-      <p class="page-sub">Bring in your books or back up your data</p>
+      <h2 class="page-title">import &amp; export</h2>
+      <p class="page-sub">bring in your books or back up your data</p>
       <div class="card">
-        <div class="card-title">Import from Goodreads</div>
+        <div class="card-title">import from Goodreads!</div>
         <p style="font-size:13px; color:var(--text2); margin-bottom:16px; line-height:1.7">
-          In Goodreads: go to <strong style="color:var(--text)">My Books</strong> → <strong style="color:var(--text)">Import and export</strong> → <strong style="color:var(--text)">Export Library</strong>. Then drop the CSV here.
+          in Goodreads: go to <strong style="color:var(--text)">My Books</strong> → <strong style="color:var(--text)">Import and export</strong> → <strong style="color:var(--text)">Export Library</strong>. then drop the CSV here!
         </p>
         <label class="import-box" for="goodreads-file">
           <div class="import-icon">📥</div>
-          <div style="font-size:15px; color:var(--text)">Drop Goodreads CSV here</div>
+          <div style="font-size:15px; color:var(--text)">drop Goodreads CSV here</div>
           <div class="import-desc">or click to select file</div>
         </label>
         <input type="file" id="goodreads-file" accept=".csv" style="display:none" onchange="importGoodreads(this)" />
         <div id="import-status" style="margin-top:12px; font-size:13px; color:var(--green);"></div>
       </div>
       <div class="card">
-        <div class="card-title">Add books manually from CSV</div>
-        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">CSV format: <code style="color:var(--accent); font-size:12px">Title,Author,Pages,Status,Genre</code></p>
+        <div class="card-title">add books manually from CSV</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">CSV format: <code style="color:var(--accent); font-size:12px">title,author,pages,status,genre</code></p>
         <label class="import-box" for="manual-csv">
           <div class="import-icon">📄</div>
-          <div style="font-size:15px; color:var(--text)">Drop custom CSV here</div>
-          <div class="import-desc">Title, Author, Pages, Status (reading/want/done), Genre</div>
+          <div style="font-size:15px; color:var(--text)">drop custom CSV here</div>
+          <div class="import-desc">title, author, pages, status (reading/want/done), genre</div>
         </label>
         <input type="file" id="manual-csv" accept=".csv" style="display:none" onchange="importManualCSV(this)" />
       </div>
       <div class="card">
-        <div class="card-title">Export your data</div>
+        <div class="card-title">export your data</div>
         <div style="display:flex; gap:10px; flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="exportJSON()">Export as JSON backup</button>
-          <button class="btn btn-ghost" onclick="exportCSV()">Export books as CSV</button>
-          <button class="btn btn-ghost" onclick="importJSONBackup()">Restore from JSON</button>
+          <button class="btn btn-ghost" onclick="exportJSON()">export as JSON backup</button>
+          <button class="btn btn-ghost" onclick="exportCSV()">export books as CSV</button>
+          <button class="btn btn-ghost" onclick="importJSONBackup()">restore from JSON</button>
         </div>
         <input type="file" id="json-restore" accept=".json" style="display:none" onchange="restoreJSON(this)" />
       </div>
       <div class="card" style="border-color:rgba(224,112,112,0.2)">
-        <div class="card-title" style="color:var(--red)">Danger zone</div>
-        <button class="btn btn-danger" onclick="clearAll()">Clear all data</button>
+        <div class="card-title" style="color:var(--red)">danger zone!!!</div>
+        <button class="btn btn-danger" onclick="clearAll()">clear all data</button>
       </div>
     </div>
-
+***
   </main>
 </div>
 
 <!-- Mobile nav -->
 <div class="mobile-nav">
   <div class="mobile-nav-inner">
-    <button class="mob-btn active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="mob-icon">📊</span>Home</button>
-    <button class="mob-btn" onclick="showPage('library',this)" data-page="library"><span class="mob-icon">📚</span>Library</button>
-    <button class="mob-btn" onclick="showPage('log',this)" data-page="log"><span class="mob-icon">✏️</span>Log</button>
-    <button class="mob-btn" onclick="showPage('stats',this)" data-page="stats"><span class="mob-icon">📈</span>Stats</button>
-    <button class="mob-btn" onclick="showPage('goals',this)" data-page="goals"><span class="mob-icon">🎯</span>Goals</button>
+    <button class="mob-btn active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="mob-icon">📊</span>home</button>
+    <button class="mob-btn" onclick="showPage('library',this)" data-page="library"><span class="mob-icon">📚</span>library</button>
+    <button class="mob-btn" onclick="showPage('log',this)" data-page="log"><span class="mob-icon">✏️</span>log</button>
+    <button class="mob-btn" onclick="showPage('stats',this)" data-page="stats"><span class="mob-icon">📈</span>stats</button>
+    <button class="mob-btn" onclick="showPage('goals',this)" data-page="goals"><span class="mob-icon">🎯</span>goals</button>
   </div>
 </div>
 
