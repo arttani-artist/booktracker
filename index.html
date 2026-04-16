@@ -293,7 +293,7 @@ textarea { resize: vertical; line-height: 1.5; }
       <div class="auth-sub ui-text" id="auth-mode-sub">your reading journey, everywhere</div>
 
       <div id="supabase-setup-note" class="setup-note" style="display:none">
-        ⚙️ <strong>Setup required:</strong> Replace <code>https://sfeyjounvjqrsnsjsmtj.supabase.co</code> and <code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmZXlqb3VudmpxcnNuc2pzbXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyOTU1NDMsImV4cCI6MjA5MTg3MTU0M30.OCy-G39ru6A-IodtNb01pqzag8XRW_Mwdvw19IaYK0w</code> at the top of the &lt;script&gt; in index.html with your project values from <a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a> → Settings → API.
+        ⚙️ <strong>Setup required:</strong> Replace <code>YOUR_SUPABASE_URL</code> and <code>YOUR_SUPABASE_ANON_KEY</code> at the top of the &lt;script&gt; in index.html with your project values from <a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a> → Settings → API.
       </div>
 
       <div class="form-group"><label>email</label><input id="auth-email" type="email" placeholder="you@example.com" /></div>
@@ -660,12 +660,14 @@ textarea { resize: vertical; line-height: 1.5; }
 </div>
 
 <script>
-// ════════════════════════════════════════════════
-// CONFIG — replace these with your Supabase values
-// ════════════════════════════════════════════════
-const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';
-// ════════════════════════════════════════════════
+
+const SUPABASE_URL  = 'https://your-project-id.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_xb_HPWpFflrJ-a-eKCW33A_qAwvgNYq';
+
+if (!sb) {
+  alert("supabase not configured");
+  return;
+}
 
 const SPINE_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#88c4a0','#d4a0b8','#f0c060','#80b8c0'];
 const CHART_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#88c4a0','#d4a0b8'];
