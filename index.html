@@ -43,7 +43,7 @@
   --blue: #88b8e0; --blue-bg: rgba(136,184,224,0.1);
   --shadow: rgba(0,0,0,0.5);
 }
-[data-theme="slate"] {
+[data-theme="blue"] {
   --bg: #0a0d12; --bg2: #111520; --bg3: #181c2a; --bg4: #202434;
   --border: rgba(120,150,255,0.08); --border2: rgba(120,150,255,0.14);
   --text: #d8dff0; --text2: #8090b0; --text3: #404860;
@@ -298,7 +298,7 @@ textarea { resize: vertical; line-height: 1.5; }
 
       <div class="form-group"><label>email</label><input id="auth-email" type="email" placeholder="you@example.com" /></div>
       <div class="form-group"><label>password</label><input id="auth-pw" type="password" placeholder="••••••••" /></div>
-      <div class="form-group" id="auth-username-wrap" style="display:none"><label>username</label><input id="auth-username" placeholder="bookworm42" /></div>
+      <div class="form-group" id="auth-username-wrap" style="display:none"><label>username</label><input id="auth-username" placeholder="bookworm2000" /></div>
       <button class="btn btn-primary btn-full" onclick="doAuth()" id="auth-btn">sign in</button>
       <div class="auth-error" id="auth-err"></div>
       <div class="auth-toggle" id="auth-toggle">no account? <a onclick="toggleAuthMode()">sign up</a></div>
@@ -314,7 +314,6 @@ textarea { resize: vertical; line-height: 1.5; }
     <aside class="sidebar">
       <div class="logo-wrap">
         <div class="logo-name">readtracker</div>
-        <div class="logo-sub ui-text">your reading journey</div>
       </div>
       <nav class="nav-section">
         <div class="nav-item active" data-page="dashboard" onclick="nav('dashboard',this)"><span class="nav-icon">◈</span><span class="nav-label">dashboard</span></div>
@@ -365,13 +364,13 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="card">
           <div class="card-title">add a book</div>
           <div class="form-row2">
-            <div class="form-group"><label>title *</label><input id="b-title" placeholder="The Name of the Wind" /></div>
-            <div class="form-group"><label>author</label><input id="b-author" placeholder="Patrick Rothfuss" /></div>
+            <div class="form-group"><label>title *</label><input id="b-title" placeholder="Catching Fire" /></div>
+            <div class="form-group"><label>author</label><input id="b-author" placeholder="Suzzane Collins" /></div>
           </div>
           <div class="form-row3">
             <div class="form-group"><label>pages</label><input id="b-pages" type="number" placeholder="662" min="1" /></div>
-            <div class="form-group"><label>genre</label><input id="b-genre" placeholder="Fantasy" /></div>
-            <div class="form-group"><label>series</label><input id="b-series" placeholder="Kingkiller Chronicle" /></div>
+            <div class="form-group"><label>genre</label><input id="b-genre" placeholder="Dystopian Fantasy" /></div>
+            <div class="form-group"><label>series</label><input id="b-series" placeholder="The Hunger Games" /></div>
           </div>
           <div class="form-row3">
             <div class="form-group"><label>series #</label><input id="b-series-num" type="number" placeholder="1" min="1" /></div>
@@ -441,7 +440,7 @@ textarea { resize: vertical; line-height: 1.5; }
               <select id="log-finish"><option value="no">no, still reading</option><option value="yes">yes, finished!</option></select>
             </div>
           </div>
-          <div class="form-group"><label>notes</label><textarea id="log-notes" rows="2" placeholder="thoughts on this session..."></textarea></div>
+          <div class="form-group"><label>notes</label><textarea id="log-notes" rows="2" placeholder="omg like this rlly craaazy thing happened.."></textarea></div>
           <button class="btn btn-primary btn-full" onclick="logSession()">save session</button>
         </div>
         <div class="card"><div class="card-title">recent sessions</div><div id="log-recent"></div></div>
@@ -453,12 +452,12 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="card">
           <div class="card-title">add a series</div>
           <div class="form-row2">
-            <div class="form-group"><label>series name *</label><input id="ser-name" placeholder="The Stormlight Archive" /></div>
+            <div class="form-group"><label>series name *</label><input id="ser-name" placeholder="Arc of a Scythe" /></div>
             <div class="form-group"><label>total books (if known)</label><input id="ser-total" type="number" placeholder="10" min="1" /></div>
           </div>
           <div class="form-row2">
-            <div class="form-group"><label>author</label><input id="ser-author" placeholder="Brandon Sanderson" /></div>
-            <div class="form-group"><label>genre</label><input id="ser-genre" placeholder="Epic Fantasy" /></div>
+            <div class="form-group"><label>author</label><input id="ser-author" placeholder="Neal Shusterman" /></div>
+            <div class="form-group"><label>genre</label><input id="ser-genre" placeholder="Dystopian Fantasy" /></div>
           </div>
           <button class="btn btn-primary" onclick="addSeries()">add series</button>
         </div>
@@ -544,7 +543,7 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="page-header"><h1 class="page-title">import & export</h1></div>
         <div class="card">
           <div class="card-title">import from goodreads</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7">Goodreads → My Books → Import and export → Export Library CSV</p>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7">Goodreads -> My Books -> Import and export -> Export Library CSV</p>
           <label class="drop-zone" for="gr-file"><div class="dz-icon">📥</div><div class="dz-label">drop goodreads CSV</div><div class="dz-sub">or click to browse</div></label>
           <input type="file" id="gr-file" accept=".csv" style="display:none" onchange="importGoodreads(this)">
           <div id="gr-status" style="margin-top:10px;font-size:12px;color:var(--green)"></div>
@@ -663,7 +662,7 @@ textarea { resize: vertical; line-height: 1.5; }
 
 const SUPABASE_URL  = 'https://sfeyjounvjqrsnsjsmtj.supabase.co';
 const SUPABASE_KEY  = 'sb_publishable_xb_HPWpFflrJ-a-eKCW33A_qAwvgNYq';
-
+//*****
 
 
 const SPINE_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#88c4a0','#d4a0b8','#f0c060','#80b8c0'];
