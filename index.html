@@ -824,7 +824,12 @@ function setCase(c, el) {
 }
 
 // ── HELPERS ──
-function todayStr() { return new Date().toISOString().slice(0,10); }
+function todayStr() {
+  const d = new Date();
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
+  return local.todayStr();
+}
 function fmtDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return `${m}/${d}/${y}`; }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
@@ -1040,7 +1045,7 @@ function renderDashboard() {
 
 function renderWeekChart() {
   const labels=[],data=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);labels.push(['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]);data.push(db.logs.filter(l=>l.date===d.toISOString().slice(0,10)).reduce((s,l)=>s+l.pages,0));}
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);labels.push(['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]);data.push(db.logs.filter(l=>l.date===d.todayStr()).reduce((s,l)=>s+l.pages,0));}
   destroyChart('week-chart');
   const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
   charts['week-chart']=new Chart(document.getElementById('week-chart'),{type:'bar',data:{labels,datasets:[{data,backgroundColor:acc+'cc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
@@ -1050,7 +1055,7 @@ function renderStreakCal() {
   const days=new Set(db.logs.map(l=>l.date));
   const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
   let html='';
-  for(let i=34;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);html+=`<div class="s-dot" style="background:${days.has(s)?acc:'rgba(128,128,128,0.1)'}" title="${fmtDate(s)}"></div>`;}
+  for(let i=34;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.todayStr();html+=`<div class="s-dot" style="background:${days.has(s)?acc:'rgba(128,128,128,0.1)'}" title="${fmtDate(s)}"></div>`;}
   document.getElementById('streak-cal').innerHTML=html;
 }
 
@@ -1171,7 +1176,7 @@ function renderStats() {
   charts['monthly-chart']=new Chart(document.getElementById('monthly-chart'),{type:'bar',data:{labels:months.map(m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1];})||['none'],datasets:[{data:months.map(m=>mc[m]),backgroundColor:'#5dbf8acc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},stepSize:1,maxTicksLimit:5}}}}});
 
   const d30l=[],d30d=[];
-  for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);d30l.push(i%5===0?d.getDate()+'':'');d30d.push(db.logs.filter(l=>l.date===s).reduce((a,l)=>a+l.pages,0));}
+  for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.todayStr();d30l.push(i%5===0?d.getDate()+'':'');d30d.push(db.logs.filter(l=>l.date===s).reduce((a,l)=>a+l.pages,0));}
   destroyChart('daily30-chart');
   charts['daily30-chart']=new Chart(document.getElementById('daily30-chart'),{type:'line',data:{labels:d30l,datasets:[{data:d30d,borderColor:'#7ab3e0',backgroundColor:'rgba(122,179,224,0.07)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#7ab3e0'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
 
@@ -1292,7 +1297,7 @@ function restoreJSON(input){const f=input.files[0];if(!f)return;const r=new File
 function clearAll(){if(!confirm('delete ALL data?'))return;db={books:[],logs:[],series:[],friends:[],friendReqs:[],goal:24,dailyGoal:30,weeklyGoal:200};save();renderAll();toast('cleared');}
 
 // ── CALC HELPERS ──
-function calcStreak(){const days=new Set(db.logs.map(l=>l.date));let s=0,d=new Date();for(let i=0;i<365;i++){const k=d.toISOString().slice(0,10);if(days.has(k)){s++;d.setDate(d.getDate()-1);}else if(i===0){d.setDate(d.getDate()-1);}else break;}return s;}
+function calcStreak(){const days=new Set(db.logs.map(l=>l.date));let s=0,d=new Date();for(let i=0;i<365;i++){const k=d.todayStr();if(days.has(k)){s++;d.setDate(d.getDate()-1);}else if(i===0){d.setDate(d.getDate()-1);}else break;}return s;}
 function pagesInDays(n){const c=new Date();c.setDate(c.getDate()-n);return db.logs.filter(l=>new Date(l.date+'T12:00:00')>=c).reduce((s,l)=>s+l.pages,0);}
 function pagesInRange(from,to){const now=new Date();const a=new Date(now);a.setDate(now.getDate()-from);const b=new Date(now);b.setDate(now.getDate()-to);return db.logs.filter(l=>{const d=new Date(l.date+'T12:00:00');return d>=a&&d<b;}).reduce((s,l)=>s+l.pages,0);}
 function calcSpeed(){const p=db.logs.reduce((s,l)=>s+l.pages,0),m=db.logs.reduce((s,l)=>s+l.minutes,0);return m>0?Math.round(p/(m/60)):0;}
