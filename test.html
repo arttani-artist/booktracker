@@ -88,7 +88,7 @@
 
 /* ── RESET & BASE ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; }
+body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; padding-bottom: 48px; }
 ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
 
 /* ── LAYOUT ── */
@@ -273,16 +273,46 @@ textarea { resize: vertical; line-height: 1.5; }
 .pending-chip { font-size: 10px; background: var(--accent-bg); color: var(--accent); padding: 2px 7px; border-radius: 10px; }
 
 /* ── WORM CARDS ── */
-.worm-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; }
-.worm-display { text-align: center; flex-shrink: 0; width: 64px; }
-.worm-hat { font-size: 18px; line-height: 1.2; min-height: 22px; }
-.worm-face { font-size: 13px; color: var(--text2); letter-spacing: 2px; line-height: 1.2; }
-.worm-body-row { font-size: 14px; line-height: 1.4; }
+.worm-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; }
+.worm-svg-display { width: 90px; flex-shrink: 0; }
+.worm-svg-display svg { width: 100%; height: auto; }
 .worm-info { flex: 1; }
-.worm-name-display { font-size: 14px; font-weight: 500; color: var(--text); }
-.worm-hp { font-size: 10px; letter-spacing: 1px; margin-top: 4px; }
+.worm-name-display { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
 
-/* ── SUGGESTION ITEMS ── */
+/* ── WORM TEMPLATES ── */
+.worm-template-pick { border: 2px solid var(--border2); border-radius: 10px; padding: 8px; cursor: pointer; transition: border-color .12s, background .12s; background: var(--bg3); }
+.worm-template-pick:hover { border-color: var(--accent); background: var(--accent-bg); }
+.worm-template-pick.selected { border-color: var(--accent); background: var(--accent-bg); }
+.worm-template-pick svg { width: 100%; height: auto; display: block; }
+
+/* ── PIXEL EDITOR ── */
+.pixel-swatch { width: 22px; height: 22px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: transform .1s; }
+.pixel-swatch:hover { transform: scale(1.15); }
+.pixel-swatch.active { border-color: var(--text); transform: scale(1.15); }
+#pixel-canvas { display: block; width: 100%; max-width: 320px; touch-action: none; }
+#pixel-preview { display: block; touch-action: none; }
+
+/* ── CRAWL BAR ── */
+@keyframes wormCrawl {
+  from { left: -80px; }
+  to   { left: 100%; }
+}
+.crawl-worm svg { width: 100%; height: 100%; }
+
+/* ── BOOK SEARCH ── */
+.book-search-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.book-search-item:last-child { border-bottom: none; }
+.book-search-cover { width: 36px; height: 48px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.book-search-cover-placeholder { width: 36px; height: 48px; background: var(--bg4); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+/* ── PLAYLIST PRESETS ── */
+.playlist-preset-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 10px; cursor: pointer; text-align: left; transition: all .12s; font-family: 'Geist', sans-serif; }
+.playlist-preset-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
+.playlist-preset-icon { font-size: 20px; margin-bottom: 5px; }
+.playlist-preset-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.playlist-preset-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── SUGGEST ITEMS ── */
 .suggest-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
 .suggest-item:last-child { border-bottom: none; }
 
@@ -649,64 +679,37 @@ textarea { resize: vertical; line-height: 1.5; }
 
       <!-- DISCOVER -->
       <div id="page-discover" class="page">
-        <div class="page-header"><h1 class="page-title">discover</h1><p class="page-sub ui-text">books & music for your reading sessions</p></div>
+        <div class="page-header"><h1 class="page-title">discover</h1><p class="page-sub ui-text">find books &amp; music for your reading sessions</p></div>
 
-        <!-- Book Suggestions -->
         <div class="card">
-          <div class="card-title">✨ book suggestions</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">ai picks based on your reading history and ratings</p>
-          <button id="suggest-book-btn" class="btn btn-primary" onclick="fetchBookSuggestions()">✨ suggest books</button>
-          <div id="book-suggestions-out" style="margin-top:14px"></div>
-        </div>
-
-        <!-- Playlist Suggestions -->
-        <div class="card">
-          <div class="card-title">🎵 reading playlist</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">ai-curated classical music for your reading sessions</p>
-          <div class="form-row2" style="margin-bottom:12px">
-            <div class="form-group">
-              <label>mood</label>
-              <select id="playlist-mood">
-                <option value="focus">deep focus</option>
-                <option value="cozy">cozy & calm</option>
-                <option value="epic">epic & dramatic</option>
-                <option value="melancholic">melancholic</option>
-                <option value="uplifting">uplifting</option>
-              </select>
-            </div>
+          <div class="card-title">🔍 find books</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">search OpenLibrary for any book and add it straight to your library</p>
+          <div class="inline-flex" style="margin-bottom:4px">
+            <input id="book-search-input" placeholder="title, author, or ISBN…" style="flex:1" onkeydown="if(event.key==='Enter')searchBooks()" />
+            <button class="btn btn-primary" onclick="searchBooks()">search</button>
           </div>
-          <button id="suggest-playlist-btn" class="btn btn-primary" onclick="fetchPlaylistSuggestions()">🎵 suggest playlist</button>
-          <div id="playlist-suggestions-out" style="margin-top:14px"></div>
+          <div id="book-search-status" style="font-size:11px;color:var(--text3);margin-bottom:8px;min-height:16px"></div>
+          <div id="book-search-results"></div>
         </div>
 
-        <!-- Spotify Embed -->
         <div class="card">
-          <div class="card-title">🎧 spotify</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">paste a spotify playlist or album URL to listen while you read</p>
-          <div class="inline-flex" style="margin-bottom:12px">
-            <input id="spotify-url-input" placeholder="https://open.spotify.com/playlist/..." style="flex:1" />
-            <button class="btn btn-primary" onclick="loadSpotifyEmbed()">load</button>
+          <div class="card-title">🎵 reading playlists</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">curated spotify playlists for every reading mood — pick one or paste your own link</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('deep-focus')"><div class="playlist-preset-icon">🎹</div><div class="playlist-preset-name">deep focus</div><div class="playlist-preset-sub">piano &amp; strings</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('cozy')"><div class="playlist-preset-icon">☕</div><div class="playlist-preset-name">cozy reading</div><div class="playlist-preset-sub">warm &amp; calm</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('epic')"><div class="playlist-preset-icon">⚔️</div><div class="playlist-preset-name">epic &amp; dramatic</div><div class="playlist-preset-sub">orchestral power</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('night')"><div class="playlist-preset-icon">🌙</div><div class="playlist-preset-name">late night</div><div class="playlist-preset-sub">ambient &amp; slow</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('baroque')"><div class="playlist-preset-icon">🎻</div><div class="playlist-preset-name">baroque</div><div class="playlist-preset-sub">bach &amp; vivaldi</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('lofi')"><div class="playlist-preset-icon">📻</div><div class="playlist-preset-name">lo-fi study</div><div class="playlist-preset-sub">chill beats</div></button>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input id="spotify-url-input" placeholder="or paste your own spotify link…" style="flex:1" onkeydown="if(event.key==='Enter')loadSpotifyEmbed()" />
+            <button class="btn btn-ghost" onclick="loadSpotifyEmbed()">load</button>
           </div>
           <div id="spotify-embed-wrap">
-            <iframe id="spotify-iframe"
-              style="border-radius:12px;display:none"
-              src=""
-              width="100%" height="352"
-              frameBorder="0"
-              allowfullscreen=""
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"></iframe>
-            <div id="spotify-placeholder" style="background:var(--bg3);border-radius:10px;padding:24px;text-align:center;color:var(--text3);font-size:13px">
-              🎵 paste a spotify link above to embed a playlist
-            </div>
-          </div>
-          <div style="margin-top:10px">
-            <p style="font-size:11px;color:var(--text3)">quick picks:</p>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-              <button class="btn btn-ghost btn-sm" onclick="loadPresetPlaylist('classical-focus')">classical focus</button>
-              <button class="btn btn-ghost btn-sm" onclick="loadPresetPlaylist('study-music')">study music</button>
-              <button class="btn btn-ghost btn-sm" onclick="loadPresetPlaylist('piano')">solo piano</button>
-            </div>
+            <iframe id="spotify-iframe" style="border-radius:12px;display:none" src="" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            <div id="spotify-placeholder" style="background:var(--bg3);border-radius:10px;padding:20px;text-align:center;color:var(--text3);font-size:13px">pick a mood above or paste a spotify link 🎵</div>
           </div>
         </div>
       </div>
@@ -715,73 +718,65 @@ textarea { resize: vertical; line-height: 1.5; }
       <div id="page-worms" class="page">
         <div class="page-header">
           <h1 class="page-title">my bookworms 🐛</h1>
-          <p class="page-sub ui-text">earn food by reading · feed your worms to keep them happy</p>
+          <p class="page-sub ui-text">earn food every 10 pages · read 100 pages in a day to unlock custom pixel worms</p>
         </div>
 
-        <div class="metrics-row" style="grid-template-columns:1fr 1fr">
+        <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
           <div class="metric hi">
             <div class="metric-label">food bank 🍎</div>
             <div class="metric-val" id="worm-food-count">0</div>
-            <div class="metric-sub">earned from reading</div>
+            <div class="metric-sub">+1 per 10 pages</div>
           </div>
           <div class="metric">
-            <div class="metric-label">total pages read</div>
-            <div class="metric-val" id="worm-total-pages">0</div>
-            <div class="metric-sub">+1 food per 10 pages</div>
+            <div class="metric-label">worms</div>
+            <div class="metric-val" id="worm-count">0</div>
+            <div class="metric-sub">crawling around</div>
+          </div>
+          <div class="metric" id="pixel-unlock-metric">
+            <div class="metric-label">today's pages</div>
+            <div class="metric-val" id="worm-today-pages">0</div>
+            <div class="metric-sub" id="pixel-unlock-sub">100 to unlock pixel art</div>
           </div>
         </div>
 
-        <!-- Design worm -->
-        <div class="card">
-          <div class="card-title">design a bookworm</div>
-          <div class="form-row3">
-            <div class="form-group">
-              <label>name</label>
-              <input id="worm-name" placeholder="wormie, pagie..." />
-            </div>
-            <div class="form-group">
-              <label>body colour</label>
-              <select id="worm-body">
-                <option value="🟤">🟤 brown</option>
-                <option value="🟠">🟠 orange</option>
-                <option value="🟡">🟡 yellow</option>
-                <option value="🟢">🟢 green</option>
-                <option value="🔵">🔵 blue</option>
-                <option value="🟣">🟣 purple</option>
-                <option value="🔴">🔴 red</option>
-                <option value="⚪">⚪ white</option>
-                <option value="⚫">⚫ black</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>hat</label>
-              <select id="worm-hat">
-                <option value="none">none</option>
-                <option value="🎩">🎩 top hat</option>
-                <option value="👑">👑 crown</option>
-                <option value="🎓">🎓 grad cap</option>
-                <option value="🪖">🪖 helmet</option>
-                <option value="🌂">🌂 brolly</option>
-                <option value="🎀">🎀 bow</option>
-                <option value="🌸">🌸 flower</option>
-                <option value="🍄">🍄 mushroom</option>
-              </select>
+        <!-- Hatch from template -->
+        <div class="card" id="worm-hatch-card">
+          <div class="card-title">hatch a bookworm</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px">choose a template and name your worm</p>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px" id="worm-template-grid"></div>
+          <div class="form-row2">
+            <div class="form-group"><label>name your worm</label><input id="worm-name" placeholder="pagie, wormy, reedy…" /></div>
+            <div style="display:flex;align-items:flex-end;padding-bottom:12px">
+              <button class="btn btn-primary" onclick="addWorm()">🐛 hatch!</button>
             </div>
           </div>
-          <div class="form-group">
-            <label>eye style</label>
-            <select id="worm-eyes">
-              <option value="◉◉">◉◉ big eyes</option>
-              <option value="ʘʘ">ʘʘ round</option>
-              <option value="••">•• dots</option>
-              <option value="◕◕">◕◕ happy</option>
-              <option value="^^">^^ closed</option>
-              <option value="@@">@@ dizzy</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" onclick="addWorm()">🐛 hatch worm</button>
+          <div id="selected-template-preview" style="font-size:12px;color:var(--text3);margin-top:4px"></div>
         </div>
 
+        <!-- Pixel art editor (unlocked at 100 pages/day) -->
+        <div class="card" id="pixel-editor-card" style="display:none">
+          <div class="card-title">🎨 pixel worm editor <span style="color:var(--green);font-size:10px">· unlocked!</span></div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">you read 100 pages today — draw your own worm! use the palette then click pixels to paint.</p>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+            <div>
+              <div id="pixel-palette" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;max-width:160px"></div>
+              <canvas id="pixel-canvas" width="160" height="80" style="border:1px solid var(--border2);border-radius:6px;cursor:crosshair;image-rendering:pixelated"></canvas>
+              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="clearPixelCanvas()">clear</button>
+                <button class="btn btn-ghost btn-sm" onclick="fillPixelCanvas()">fill</button>
+                <button class="btn btn-ghost btn-sm" id="eraser-btn" onclick="toggleEraser()">eraser</button>
+              </div>
+            </div>
+            <div style="flex:1;min-width:160px">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:8px">preview (animated)</div>
+              <canvas id="pixel-preview" width="96" height="48" style="border:1px solid var(--border2);border-radius:6px;image-rendering:pixelated"></canvas>
+              <div class="form-group" style="margin-top:10px"><label>worm name</label><input id="pixel-worm-name" placeholder="my custom worm" /></div>
+              <button class="btn btn-primary btn-full" onclick="savePixelWorm()">🐛 hatch pixel worm</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Worm list -->
         <div id="worm-list"></div>
       </div>
 
@@ -797,6 +792,9 @@ textarea { resize: vertical; line-height: 1.5; }
     </div>
   </div>
 </div>
+
+<!-- WORM CRAWL BAR -->
+<div id="worm-crawl-bar" style="position:fixed;bottom:0;left:0;right:0;height:44px;pointer-events:none;z-index:90;overflow:hidden"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -878,6 +876,7 @@ function showApp() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   renderAll();
   loadFriends();
+  setTimeout(function(){ initWorms(); renderCrawlBar(); }, 200);
 }
 function toggleAuthMode() {
   authMode = authMode === 'signin' ? 'signup' : 'signin';
@@ -1586,131 +1585,332 @@ function renderWorms() {
 
 // ── SPOTIFY EMBED ──
 const PRESET_PLAYLISTS = {
-  'classical-focus': '37i9dQZF1DWZeKCadgRdKQ',
-  'study-music':     '37i9dQZF1DX8NTLI2TtZa6',
-  'piano':           '37i9dQZF1DX4sWSpwq3LiO',
+  'deep-focus': '37i9dQZF1DWZeKCadgRdKQ',
+  'cozy':       '37i9dQZF1DX4sWSpwq3LiO',
+  'epic':       '37i9dQZF1DX1s9knjP51Oa',
+  'night':      '37i9dQZF1DX3Ogo9pFvBkY',
+  'baroque':    '37i9dQZF1DWWEJlAGA9gs0',
+  'lofi':       '37i9dQZF1DX8NTLI2TtZa6',
 };
-
 function loadSpotifyEmbed() {
   const raw = document.getElementById('spotify-url-input').value.trim();
-  embedSpotify(raw);
+  if(raw) embedSpotify(raw);
 }
-
 function loadPresetPlaylist(key) {
   const id = PRESET_PLAYLISTS[key];
-  if(id) embedSpotify(`https://open.spotify.com/playlist/${id}`);
+  if(id) embedSpotify('https://open.spotify.com/playlist/'+id);
 }
-
 function embedSpotify(url) {
   if(!url) return;
-  // Extract type and id from spotify URL
   const match = url.match(/spotify\.com\/(playlist|album|track|artist)\/([A-Za-z0-9]+)/);
   if(!match){toast('paste a valid spotify link');return;}
   const [,type,id] = match;
-  const embedUrl = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
   const iframe = document.getElementById('spotify-iframe');
-  iframe.src = embedUrl;
+  iframe.src = 'https://open.spotify.com/embed/'+type+'/'+id+'?utm_source=generator&theme=0';
   iframe.style.display = 'block';
   document.getElementById('spotify-placeholder').style.display = 'none';
 }
-async function fetchBookSuggestions() {
-  const btn = document.getElementById('suggest-book-btn');
-  const out = document.getElementById('book-suggestions-out');
-  btn.disabled = true; btn.textContent = 'thinking...';
-  out.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">✨ generating suggestions...</div>';
 
-  const genres = [...new Set(db.books.map(b=>b.genre).filter(Boolean))].slice(0,5);
-  const faves  = db.books.filter(b=>b.status==='done'&&b.rating>=4).map(b=>b.title).slice(0,5);
-  const authors= [...new Set(db.books.filter(b=>b.rating>=4).map(b=>b.author).filter(Boolean))].slice(0,4);
-  const already= db.books.map(b=>b.title.toLowerCase());
-
-  const prompt = `You are a book recommendation expert. Based on this reader's profile, suggest 5 books they'd love.
-
-Genres they enjoy: ${genres.length?genres.join(', '):'varied'}
-Favorite books (rated 4-5★): ${faves.length?faves.join(', '):'not enough data yet'}
-Favorite authors: ${authors.length?authors.join(', '):'varied'}
-Books already in their library: ${already.slice(0,10).join(', ')||'none yet'}
-
-Return ONLY a JSON array (no markdown, no extra text) with exactly 5 objects like:
-[{"title":"Book Title","author":"Author Name","why":"one sentence why they'd love it","genre":"Genre"}]`;
-
+// ── OPENLIBRARY BOOK SEARCH ──
+async function searchBooks() {
+  const q = document.getElementById('book-search-input').value.trim();
+  if(!q) return;
+  const statusEl = document.getElementById('book-search-status');
+  const resultsEl = document.getElementById('book-search-results');
+  statusEl.textContent = 'searching\u2026';
+  resultsEl.innerHTML = '';
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
+    const res = await fetch('https://openlibrary.org/search.json?q='+encodeURIComponent(q)+'&limit=8&fields=title,author_name,number_of_pages_median,cover_i,first_publish_year,key');
     const data = await res.json();
-    const text = data.content?.find(c=>c.type==='text')?.text||'[]';
-    const clean = text.replace(/```json|```/g,'').trim();
-    const books = JSON.parse(clean);
-    out.innerHTML = books.map(b=>`
-      <div class="suggest-item">
-        <div style="font-size:14px;font-weight:500;color:var(--text)">${esc(b.title)}</div>
-        <div style="font-size:12px;color:var(--accent);margin-top:1px">${esc(b.author)} · <span style="color:var(--text3)">${esc(b.genre)}</span></div>
-        <div style="font-size:12px;color:var(--text2);margin-top:4px;font-style:italic">${esc(b.why)}</div>
-        <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="quickAddSuggested('${esc(b.title).replace(/'/g,"\\'")}','${esc(b.author).replace(/'/g,"\\'")}')">+ add to library</button>
-      </div>`).join('');
+    if(!data.docs||!data.docs.length){statusEl.textContent='no results found';return;}
+    statusEl.textContent = data.numFound.toLocaleString()+' results';
+    resultsEl.innerHTML = data.docs.map(function(d){
+      var title = esc(d.title||'Unknown');
+      var author = esc((d.author_name||[]).slice(0,2).join(', ')||'Unknown author');
+      var pages = d.number_of_pages_median||0;
+      var year = d.first_publish_year||'';
+      var cover = d.cover_i ? 'https://covers.openlibrary.org/b/id/'+d.cover_i+'-S.jpg' : '';
+      var alreadyHave = db.books.some(function(b){return b.title.toLowerCase()===d.title.toLowerCase();});
+      var titleEscJs = (d.title||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      var authorEscJs = ((d.author_name||[]).slice(0,2).join(', ')||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<div class="book-search-item">'
+        +(cover?'<img src="'+cover+'" alt="" class="book-search-cover" onerror="this.style.display=\'none\'" />':'<div class="book-search-cover-placeholder">\uD83D\uDCD6</div>')
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+title+'</div>'
+        +'<div style="font-size:11px;color:var(--accent)">'+author+'</div>'
+        +'<div style="font-size:10px;color:var(--text3)">'+(year?year+' \u00B7 ':'')+(pages?pages+' pages':'')+'</div>'
+        +'</div>'
+        +'<div style="flex-shrink:0">'
+        +(alreadyHave
+          ? '<span style="font-size:11px;color:var(--text3)">in library</span>'
+          : '<button class="btn btn-ghost btn-sm" onclick="addSearchedBook(\''+titleEscJs+'\',\''+authorEscJs+'\','+pages+')">+ add</button>')
+        +'</div></div>';
+    }).join('');
   } catch(e) {
-    out.innerHTML = '<div style="color:var(--red);font-size:12px;padding:8px">could not load suggestions — try again</div>';
+    statusEl.textContent = 'search failed \u2014 check your connection';
   }
-  btn.disabled = false; btn.textContent = '✨ suggest books';
+}
+function addSearchedBook(title, author, pages) {
+  db.books.push({id:Date.now(),title:title,author:author,pages:pages||0,genre:'',series:'',seriesNum:0,status:'want',color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:0,startDate:'',finishedDate:'',addedDate:todayStr()});
+  save(); renderAll(); toast('"'+title+'" added to want to read!');
 }
 
-function quickAddSuggested(title, author) {
-  db.books.push({id:Date.now(),title,author,pages:0,genre:'',series:'',seriesNum:0,status:'want',color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:0,startDate:'',finishedDate:'',addedDate:todayStr()});
-  save(); renderAll(); toast(`"${title}" added to want to read!`);
+// ── WORM TEMPLATES ──
+const WORM_TEMPLATES = [
+  { id:'classic', name:'classic', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="20" rx="18" ry="14" fill="#7ecb6e"/><ellipse cx="36" cy="22" rx="14" ry="11" fill="#6dc05c"/><ellipse cx="50" cy="22" rx="13" ry="10" fill="#7ecb6e"/><ellipse cx="63" cy="21" rx="11" ry="9" fill="#6dc05c"/><ellipse cx="73" cy="20" rx="8" ry="7" fill="#7ecb6e"/><circle cx="13" cy="17" r="3.5" fill="white"/><circle cx="13" cy="17" r="2" fill="#1a1a1a"/><circle cx="22" cy="15" r="3.5" fill="white"/><circle cx="22" cy="15" r="2" fill="#1a1a1a"/><path d="M14 25 Q18 29 22 25" stroke="#3a7a30" stroke-width="1.5" fill="none" stroke-linecap="round"/><line x1="12" y1="8" x2="10" y2="2" stroke="#5ab048" stroke-width="1.5"/><circle cx="10" cy="2" r="2" fill="#e87070"/></svg>' },
+  { id:'chubby', name:'chubby', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="22" rx="17" ry="16" fill="#e8a87c"/><ellipse cx="33" cy="24" rx="15" ry="13" fill="#d9956a"/><ellipse cx="48" cy="24" rx="14" ry="12" fill="#e8a87c"/><ellipse cx="62" cy="23" rx="12" ry="11" fill="#d9956a"/><ellipse cx="73" cy="22" rx="9" ry="8" fill="#e8a87c"/><circle cx="11" cy="18" r="4" fill="white"/><circle cx="11" cy="18" r="2.2" fill="#1a1a1a"/><circle cx="21" cy="16" r="4" fill="white"/><circle cx="21" cy="16" r="2.2" fill="#1a1a1a"/><path d="M12 27 Q17 32 22 27" stroke="#b07050" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="17" cy="30" rx="4" ry="2" fill="#ffb4a0" opacity="0.6"/></svg>' },
+  { id:'cool', name:'cool', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="21" rx="17" ry="13" fill="#7ab3e0"/><ellipse cx="34" cy="23" rx="14" ry="11" fill="#6aa0cc"/><ellipse cx="48" cy="23" rx="13" ry="10" fill="#7ab3e0"/><ellipse cx="62" cy="22" rx="11" ry="9" fill="#6aa0cc"/><ellipse cx="73" cy="21" rx="8" ry="7" fill="#7ab3e0"/><rect x="7" y="14" width="10" height="6" rx="3" fill="#1a1a1a"/><rect x="19" y="12" width="10" height="6" rx="3" fill="#1a1a1a"/><rect x="8" y="15" width="8" height="4" rx="2" fill="#4488cc" opacity="0.5"/><rect x="20" y="13" width="8" height="4" rx="2" fill="#4488cc" opacity="0.5"/><line x1="17" y1="17" x2="19" y2="15" stroke="#1a1a1a" stroke-width="1.5"/><path d="M12 26 Q17 28 22 26" stroke="#4a7aaa" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>' },
+  { id:'fancy', name:'fancy', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="21" rx="17" ry="13" fill="#b39ddb"/><ellipse cx="34" cy="23" rx="14" ry="11" fill="#9f88c8"/><ellipse cx="48" cy="23" rx="13" ry="10" fill="#b39ddb"/><ellipse cx="62" cy="22" rx="11" ry="9" fill="#9f88c8"/><ellipse cx="73" cy="21" rx="8" ry="7" fill="#b39ddb"/><circle cx="12" cy="17" r="3.5" fill="white"/><circle cx="12" cy="17" r="2" fill="#1a1a1a"/><circle cx="21" cy="15" r="3.5" fill="white"/><circle cx="21" cy="15" r="2" fill="#1a1a1a"/><path d="M12 25 Q17 30 22 25" stroke="#7060a8" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="10" y="2" width="18" height="7" rx="3.5" fill="#1a1a1a"/><rect x="9" y="6" width="20" height="3" rx="1.5" fill="#1a1a1a"/></svg>' },
+  { id:'sleepy', name:'sleepy', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="23" rx="17" ry="14" fill="#88c4a0"/><ellipse cx="34" cy="25" rx="14" ry="12" fill="#72b08c"/><ellipse cx="48" cy="25" rx="13" ry="11" fill="#88c4a0"/><ellipse cx="62" cy="24" rx="11" ry="10" fill="#72b08c"/><ellipse cx="73" cy="23" rx="8" ry="7" fill="#88c4a0"/><path d="M9 17 Q12 15 15 17" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M19 15 Q22 13 25 15" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 26 Q17 29 22 26" stroke="#4a9068" stroke-width="1.5" fill="none" stroke-linecap="round"/><text x="27" y="12" font-size="7" fill="#88c4a0">z</text><text x="33" y="7" font-size="9" fill="#88c4a0" opacity="0.7">z</text></svg>' },
+  { id:'grumpy', name:'grumpy', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="21" rx="17" ry="13" fill="#e07070"/><ellipse cx="34" cy="23" rx="14" ry="11" fill="#cc5c5c"/><ellipse cx="48" cy="23" rx="13" ry="10" fill="#e07070"/><ellipse cx="62" cy="22" rx="11" ry="9" fill="#cc5c5c"/><ellipse cx="73" cy="21" rx="8" ry="7" fill="#e07070"/><circle cx="11" cy="17" r="3.5" fill="white"/><circle cx="12" cy="18" r="2" fill="#1a1a1a"/><circle cx="21" cy="15" r="3.5" fill="white"/><circle cx="22" cy="16" r="2" fill="#1a1a1a"/><path d="M8 12 Q12 15 16 12" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M18 10 Q22 13 26 10" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 27 Q17 23 22 27" stroke="#aa4040" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' },
+];
+
+let selectedTemplateId = WORM_TEMPLATES[0].id;
+let pixelEraserOn = false;
+let pixelColor = '#7ecb6e';
+const PIXEL_COLS = 20, PIXEL_ROWS = 10;
+let pixelData = Array.from({length:PIXEL_ROWS}, function(){return Array(PIXEL_COLS).fill(null);});
+const PIXEL_PALETTE_COLORS = ['#7ecb6e','#e8a87c','#7ab3e0','#b39ddb','#e07070','#f0c060','#88c4a0','#d4a0b8','#80b8c0','#c9a96e','#ffffff','#aaaaaa','#555555','#1a1a1a','#ffaaaa','#aaffaa'];
+
+function initWorms() {
+  if(!db.worms) db.worms = { list:[], totalPagesMilestone:0, hunger:0 };
+  if(db.worms.hunger==null) db.worms.hunger = 0;
 }
 
-// ── PLAYLIST SUGGESTIONS (AI-powered) ──
-async function fetchPlaylistSuggestions() {
-  const btn = document.getElementById('suggest-playlist-btn');
-  const out = document.getElementById('playlist-suggestions-out');
-  btn.disabled = true; btn.textContent = 'composing...';
-  out.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">🎵 crafting your reading playlist...</div>';
-
-  const currentBook = db.books.filter(b=>b.status==='reading')[0];
-  const genres = [...new Set(db.books.map(b=>b.genre).filter(Boolean))].slice(0,4);
-  const mood = document.getElementById('playlist-mood')?.value||'focus';
-
-  const prompt = `You are a classical music curator. Suggest a reading playlist of 6 pieces for someone who reads ${genres.length?genres.join(', '):' various genres'}.${currentBook?` They are currently reading "${currentBook.title}" by ${currentBook.author}.`:''} Mood requested: ${mood}.
-
-Return ONLY a JSON array (no markdown, no extra text):
-[{"title":"Piece Title","composer":"Composer Name","why":"one sentence why it suits reading","duration":"approx duration","spotifySearch":"search query for spotify"}]`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.find(c=>c.type==='text')?.text||'[]';
-    const clean = text.replace(/```json|```/g,'').trim();
-    const tracks = JSON.parse(clean);
-    out.innerHTML = tracks.map((t,i)=>`
-      <div class="suggest-item" style="display:flex;gap:10px;align-items:flex-start">
-        <div style="font-size:18px;color:var(--text3);width:20px;flex-shrink:0;margin-top:1px">${i+1}</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:500;color:var(--text)">${esc(t.title)}</div>
-          <div style="font-size:12px;color:var(--accent)">${esc(t.composer)} · <span style="color:var(--text3)">${esc(t.duration)}</span></div>
-          <div style="font-size:11px;color:var(--text2);margin-top:3px;font-style:italic">${esc(t.why)}</div>
-          <a href="https://open.spotify.com/search/${encodeURIComponent(t.spotifySearch)}" target="_blank" style="font-size:11px;color:var(--green);text-decoration:none;margin-top:4px;display:inline-block">▶ find on spotify →</a>
-        </div>
-      </div>`).join('');
-  } catch(e) {
-    out.innerHTML = '<div style="color:var(--red);font-size:12px;padding:8px">could not load playlist — try again</div>';
+function checkWormReward() {
+  initWorms();
+  const totalPages = db.logs.reduce(function(s,l){return s+l.pages;},0);
+  const newMilestones = Math.floor(totalPages/10);
+  const oldMilestones = db.worms.totalPagesMilestone||0;
+  if(newMilestones > oldMilestones) {
+    const earned = newMilestones - oldMilestones;
+    db.worms.totalPagesMilestone = newMilestones;
+    db.worms.hunger = (db.worms.hunger||0) + earned;
+    toast('\uD83D\uDC1B +'+earned+' worm food earned!');
+    save();
+    if(document.getElementById('page-worms')&&document.getElementById('page-worms').classList.contains('active')) renderWorms();
   }
-  btn.disabled = false; btn.textContent = '🎵 suggest playlist';
 }
+
+function buildTemplateGrid() {
+  const grid = document.getElementById('worm-template-grid');
+  if(!grid) return;
+  grid.innerHTML = WORM_TEMPLATES.map(function(t){
+    return '<div class="worm-template-pick'+(t.id===selectedTemplateId?' selected':'')+'" onclick="selectTemplate(\''+t.id+'\')" title="'+t.name+'">'
+      +t.svg
+      +'<div style="font-size:10px;color:var(--text3);text-align:center;margin-top:3px">'+t.name+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function selectTemplate(id) {
+  selectedTemplateId = id;
+  buildTemplateGrid();
+}
+
+function addWorm() {
+  initWorms();
+  const name = document.getElementById('worm-name').value.trim()||'wormie';
+  const t = WORM_TEMPLATES.find(function(x){return x.id===selectedTemplateId;})||WORM_TEMPLATES[0];
+  const newWorm = {id:Date.now(),name:name,templateId:t.id,pixelData:null,happiness:7,timesFed:0,createdDate:todayStr()};
+  db.worms.list.push(newWorm);
+  document.getElementById('worm-name').value='';
+  save(); renderWorms(); toast(name+' joined your library! \uD83D\uDC1B');
+}
+
+function feedWorm(id) {
+  initWorms();
+  const w = db.worms.list.find(function(x){return x.id===id;});
+  if(!w) return;
+  if((db.worms.hunger||0)<1){toast('read 10 more pages to earn food! \uD83D\uDCDA');return;}
+  db.worms.hunger = Math.max(0,(db.worms.hunger||0)-1);
+  w.timesFed = (w.timesFed||0)+1;
+  w.happiness = Math.min(10,(w.happiness||5)+2);
+  save(); renderWorms(); toast(w.name+' says yum! \uD83D\uDC1B');
+}
+
+function deleteWorm(id) {
+  if(!confirm('release this worm back into the wild?')) return;
+  initWorms();
+  db.worms.list = db.worms.list.filter(function(w){return w.id!==id;});
+  const el = document.querySelector('.crawl-worm[data-worm-id="'+id+'"]');
+  if(el) el.remove();
+  save(); renderWorms();
+}
+
+function renderWorms() {
+  initWorms();
+  const totalPages = db.logs.reduce(function(s,l){return s+l.pages;},0);
+  const todayPages = db.logs.filter(function(l){return l.date===todayStr();}).reduce(function(s,l){return s+l.pages;},0);
+  const foodEl = document.getElementById('worm-food-count');
+  const countEl = document.getElementById('worm-count');
+  const todayEl = document.getElementById('worm-today-pages');
+  const subEl   = document.getElementById('pixel-unlock-sub');
+  if(foodEl)  foodEl.textContent  = db.worms.hunger||0;
+  if(countEl) countEl.textContent = db.worms.list.length;
+  if(todayEl) todayEl.textContent = todayPages;
+  const pixelUnlocked = todayPages >= 100;
+  if(subEl) subEl.textContent = pixelUnlocked ? '\uD83C\uDFA8 pixel art unlocked!' : (100-todayPages)+' more to unlock';
+  const pixelCard = document.getElementById('pixel-editor-card');
+  if(pixelCard) { pixelCard.style.display = pixelUnlocked ? 'block' : 'none'; if(pixelUnlocked) initPixelEditor(); }
+  buildTemplateGrid();
+  renderCrawlBar();
+  const el = document.getElementById('worm-list');
+  if(!el) return;
+  if(!db.worms.list.length){el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">\uD83D\uDC1B</div><p>hatch your first bookworm above!</p></div></div>';return;}
+  el.innerHTML = db.worms.list.map(function(w){
+    const hp = Math.min(10,Math.max(0,w.happiness||5));
+    const hpFill = Math.round(hp/10*100);
+    const mood = hp>=8?'happy \uD83D\uDE0A':hp>=5?'content \uD83D\uDE10':'hungry \uD83D\uDE22';
+    const t = WORM_TEMPLATES.find(function(x){return x.id===w.templateId;})||WORM_TEMPLATES[0];
+    const wormSvg = w.pixelData ? pixelDataToImg(w.pixelData) : t.svg;
+    return '<div class="worm-card">'
+      +'<div class="worm-svg-display">'+wormSvg+'</div>'
+      +'<div class="worm-info">'
+      +'<div class="worm-name-display">'+esc(w.name)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+mood+' \u00B7 fed '+(w.timesFed||0)+'\u00D7 \u00B7 since '+fmtDate(w.createdDate)+'</div>'
+      +'<div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">happiness '+hp+'/10</div>'
+      +'<div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+hpFill+'%;background:'+(hp>=7?'var(--green)':hp>=4?'var(--accent)':'var(--red)')+';border-radius:3px;transition:width .4s"></div></div></div>'
+      +'<div style="display:flex;gap:6px;margin-top:8px">'
+      +'<button class="btn btn-primary btn-sm" onclick="feedWorm('+w.id+')">\uD83C\uDF4E feed</button>'
+      +'<button class="btn btn-ghost btn-sm" onclick="deleteWorm('+w.id+')">release</button>'
+      +'</div></div></div>';
+  }).join('');
+}
+
+function pixelDataToImg(pd) {
+  const cw=8,ch=8;
+  const rects=[];
+  for(var r=0;r<PIXEL_ROWS;r++) for(var c=0;c<PIXEL_COLS;c++) {
+    if(pd[r]&&pd[r][c]) rects.push('<rect x="'+(c*cw)+'" y="'+(r*ch)+'" width="'+cw+'" height="'+ch+'" fill="'+pd[r][c]+'"/>');
+  }
+  return '<svg viewBox="0 0 '+(PIXEL_COLS*cw)+' '+(PIXEL_ROWS*ch)+'" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">'+rects.join('')+'</svg>';
+}
+
+// ── PIXEL EDITOR ──
+let pixelEditorInited = false;
+function initPixelEditor() {
+  if(pixelEditorInited) return;
+  pixelEditorInited = true;
+  const palette = document.getElementById('pixel-palette');
+  if(!palette) return;
+  palette.innerHTML = PIXEL_PALETTE_COLORS.map(function(c){
+    return '<div class="pixel-swatch'+(c===pixelColor?' active':'')+'" style="background:'+c+'" onclick="setPixelColor(\''+c+'\',this)"></div>';
+  }).join('');
+  drawPixelCanvas();
+  setTimeout(setupPixelCanvas, 50);
+}
+
+function setPixelColor(c, el) {
+  pixelColor = c; pixelEraserOn = false;
+  document.querySelectorAll('.pixel-swatch').forEach(function(s){s.classList.remove('active');});
+  if(el) el.classList.add('active');
+  const eb = document.getElementById('eraser-btn');
+  if(eb) eb.style.background='';
+}
+
+function toggleEraser() {
+  pixelEraserOn = !pixelEraserOn;
+  const btn = document.getElementById('eraser-btn');
+  if(btn) btn.style.background = pixelEraserOn ? 'var(--accent-bg)' : '';
+}
+
+function drawPixelCanvas() {
+  const canvas = document.getElementById('pixel-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cw = canvas.width/PIXEL_COLS, ch = canvas.height/PIXEL_ROWS;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='rgba(128,128,128,0.15)'; ctx.lineWidth=0.5;
+  for(var c=0;c<=PIXEL_COLS;c++){ctx.beginPath();ctx.moveTo(c*cw,0);ctx.lineTo(c*cw,canvas.height);ctx.stroke();}
+  for(var r=0;r<=PIXEL_ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*ch);ctx.lineTo(canvas.width,r*ch);ctx.stroke();}
+  for(var row=0;row<PIXEL_ROWS;row++) for(var col=0;col<PIXEL_COLS;col++) {
+    if(pixelData[row]&&pixelData[row][col]){ctx.fillStyle=pixelData[row][col];ctx.fillRect(col*cw+0.5,row*ch+0.5,cw-1,ch-1);}
+  }
+  drawPixelPreview();
+}
+
+function drawPixelPreview() {
+  const pv = document.getElementById('pixel-preview');
+  if(!pv) return;
+  const ctx = pv.getContext('2d');
+  const cw = pv.width/PIXEL_COLS, ch = pv.height/PIXEL_ROWS;
+  ctx.clearRect(0,0,pv.width,pv.height);
+  for(var r=0;r<PIXEL_ROWS;r++) for(var c=0;c<PIXEL_COLS;c++) {
+    if(pixelData[r]&&pixelData[r][c]){ctx.fillStyle=pixelData[r][c];ctx.fillRect(c*cw,r*ch,cw,ch);}
+  }
+}
+
+function getPixelRC(e, canvas) {
+  const rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+  const cx=e.touches?e.touches[0].clientX:e.clientX;
+  const cy=e.touches?e.touches[0].clientY:e.clientY;
+  return {c:Math.floor((cx-rect.left)*sx/(canvas.width/PIXEL_COLS)), r:Math.floor((cy-rect.top)*sy/(canvas.height/PIXEL_ROWS))};
+}
+
+let pixelPainting = false;
+function setupPixelCanvas() {
+  const canvas = document.getElementById('pixel-canvas');
+  if(!canvas||canvas._setup) return;
+  canvas._setup = true;
+  function paint(e){
+    e.preventDefault();
+    const p=getPixelRC(e,canvas);
+    if(p.r<0||p.r>=PIXEL_ROWS||p.c<0||p.c>=PIXEL_COLS) return;
+    pixelData[p.r][p.c] = pixelEraserOn ? null : pixelColor;
+    drawPixelCanvas();
+  }
+  canvas.addEventListener('mousedown',function(e){pixelPainting=true;paint(e);});
+  canvas.addEventListener('mousemove',function(e){if(pixelPainting)paint(e);});
+  canvas.addEventListener('mouseup',function(){pixelPainting=false;});
+  canvas.addEventListener('mouseleave',function(){pixelPainting=false;});
+  canvas.addEventListener('touchstart',function(e){pixelPainting=true;paint(e);},{passive:false});
+  canvas.addEventListener('touchmove',function(e){if(pixelPainting)paint(e);},{passive:false});
+  canvas.addEventListener('touchend',function(){pixelPainting=false;});
+}
+
+function clearPixelCanvas(){pixelData=Array.from({length:PIXEL_ROWS},function(){return Array(PIXEL_COLS).fill(null);});drawPixelCanvas();}
+function fillPixelCanvas(){pixelData=Array.from({length:PIXEL_ROWS},function(){return Array(PIXEL_COLS).fill(pixelColor);});drawPixelCanvas();}
+
+function savePixelWorm() {
+  initWorms();
+  const name = document.getElementById('pixel-worm-name').value.trim()||'pixel worm';
+  if(!pixelData.some(function(row){return row.some(function(p){return p;});})){toast('draw something first!');return;}
+  const savedData = pixelData.map(function(row){return row.slice();});
+  db.worms.list.push({id:Date.now(),name:name,templateId:null,pixelData:savedData,happiness:10,timesFed:0,createdDate:todayStr()});
+  clearPixelCanvas();
+  document.getElementById('pixel-worm-name').value='';
+  pixelEditorInited=false;
+  save(); renderWorms(); toast(name+' hatched! \uD83C\uDFA8\uD83D\uDC1B');
+}
+
+// ── WORM CRAWL BAR ──
+function renderCrawlBar() {
+  initWorms();
+  const bar = document.getElementById('worm-crawl-bar');
+  if(!bar) return;
+  if(!db.worms.list.length){bar.innerHTML='';return;}
+  const existingIds = new Set(Array.from(bar.querySelectorAll('.crawl-worm')).map(function(el){return +el.dataset.wormId;}));
+  db.worms.list.forEach(function(w){if(!existingIds.has(w.id)) spawnWormEl(bar,w);});
+  bar.querySelectorAll('.crawl-worm').forEach(function(el){if(!db.worms.list.find(function(w){return w.id===+el.dataset.wormId;})) el.remove();});
+}
+
+function spawnWormEl(bar, w) {
+  const t = WORM_TEMPLATES.find(function(x){return x.id===w.templateId;})||WORM_TEMPLATES[0];
+  const wormSvg = w.pixelData ? pixelDataToImg(w.pixelData) : t.svg;
+  const el = document.createElement('div');
+  el.className = 'crawl-worm';
+  el.dataset.wormId = w.id;
+  el.innerHTML = wormSvg;
+  el.title = w.name;
+  const speed = 20 + Math.random()*25;
+  const delay = -(Math.random()*speed);
+  const flip = Math.random()>0.5;
+  el.style.cssText = 'position:absolute;bottom:2px;width:72px;height:36px;transform:scaleX('+(flip?-1:1)+');animation:wormCrawl '+speed+'s '+delay+'s linear infinite;pointer-events:none;';
+  bar.appendChild(el);
+}
+
 
 boot();
 </script>
