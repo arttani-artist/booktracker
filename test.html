@@ -740,18 +740,42 @@ textarea { resize: vertical; line-height: 1.5; }
         </div>
 
         <!-- Hatch from template -->
-        <div class="card" id="worm-hatch-card">
+      <div class="card" id="worm-hatch-card">
           <div class="card-title">hatch a bookworm</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:14px">choose a template and name your worm</p>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px" id="worm-template-grid"></div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px">customize your worm, then give it a name</p>
+        
+          <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px">
+            <div id="worm-live-preview" style="width:180px;flex-shrink:0">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:6px">preview</div>
+              <div id="worm-preview-svg" style="background:var(--bg3);border-radius:10px;padding:10px;min-height:60px;display:flex;align-items:center;justify-content:center"></div>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <div class="form-group">
+                <label>body colour</label>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="worm-body-swatches"></div>
+              </div>
+              <div class="form-group">
+                <label>hat / accessory</label>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="worm-hat-swatches"></div>
+              </div>
+              <div class="form-group">
+                <label>eyes</label>
+                <select id="worm-eyes-select" onchange="updateWormPreview()" style="width:auto"></select>
+              </div>
+              <div class="form-group">
+                <label>length (segments)</label>
+                <div style="display:flex;gap:6px;margin-top:4px" id="worm-length-swatches"></div>
+              </div>
+            </div>
+          </div>
+        
           <div class="form-row2">
             <div class="form-group"><label>name your worm</label><input id="worm-name" placeholder="pagie, wormy, reedy…" /></div>
             <div style="display:flex;align-items:flex-end;padding-bottom:12px">
               <button class="btn btn-primary" onclick="addWorm()">🐛 hatch!</button>
             </div>
           </div>
-          <div id="selected-template-preview" style="font-size:12px;color:var(--text3);margin-top:4px"></div>
-        </div>
+      </div>
 
         <!-- Pixel art editor (unlocked at 100 pages/day) -->
         <div class="card" id="pixel-editor-card" style="display:none">
@@ -947,21 +971,26 @@ function applyPrefs() {
   const h = document.documentElement;
   h.setAttribute('data-theme',   prefs.theme);
   h.setAttribute('data-accent',  prefs.accent);
-  h.setAttribute('data-texture', prefs.texture);
   h.setAttribute('data-density', prefs.density);
   h.setAttribute('data-case',    prefs.textCase);
-  // Apply texture directly to body so it's visible
-  const textureStyles = {
-    'none':  { backgroundImage: 'none', backgroundSize: '' },
-    'paper': { backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E\")", backgroundSize: '200px 200px' },
-    'dots':  { backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb),0.15) 1px, transparent 1px)', backgroundSize: '24px 24px' },
-    'lines': { backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--accent-rgb),0.07) 39px, rgba(var(--accent-rgb),0.07) 40px)', backgroundSize: '' },
-    'grid':  { backgroundImage: 'linear-gradient(rgba(var(--accent-rgb),0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--accent-rgb),0.06) 1px, transparent 1px)', backgroundSize: '32px 32px' },
+
+  const accentRGBs = {
+    gold:'201,169,110', rose:'232,160,176', sage:'136,196,160',
+    sky:'122,184,232', lavender:'176,160,224', coral:'232,144,112'
   };
-  const ts = textureStyles[prefs.texture] || textureStyles['none'];
-  document.body.style.backgroundImage = ts.backgroundImage;
-  if(ts.backgroundSize) document.body.style.backgroundSize = ts.backgroundSize;
-  else document.body.style.backgroundSize = '';
+  const rgb = accentRGBs[prefs.accent] || '201,169,110';
+
+  const textures = {
+    none:  '',
+    paper: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E\")",
+    dots:  'radial-gradient(circle, rgba('+rgb+',0.18) 1px, transparent 1px)',
+    lines: 'repeating-linear-gradient(0deg, transparent, transparent 39px, rgba('+rgb+',0.09) 39px, rgba('+rgb+',0.09) 40px)',
+    grid:  'linear-gradient(rgba('+rgb+',0.07) 1px, transparent 1px), linear-gradient(90deg, rgba('+rgb+',0.07) 1px, transparent 1px)',
+  };
+  const sizes = { none:'', paper:'200px 200px', dots:'24px 24px', lines:'', grid:'32px 32px' };
+
+  document.body.style.backgroundImage = textures[prefs.texture] || '';
+  document.body.style.backgroundSize  = sizes[prefs.texture]   || '';
 }
 function setTheme(t, el) {
   prefs.theme = t; savePrefs(); applyPrefs();
@@ -990,7 +1019,7 @@ function setCase(c, el) {
 }
 
 // ── HELPERS ──
-function todayStr() { return new Date().toISOString().slice(0,10); }
+function todayStr() { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return `${m}/${d}/${y}`; }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
@@ -1481,9 +1510,10 @@ function editBookPages(id) {
 
 // ── WORM PETS ──
 const WORM_PARTS = {
-  body: ['🟤','🟠','🟡','🟢','🔵','🟣','🔴','⚪','⚫'],
-  hat:  ['none','🎩','👑','🎓','🪖','⛑️','🌂','🎀','🌸','🍄'],
-  eyes: ['◉◉','ʘʘ','••','◕◕','◔◔','^^','@@','◡◡'],
+  body: ['#7ecb6e','#e8a87c','#7ab3e0','#b39ddb','#e07070','#f0c060','#88c4a0','#d4a0b8','#80b8c0','#c9a96e','#ff9999','#99ccff'],
+  hat:  ['none','🎩','👑','🎓','🪖','🎀','🌸','🍄','🎵','🌈'],
+  eyes: ['◉◉','ʘʘ','••','◕◕','◔◔','^^','@@','◡◡','òó','ᵔᵔ'],
+  length: [3, 4, 5, 6, 7],
 };
 
 function initWorms() {
@@ -1692,30 +1722,84 @@ function checkWormReward() {
   }
 }
 
-function buildTemplateGrid() {
-  const grid = document.getElementById('worm-template-grid');
-  if(!grid) return;
-  grid.innerHTML = WORM_TEMPLATES.map(function(t){
-    return '<div class="worm-template-pick'+(t.id===selectedTemplateId?' selected':'')+'" onclick="selectTemplate(\''+t.id+'\')" title="'+t.name+'">'
-      +t.svg
-      +'<div style="font-size:10px;color:var(--text3);text-align:center;margin-top:3px">'+t.name+'</div>'
-      +'</div>';
+
+  let wormCustom = { color: '#7ecb6e', hat: 'none', eyes: '◉◉', length: 4 };
+
+function buildWormCustomizer() {
+  const bodyEl = document.getElementById('worm-body-swatches');
+  const hatEl  = document.getElementById('worm-hat-swatches');
+  const eyeEl  = document.getElementById('worm-eyes-select');
+  const lenEl  = document.getElementById('worm-length-swatches');
+  if(!bodyEl) return;
+
+  bodyEl.innerHTML = WORM_PARTS.body.map(function(c){
+    return '<div onclick="setWormPart(\'color\',\''+c+'\',this)" title="'+c+'" style="width:24px;height:24px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+(c===wormCustom.color?'var(--text)':'transparent')+';transition:transform .1s" '+(c===wormCustom.color?'class="swatch active"':'class="swatch"')+'></div>';
   }).join('');
+
+  hatEl.innerHTML = WORM_PARTS.hat.map(function(h){
+    const isNone = h==='none';
+    return '<div onclick="setWormPart(\'hat\',\''+h+'\',this)" style="padding:4px 8px;border-radius:6px;cursor:pointer;font-size:16px;border:1px solid '+(h===wormCustom.hat?'var(--accent)':'var(--border2)')+';background:'+(h===wormCustom.hat?'var(--accent-bg)':'var(--bg3)')+';">'+(isNone?'✕ none':h)+'</div>';
+  }).join('');
+
+  eyeEl.innerHTML = WORM_PARTS.eyes.map(function(e){
+    return '<option value="'+e+'" '+(e===wormCustom.eyes?'selected':'')+'>'+e+'</option>';
+  }).join('');
+  eyeEl.onchange = function(){ wormCustom.eyes = this.value; updateWormPreview(); };
+
+  lenEl.innerHTML = WORM_PARTS.length.map(function(n){
+    return '<div onclick="setWormPart(\'length\','+n+',this)" style="padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;border:1px solid '+(n===wormCustom.length?'var(--accent)':'var(--border2)')+';background:'+(n===wormCustom.length?'var(--accent-bg)':'var(--bg3)')+';">'+n+'</div>';
+  }).join('');
+
+  updateWormPreview();
 }
 
-function selectTemplate(id) {
-  selectedTemplateId = id;
-  buildTemplateGrid();
+function setWormPart(part, val, el) {
+  wormCustom[part] = val;
+  buildWormCustomizer();
+}
+
+function updateWormPreview() {
+  wormCustom.eyes = document.getElementById('worm-eyes-select')?.value || wormCustom.eyes;
+  const el = document.getElementById('worm-preview-svg');
+  if(el) el.innerHTML = buildWormSVG(wormCustom);
+}
+
+function buildWormSVG(w) {
+  const segs = w.length || 4;
+  const c = w.color || '#7ecb6e';
+  const dark = shadeColor(c, -30);
+  const segW = 18, segH = 13, overlap = 6;
+  const totalW = segs * (segW - overlap) + overlap + 20;
+  const cx0 = 14, cy = 20;
+  let rects = '';
+  for(let i = segs-1; i >= 0; i--) {
+    const x = cx0 + i*(segW-overlap);
+    const fill = i%2===0 ? c : dark;
+    rects += '<ellipse cx="'+(x)+'" cy="'+cy+'" rx="'+(segW/2)+'" ry="'+(segH/2)+'" fill="'+fill+'"/>';
+  }
+  const headX = cx0;
+  const eyeStr = w.eyes || '◉◉';
+  const hatStr = w.hat !== 'none' ? w.hat : '';
+  return '<svg viewBox="0 0 '+totalW+' 40" xmlns="http://www.w3.org/2000/svg" width="100%" height="44">'
+    + rects
+    + '<text x="'+(headX)+'" y="'+(cy+5)+'" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.6)">'+eyeStr+'</text>'
+    + (hatStr ? '<text x="'+(headX)+'" y="'+(cy-segH/2-1)+'" text-anchor="middle" font-size="12">'+hatStr+'</text>' : '')
+    + '</svg>';
+}
+
+function shadeColor(hex, pct) {
+  let r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  r=Math.max(0,Math.min(255,r+pct)); g=Math.max(0,Math.min(255,g+pct)); b=Math.max(0,Math.min(255,b+pct));
+  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
 }
 
 function addWorm() {
   initWorms();
+  wormCustom.eyes = document.getElementById('worm-eyes-select')?.value || wormCustom.eyes;
   const name = document.getElementById('worm-name').value.trim()||'wormie';
-  const t = WORM_TEMPLATES.find(function(x){return x.id===selectedTemplateId;})||WORM_TEMPLATES[0];
-  const newWorm = {id:Date.now(),name:name,templateId:t.id,pixelData:null,happiness:7,timesFed:0,createdDate:todayStr()};
-  db.worms.list.push(newWorm);
+  db.worms.list.push({id:Date.now(),name:name,wormCustom:{...wormCustom},templateId:null,pixelData:null,happiness:7,timesFed:0,createdDate:todayStr()});
   document.getElementById('worm-name').value='';
-  save(); renderWorms(); toast(name+' joined your library! \uD83D\uDC1B');
+  save(); renderWorms(); toast(name+' joined your library! 🐛');
 }
 
 function feedWorm(id) {
@@ -1749,7 +1833,11 @@ function renderWorms() {
   if(foodEl)  foodEl.textContent  = db.worms.hunger||0;
   if(countEl) countEl.textContent = db.worms.list.length;
   if(todayEl) todayEl.textContent = todayPages;
-  const pixelUnlocked = todayPages >= 100;
+  const qualifyingSessions = db.logs.filter(function(l){ return l.date === todayStr() && l.pages >= 100; });
+  const usedSessions = db.worms.usedPixelSessions || [];
+  const freshSession = qualifyingSessions.find(function(l){ return !usedSessions.includes(l.id); });
+  const pixelUnlocked = !!freshSession;
+  if(pixelCard) pixelCard.dataset.sessionId = freshSession ? freshSession.id : '';
   if(subEl) subEl.textContent = pixelUnlocked ? '\uD83C\uDFA8 pixel art unlocked!' : (100-todayPages)+' more to unlock';
   const pixelCard = document.getElementById('pixel-editor-card');
   if(pixelCard) { pixelCard.style.display = pixelUnlocked ? 'block' : 'none'; if(pixelUnlocked) initPixelEditor(); }
@@ -1762,8 +1850,7 @@ function renderWorms() {
     const hp = Math.min(10,Math.max(0,w.happiness||5));
     const hpFill = Math.round(hp/10*100);
     const mood = hp>=8?'happy \uD83D\uDE0A':hp>=5?'content \uD83D\uDE10':'hungry \uD83D\uDE22';
-    const t = WORM_TEMPLATES.find(function(x){return x.id===w.templateId;})||WORM_TEMPLATES[0];
-    const wormSvg = w.pixelData ? pixelDataToImg(w.pixelData) : t.svg;
+    const wormSvg = w.pixelData ? pixelDataToImg(w.pixelData) : buildWormSVG(w.wormCustom || {color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4});
     return '<div class="worm-card">'
       +'<div class="worm-svg-display">'+wormSvg+'</div>'
       +'<div class="worm-info">'
@@ -1875,6 +1962,11 @@ function fillPixelCanvas(){pixelData=Array.from({length:PIXEL_ROWS},function(){r
 
 function savePixelWorm() {
   initWorms();
+  const sessionId = +document.getElementById('pixel-editor-card').dataset.sessionId;
+  if(sessionId) {
+    if(!db.worms.usedPixelSessions) db.worms.usedPixelSessions = [];
+    if(!db.worms.usedPixelSessions.includes(sessionId)) db.worms.usedPixelSessions.push(sessionId);
+  }
   const name = document.getElementById('pixel-worm-name').value.trim()||'pixel worm';
   if(!pixelData.some(function(row){return row.some(function(p){return p;});})){toast('draw something first!');return;}
   const savedData = pixelData.map(function(row){return row.slice();});
