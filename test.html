@@ -839,37 +839,42 @@ textarea { resize: vertical; line-height: 1.5; }
 
 const SUPABASE_URL  = 'https://sfeyjounvjqrsnsjsmtj.supabase.co';
 const SUPABASE_KEY  = 'sb_publishable_xb_HPWpFflrJ-a-eKCW33A_qAwvgNYq';
-//*****
-
 
 const SPINE_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#88c4a0','#d4a0b8','#f0c060','#80b8c0'];
 const CHART_COLORS = ['#c9a96e','#5dbf8a','#7ab3e0','#b39ddb','#e07070','#e8a87c','#88c4a0','#d4a0b8'];
+
+const WORM_PARTS = {
+  body:   ['#7ecb6e','#e8a87c','#7ab3e0','#b39ddb','#e07070','#f0c060','#88c4a0','#d4a0b8','#80b8c0','#c9a96e','#ff9999','#99ccff'],
+  hat:    ['none','🎩','👑','🎓','🪖','🎀','🌸','🍄','🎵','🌈'],
+  eyes:   ['◉◉','ʘʘ','••','◕◕','◔◔','^^','@@','◡◡','òó','ᵔᵔ'],
+  length: [3,4,5,6,7],
+};
 
 let sb = null, currentUser = null, isOffline = false;
 let db = { books:[], logs:[], series:[], friends:[], friendReqs:[], goal:24, dailyGoal:30, weeklyGoal:200, worms:{list:[],totalPagesMilestone:0,hunger:0} };
 let prefs = { theme:'dark', accent:'gold', texture:'none', density:'normal', textCase:'lower' };
 let charts = {}, libTabCurrent = 'reading', colorModalTarget = null;
+let wormCustom = { color:'#7ecb6e', hat:'none', eyes:'◉◉', length:4 };
+
+// ── PIXEL EDITOR STATE ──
+let pixelEraserOn = false;
+let pixelColor = '#7ecb6e';
+const PIXEL_COLS = 20, PIXEL_ROWS = 10;
+let pixelData = Array.from({length:PIXEL_ROWS}, function(){ return Array(PIXEL_COLS).fill(null); });
+const PIXEL_PALETTE_COLORS = ['#7ecb6e','#e8a87c','#7ab3e0','#b39ddb','#e07070','#f0c060','#88c4a0','#d4a0b8','#80b8c0','#c9a96e','#ffffff','#aaaaaa','#555555','#1a1a1a','#ffaaaa','#aaffaa'];
+let pixelEditorInited = false;
+let pixelPainting = false;
 
 function initSupabase() {
   if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return null;
-
-  try {
-    const { createClient } = supabase;
-    return createClient(SUPABASE_URL, SUPABASE_KEY);
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
+  try { const { createClient } = supabase; return createClient(SUPABASE_URL, SUPABASE_KEY); }
+  catch(e) { console.error(e); return null; }
 }
 
 async function boot() {
   sb = initSupabase();
   loadPrefs();
-  if (!sb) {
-    document.getElementById('supabase-setup-note').style.display = 'block';
-    showAuth();
-    return;
-  }
+  if (!sb) { document.getElementById('supabase-setup-note').style.display='block'; showAuth(); return; }
   const { data: { session } } = await sb.auth.getSession();
   if (session) { currentUser = session.user; await loadFromCloud(); showApp(); }
   else showAuth();
@@ -877,24 +882,21 @@ async function boot() {
 
 // ── AUTH ──
 let authMode = 'signin';
-function showAuth() {
-  document.getElementById('auth-screen').style.display = 'block';
-  document.getElementById('app-screen').style.display = 'none';
-}
+function showAuth() { document.getElementById('auth-screen').style.display='block'; document.getElementById('app-screen').style.display='none'; }
 function showApp() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
   if (currentUser) {
     const meta = currentUser.user_metadata || {};
     const uname = meta.username || currentUser.email.split('@')[0];
     document.getElementById('sidebar-av').textContent = uname[0].toUpperCase();
     document.getElementById('sidebar-uname').textContent = uname;
     document.getElementById('sidebar-email').textContent = currentUser.email;
-    document.getElementById('account-info').textContent = `signed in as ${currentUser.email}`;
+    document.getElementById('account-info').textContent = 'signed in as '+currentUser.email;
   } else {
     document.getElementById('account-info').textContent = 'offline mode — data saved locally only';
     document.getElementById('signout-btn').textContent = 'sign in';
-    document.getElementById('signout-btn').onclick = () => { showAuth(); };
+    document.getElementById('signout-btn').onclick = function(){ showAuth(); };
   }
   document.getElementById('log-date').value = todayStr();
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -903,11 +905,11 @@ function showApp() {
   setTimeout(function(){ initWorms(); renderCrawlBar(); }, 200);
 }
 function toggleAuthMode() {
-  authMode = authMode === 'signin' ? 'signup' : 'signin';
-  document.getElementById('auth-btn').textContent = authMode === 'signin' ? 'sign in' : 'create account';
-  document.getElementById('auth-toggle').innerHTML = authMode === 'signin' ? 'no account? <a onclick="toggleAuthMode()">sign up</a>' : 'have an account? <a onclick="toggleAuthMode()">sign in</a>';
-  document.getElementById('auth-mode-sub').textContent = authMode === 'signin' ? 'your reading journey, everywhere' : 'join readtracker';
-  document.getElementById('auth-username-wrap').style.display = authMode === 'signup' ? 'block' : 'none';
+  authMode = authMode==='signin'?'signup':'signin';
+  document.getElementById('auth-btn').textContent = authMode==='signin'?'sign in':'create account';
+  document.getElementById('auth-toggle').innerHTML = authMode==='signin'?'no account? <a onclick="toggleAuthMode()">sign up</a>':'have an account? <a onclick="toggleAuthMode()">sign in</a>';
+  document.getElementById('auth-mode-sub').textContent = authMode==='signin'?'your reading journey, everywhere':'join readtracker';
+  document.getElementById('auth-username-wrap').style.display = authMode==='signup'?'block':'none';
   document.getElementById('auth-err').classList.remove('show');
 }
 async function doAuth() {
@@ -916,56 +918,41 @@ async function doAuth() {
   const pw    = document.getElementById('auth-pw').value;
   const errEl = document.getElementById('auth-err');
   errEl.classList.remove('show');
-  if (!email || !pw) { errEl.textContent='please fill in all fields'; errEl.classList.add('show'); return; }
+  if (!email||!pw) { errEl.textContent='please fill in all fields'; errEl.classList.add('show'); return; }
   document.getElementById('auth-btn').textContent = '...';
   let res;
-  if (authMode === 'signin') {
-    res = await sb.auth.signInWithPassword({ email, password: pw });
-  } else {
-    const username = document.getElementById('auth-username').value.trim() || email.split('@')[0];
-    res = await sb.auth.signUp({ email, password: pw, options: { data: { username } } });
-  }
-  document.getElementById('auth-btn').textContent = authMode === 'signin' ? 'sign in' : 'create account';
-  if (res.error) { errEl.textContent = res.error.message; errEl.classList.add('show'); return; }
+  if (authMode==='signin') { res = await sb.auth.signInWithPassword({ email, password:pw }); }
+  else { const username = document.getElementById('auth-username').value.trim()||email.split('@')[0]; res = await sb.auth.signUp({ email, password:pw, options:{ data:{ username } } }); }
+  document.getElementById('auth-btn').textContent = authMode==='signin'?'sign in':'create account';
+  if (res.error) { errEl.textContent=res.error.message; errEl.classList.add('show'); return; }
   currentUser = res.data.user;
-  if (authMode === 'signup') toast('welcome! check email to verify if needed');
+  if (authMode==='signup') toast('welcome! check email to verify if needed');
   await loadFromCloud();
   showApp();
 }
-function continueOffline() { isOffline = true; loadLocal(); showApp(); }
+function continueOffline() { isOffline=true; loadLocal(); showApp(); }
 async function doSignOut() {
   if (sb) await sb.auth.signOut();
-  currentUser = null; isOffline = false;
+  currentUser=null; isOffline=false;
   db = { books:[], logs:[], series:[], friends:[], friendReqs:[], goal:24, dailyGoal:30, weeklyGoal:200 };
   showAuth();
 }
 
 // ── DATA ──
-function loadLocal() { try { const d = localStorage.getItem('rt_db'); if(d) db = {...db,...JSON.parse(d)}; } catch(e){} }
+function loadLocal() { try { const d=localStorage.getItem('rt_db'); if(d) db={...db,...JSON.parse(d)}; } catch(e){} }
 function saveLocal() { try { localStorage.setItem('rt_db', JSON.stringify(db)); } catch(e){} }
-
 async function loadFromCloud() {
-  if (!sb || !currentUser) { loadLocal(); return; }
-  try {
-    const { data, error } = await sb.from('userdata').select('data').eq('user_id', currentUser.id).single();
-    if (data && data.data) db = { ...db, ...data.data };
-    else loadLocal();
-  } catch(e) { loadLocal(); }
+  if (!sb||!currentUser) { loadLocal(); return; }
+  try { const {data,error}=await sb.from('userdata').select('data').eq('user_id',currentUser.id).single(); if(data&&data.data) db={...db,...data.data}; else loadLocal(); } catch(e){ loadLocal(); }
 }
-
 async function save() {
   saveLocal();
-  if (!sb || !currentUser) return;
-  try {
-    await sb.from('userdata').upsert({ user_id: currentUser.id, data: db, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-  } catch(e) {}
+  if (!sb||!currentUser) return;
+  try { await sb.from('userdata').upsert({user_id:currentUser.id,data:db,updated_at:new Date().toISOString()},{onConflict:'user_id'}); } catch(e){}
 }
 
 // ── PREFS ──
-function loadPrefs() {
-  try { const p = localStorage.getItem('rt_prefs'); if(p) prefs = {...prefs,...JSON.parse(p)}; } catch(e){}
-  applyPrefs();
-}
+function loadPrefs() { try { const p=localStorage.getItem('rt_prefs'); if(p) prefs={...prefs,...JSON.parse(p)}; } catch(e){} applyPrefs(); }
 function savePrefs() { try { localStorage.setItem('rt_prefs', JSON.stringify(prefs)); } catch(e){} }
 function applyPrefs() {
   const h = document.documentElement;
@@ -973,13 +960,8 @@ function applyPrefs() {
   h.setAttribute('data-accent',  prefs.accent);
   h.setAttribute('data-density', prefs.density);
   h.setAttribute('data-case',    prefs.textCase);
-
-  const accentRGBs = {
-    gold:'201,169,110', rose:'232,160,176', sage:'136,196,160',
-    sky:'122,184,232', lavender:'176,160,224', coral:'232,144,112'
-  };
-  const rgb = accentRGBs[prefs.accent] || '201,169,110';
-
+  const accentRGBs = { gold:'201,169,110', rose:'232,160,176', sage:'136,196,160', sky:'122,184,232', lavender:'176,160,224', coral:'232,144,112' };
+  const rgb = accentRGBs[prefs.accent]||'201,169,110';
   const textures = {
     none:  '',
     paper: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E\")",
@@ -988,53 +970,27 @@ function applyPrefs() {
     grid:  'linear-gradient(rgba('+rgb+',0.07) 1px, transparent 1px), linear-gradient(90deg, rgba('+rgb+',0.07) 1px, transparent 1px)',
   };
   const sizes = { none:'', paper:'200px 200px', dots:'24px 24px', lines:'', grid:'32px 32px' };
-
-  document.body.style.backgroundImage = textures[prefs.texture] || '';
-  document.body.style.backgroundSize  = sizes[prefs.texture]   || '';
+  document.body.style.backgroundImage = textures[prefs.texture]||'';
+  document.body.style.backgroundSize  = sizes[prefs.texture]||'';
 }
-function setTheme(t, el) {
-  prefs.theme = t; savePrefs(); applyPrefs();
-  document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
-  if(el) el.classList.add('active');
-}
-function setAccent(a, el) {
-  prefs.accent = a; savePrefs(); applyPrefs();
-  document.querySelectorAll('#accent-swatches .swatch').forEach(s => s.classList.remove('active'));
-  if(el) el.classList.add('active');
-}
-function setTexture(t, el) {
-  prefs.texture = t; savePrefs(); applyPrefs();
-  document.querySelectorAll('#texture-btns .btn').forEach(b => b.classList.remove('active-texture'));
-  if(el) el.classList.add('active-texture');
-}
-function setDensity(d, el) {
-  prefs.density = d; savePrefs(); applyPrefs();
-  document.querySelectorAll('#density-btns .btn').forEach(b => b.classList.remove('active-density'));
-  if(el) el.classList.add('active-density');
-}
-function setCase(c, el) {
-  prefs.textCase = c; savePrefs(); applyPrefs();
-  document.querySelectorAll('#case-btns .btn').forEach(b => b.classList.remove('active-case'));
-  if(el) el.classList.add('active-case');
-}
+function setTheme(t,el) { prefs.theme=t; savePrefs(); applyPrefs(); document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active')); if(el)el.classList.add('active'); }
+function setAccent(a,el) { prefs.accent=a; savePrefs(); applyPrefs(); document.querySelectorAll('#accent-swatches .swatch').forEach(s=>s.classList.remove('active')); if(el)el.classList.add('active'); }
+function setTexture(t,el) { prefs.texture=t; savePrefs(); applyPrefs(); document.querySelectorAll('#texture-btns .btn').forEach(b=>b.classList.remove('active-texture')); if(el)el.classList.add('active-texture'); }
+function setDensity(d,el) { prefs.density=d; savePrefs(); applyPrefs(); document.querySelectorAll('#density-btns .btn').forEach(b=>b.classList.remove('active-density')); if(el)el.classList.add('active-density'); }
+function setCase(c,el) { prefs.textCase=c; savePrefs(); applyPrefs(); document.querySelectorAll('#case-btns .btn').forEach(b=>b.classList.remove('active-case')); if(el)el.classList.add('active-case'); }
 
 // ── HELPERS ──
-function todayStr() { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function fmtDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return `${m}/${d}/${y}`; }
+function todayStr() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtDate(s) { if(!s)return''; const[y,m,d]=s.split('-'); return m+'/'+d+'/'+y; }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
-function stars(n) { return [1,2,3,4,5].map(i=>`<span class="star ${i<=n?'on':''}" onclick="setRating(event,${n},${i})">★</span>`).join(''); }
-function starsFixed(n) { return [1,2,3,4,5].map(i=>`<span style="color:${i<=n?'var(--accent)':'var(--text3)'}">★</span>`).join(''); }
+function starsFixed(n) { return [1,2,3,4,5].map(i=>'<span style="color:'+(i<=n?'var(--accent)':'var(--text3)')+'">★</span>').join(''); }
 function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
-function chartColors() { return CHART_COLORS; }
 
-// colour swatches (quick picks)
 function buildSwatches(containerId, onPick) {
-  const el = document.getElementById(containerId);
-  if(!el) return;
-  el.innerHTML = SPINE_COLORS.map(c => `<div class="swatch" style="background:${c};width:20px;height:20px" onclick="(${onPick})('${c}',this)"></div>`).join('');
+  const el=document.getElementById(containerId); if(!el)return;
+  el.innerHTML=SPINE_COLORS.map(c=>'<div class="swatch" style="background:'+c+';width:20px;height:20px" onclick="('+onPick+')('+"'"+c+"'"+',this)"></div>').join('');
 }
-
 buildSwatches('quick-swatches', (c)=>`document.getElementById('b-color').value='${c}'`);
 
 // ── NAV ──
@@ -1042,19 +998,17 @@ function nav(id, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item, .mob-btn').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  document.querySelectorAll(`[data-page="${id}"], [data-p="${id}"]`).forEach(n=>n.classList.add('active'));
+  document.querySelectorAll('[data-page="'+id+'"], [data-p="'+id+'"]').forEach(n=>n.classList.add('active'));
   if(el) el.classList.add('active');
-  setTimeout(()=>{
-    if(id==='worms') { initWorms(); renderWorms(); }
-    if(id==='discover') { /* page renders on demand */ }
-    if(id==='stats') renderStats();
-    if(id==='goals') renderGoals();
-    if(id==='share') renderShare();
-    if(id==='series') renderSeriesPage();
+  setTimeout(function(){
+    if(id==='worms')    { initWorms(); renderWorms(); }
+    if(id==='stats')    renderStats();
+    if(id==='goals')    renderGoals();
+    if(id==='share')    renderShare();
+    if(id==='series')   renderSeriesPage();
     if(id==='settings') syncSettingsUI();
   }, 30);
 }
-
 function syncSettingsUI() {
   document.querySelectorAll('#theme-swatches .theme-swatch').forEach(s=>s.classList.toggle('active', s.dataset.theme===prefs.theme));
   document.querySelectorAll('#accent-swatches .swatch').forEach(s=>s.classList.toggle('active', s.dataset.accent===prefs.accent));
@@ -1062,83 +1016,52 @@ function syncSettingsUI() {
 
 // ── ADD BOOK ──
 function addBook() {
-  const title = document.getElementById('b-title').value.trim();
-  if(!title){toast('please enter a title');return;}
-  const status = document.getElementById('b-status').value;
-  const pages  = parseInt(document.getElementById('b-pages').value)||0;
-  const seriesName = document.getElementById('b-series').value.trim();
-  const seriesNum  = parseInt(document.getElementById('b-series-num').value)||0;
-  const color = document.getElementById('b-color').value || SPINE_COLORS[db.books.length%SPINE_COLORS.length];
-
-  // auto-create series if named
-  if(seriesName && !db.series.find(s=>s.name.toLowerCase()===seriesName.toLowerCase())) {
-    db.series.push({ id: Date.now(), name: seriesName, author: document.getElementById('b-author').value.trim(), genre: document.getElementById('b-genre').value.trim(), total: 0 });
-  }
-
-  db.books.push({
-    id: Date.now(), title, author: document.getElementById('b-author').value.trim(),
-    pages, genre: document.getElementById('b-genre').value.trim(),
-    series: seriesName, seriesNum, status, color,
-    rating: parseInt(document.getElementById('b-rating').value)||0,
-    pagesRead: status==='done'?pages:0,
-    startDate: document.getElementById('b-start').value||(status!=='want'?todayStr():''),
-    finishedDate: status==='done'?todayStr():'', addedDate: todayStr()
-  });
+  const title=document.getElementById('b-title').value.trim(); if(!title){toast('please enter a title');return;}
+  const status=document.getElementById('b-status').value;
+  const pages=parseInt(document.getElementById('b-pages').value)||0;
+  const seriesName=document.getElementById('b-series').value.trim();
+  const seriesNum=parseInt(document.getElementById('b-series-num').value)||0;
+  const color=document.getElementById('b-color').value||SPINE_COLORS[db.books.length%SPINE_COLORS.length];
+  if(seriesName&&!db.series.find(s=>s.name.toLowerCase()===seriesName.toLowerCase()))
+    db.series.push({id:Date.now(),name:seriesName,author:document.getElementById('b-author').value.trim(),genre:document.getElementById('b-genre').value.trim(),total:0});
+  db.books.push({id:Date.now(),title,author:document.getElementById('b-author').value.trim(),pages,genre:document.getElementById('b-genre').value.trim(),series:seriesName,seriesNum,status,color,rating:parseInt(document.getElementById('b-rating').value)||0,pagesRead:status==='done'?pages:0,startDate:document.getElementById('b-start').value||(status!=='want'?todayStr():''),finishedDate:status==='done'?todayStr():'',addedDate:todayStr()});
   ['b-title','b-author','b-pages','b-genre','b-series','b-series-num','b-start'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('b-status').value='reading';
-  document.getElementById('b-rating').value='0';
-  document.getElementById('b-color').value='#c9a96e';
+  document.getElementById('b-status').value='reading'; document.getElementById('b-rating').value='0'; document.getElementById('b-color').value='#c9a96e';
   save(); renderAll(); toast('book added!');
 }
-
 function deleteBook(id) {
   if(!confirm('remove this book and its sessions?'))return;
-  db.books = db.books.filter(b=>b.id!==id);
-  db.logs  = db.logs.filter(l=>l.bookId!==id);
+  db.books=db.books.filter(b=>b.id!==id); db.logs=db.logs.filter(l=>l.bookId!==id);
   save(); renderAll(); toast('removed');
 }
-
-function setRating(e, bookId, r) {
-  e.stopPropagation();
-  const b = db.books.find(x=>x.id===bookId);
-  if(b){b.rating=r;save();renderLibrary();}
-}
+function setRating(e,bookId,r) { e.stopPropagation(); const b=db.books.find(x=>x.id===bookId); if(b){b.rating=r;save();renderLibrary();} }
 
 // ── SPINE COLOR MODAL ──
 function openColorModal(bookId) {
-  colorModalTarget = bookId;
-  const book = db.books.find(b=>b.id===bookId);
-  if(book) document.getElementById('modal-color-picker').value = book.color || '#c9a96e';
+  colorModalTarget=bookId; const book=db.books.find(b=>b.id===bookId);
+  if(book) document.getElementById('modal-color-picker').value=book.color||'#c9a96e';
   buildSwatches('modal-swatches', (c)=>`document.getElementById('modal-color-picker').value='${c}'`);
   document.getElementById('color-modal').style.display='flex';
 }
 function closeColorModal() { document.getElementById('color-modal').style.display='none'; colorModalTarget=null; }
 function applySpineColor() {
-  const c = document.getElementById('modal-color-picker').value;
-  if(colorModalTarget) {
-    const b = db.books.find(x=>x.id===colorModalTarget);
-    if(b){b.color=c;save();renderLibrary();}
-  }
+  const c=document.getElementById('modal-color-picker').value;
+  if(colorModalTarget){ const b=db.books.find(x=>x.id===colorModalTarget); if(b){b.color=c;save();renderLibrary();} }
   closeColorModal();
 }
 
 // ── LOG SESSION ──
 function logSession() {
-  const bid = parseInt(document.getElementById('log-book').value);
-  const pages = parseInt(document.getElementById('log-pages').value)||0;
+  const bid=parseInt(document.getElementById('log-book').value);
+  const pages=parseInt(document.getElementById('log-pages').value)||0;
   if(!bid||!pages){toast('select a book and enter pages');return;}
-  const mins   = parseInt(document.getElementById('log-mins').value)||0;
-  const date   = document.getElementById('log-date').value||todayStr();
-  const finish = document.getElementById('log-finish').value==='yes';
-  const notes  = document.getElementById('log-notes').value.trim();
+  const mins=parseInt(document.getElementById('log-mins').value)||0;
+  const date=document.getElementById('log-date').value||todayStr();
+  const finish=document.getElementById('log-finish').value==='yes';
+  const notes=document.getElementById('log-notes').value.trim();
   db.logs.push({id:Date.now(),bookId:bid,pages,minutes:mins,date,notes});
-  const book = db.books.find(b=>b.id===bid);
-  if(book){
-    book.pagesRead = Math.min((book.pagesRead||0)+pages, book.pages||99999);
-    if(finish||(book.pages&&book.pagesRead>=book.pages)){
-      book.status='done'; book.finishedDate=date; toast('🎉 book finished!');
-    } else toast('session saved!');
-  }
+  const book=db.books.find(b=>b.id===bid);
+  if(book){ book.pagesRead=Math.min((book.pagesRead||0)+pages,book.pages||99999); if(finish||(book.pages&&book.pagesRead>=book.pages)){book.status='done';book.finishedDate=date;toast('🎉 book finished!');} else toast('session saved!'); }
   ['log-pages','log-mins','log-notes'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('log-finish').value='no';
   save(); renderAll(); checkWormReward();
@@ -1146,168 +1069,97 @@ function logSession() {
 
 // ── SERIES ──
 function addSeries() {
-  const name = document.getElementById('ser-name').value.trim();
-  if(!name){toast('enter a series name');return;}
+  const name=document.getElementById('ser-name').value.trim(); if(!name){toast('enter a series name');return;}
   if(db.series.find(s=>s.name.toLowerCase()===name.toLowerCase())){toast('series already exists');return;}
-  db.series.push({ id:Date.now(), name, author:document.getElementById('ser-author').value.trim(), genre:document.getElementById('ser-genre').value.trim(), total:parseInt(document.getElementById('ser-total').value)||0 });
+  db.series.push({id:Date.now(),name,author:document.getElementById('ser-author').value.trim(),genre:document.getElementById('ser-genre').value.trim(),total:parseInt(document.getElementById('ser-total').value)||0});
   ['ser-name','ser-author','ser-genre','ser-total'].forEach(i=>document.getElementById(i).value='');
   save(); renderSeriesPage(); toast('series added!');
 }
-function deleteSeries(id) {
-  db.series = db.series.filter(s=>s.id!==id); save(); renderSeriesPage();
-}
+function deleteSeries(id) { db.series=db.series.filter(s=>s.id!==id); save(); renderSeriesPage(); }
 
 // ── GOALS ──
-function setGoal()       { const v=parseInt(document.getElementById('goal-in').value); if(v>0){db.goal=v;save();renderGoals();toast('goal set!');} }
+function setGoal()       { const v=parseInt(document.getElementById('goal-in').value);    if(v>0){db.goal=v;save();renderGoals();toast('goal set!');} }
 function setDailyGoal()  { const v=parseInt(document.getElementById('daily-g-in').value); if(v>0){db.dailyGoal=v;save();renderGoals();toast('daily goal set!');} }
-function setWeeklyGoal() { const v=parseInt(document.getElementById('weekly-g-in').value); if(v>0){db.weeklyGoal=v;save();renderGoals();toast('weekly goal set!');} }
+function setWeeklyGoal() { const v=parseInt(document.getElementById('weekly-g-in').value);if(v>0){db.weeklyGoal=v;save();renderGoals();toast('weekly goal set!');} }
 
-// ── FRIENDS (Supabase only) ──
+// ── FRIENDS ──
 async function sendFriendRequest() {
   if(!sb||!currentUser){toast('sign in to add friends');return;}
-  const username = document.getElementById('friend-username').value.trim();
-  if(!username){return;}
-  const {data:profiles,error} = await sb.from('profiles').select('id,username').eq('username',username).single();
-  const statusEl = document.getElementById('friend-req-status');
+  const username=document.getElementById('friend-username').value.trim(); if(!username)return;
+  const {data:profiles,error}=await sb.from('profiles').select('id,username').eq('username',username).single();
+  const statusEl=document.getElementById('friend-req-status');
   if(error||!profiles){statusEl.textContent='user not found';return;}
-  if(profiles.id===currentUser.id){statusEl.textContent='that\'s you!';return;}
-  const {error:e2} = await sb.from('friendships').insert({requester_id:currentUser.id, addressee_id:profiles.id, status:'pending'});
+  if(profiles.id===currentUser.id){statusEl.textContent="that's you!";return;}
+  const {error:e2}=await sb.from('friendships').insert({requester_id:currentUser.id,addressee_id:profiles.id,status:'pending'});
   if(e2){statusEl.textContent='could not send (may already be friends)';return;}
   statusEl.textContent='friend request sent!'; document.getElementById('friend-username').value='';
   setTimeout(()=>statusEl.textContent='',3000);
 }
-
 async function loadFriends() {
-  if(!sb||!currentUser) { renderFriends(); return; }
+  if(!sb||!currentUser){renderFriends();return;}
   try {
-    const {data:sent}    = await sb.from('friendships').select('addressee_id,status').eq('requester_id',currentUser.id);
-    const {data:received}= await sb.from('friendships').select('requester_id,status').eq('addressee_id',currentUser.id);
-    const acceptedIds = [...(sent||[]).filter(r=>r.status==='accepted').map(r=>r.addressee_id),
-                         ...(received||[]).filter(r=>r.status==='accepted').map(r=>r.requester_id)];
-    const pendingIds  = (received||[]).filter(r=>r.status==='pending').map(r=>r.requester_id);
-    db.friendReqs = pendingIds;
-    if(acceptedIds.length) {
-      const {data:profiles} = await sb.from('profiles').select('id,username').in('id',acceptedIds);
-      db.friends = (profiles||[]).map(p=>({id:p.id,username:p.username}));
-    }
-    // load friend data
-    for(const f of db.friends) {
-      const {data:fd} = await sb.from('userdata').select('data').eq('user_id',f.id).single();
-      if(fd&&fd.data) { f.booksRead=(fd.data.books||[]).filter(b=>b.status==='done').length; f.reading=(fd.data.books||[]).filter(b=>b.status==='reading').map(b=>b.title); }
-    }
+    const {data:sent}=await sb.from('friendships').select('addressee_id,status').eq('requester_id',currentUser.id);
+    const {data:received}=await sb.from('friendships').select('requester_id,status').eq('addressee_id',currentUser.id);
+    const acceptedIds=[...(sent||[]).filter(r=>r.status==='accepted').map(r=>r.addressee_id),...(received||[]).filter(r=>r.status==='accepted').map(r=>r.requester_id)];
+    db.friendReqs=(received||[]).filter(r=>r.status==='pending').map(r=>r.requester_id);
+    if(acceptedIds.length){const {data:profiles}=await sb.from('profiles').select('id,username').in('id',acceptedIds);db.friends=(profiles||[]).map(p=>({id:p.id,username:p.username}));}
+    for(const f of db.friends){const {data:fd}=await sb.from('userdata').select('data').eq('user_id',f.id).single();if(fd&&fd.data){f.booksRead=(fd.data.books||[]).filter(b=>b.status==='done').length;f.reading=(fd.data.books||[]).filter(b=>b.status==='reading').map(b=>b.title);}}
     renderFriends();
   } catch(e){ renderFriends(); }
 }
-
-async function acceptFriend(uid) {
-  if(!sb||!currentUser)return;
-  await sb.from('friendships').update({status:'accepted'}).eq('requester_id',uid).eq('addressee_id',currentUser.id);
-  loadFriends();
-}
-async function declineFriend(uid) {
-  if(!sb||!currentUser)return;
-  await sb.from('friendships').delete().eq('requester_id',uid).eq('addressee_id',currentUser.id);
-  db.friendReqs=db.friendReqs.filter(i=>i!==uid); renderFriends();
-}
+async function acceptFriend(uid) { if(!sb||!currentUser)return; await sb.from('friendships').update({status:'accepted'}).eq('requester_id',uid).eq('addressee_id',currentUser.id); loadFriends(); }
+async function declineFriend(uid) { if(!sb||!currentUser)return; await sb.from('friendships').delete().eq('requester_id',uid).eq('addressee_id',currentUser.id); db.friendReqs=db.friendReqs.filter(i=>i!==uid); renderFriends(); }
 
 // ── RENDER ALL ──
 function renderAll() { renderDashboard(); renderLibrary(); renderLogPage(); renderGoals(); renderShare(); }
 
 // ── DASHBOARD ──
 function renderDashboard() {
-  const streak = calcStreak();
-  const pw = pagesInDays(7), pl = pagesInRange(14,7);
-  const diff = pw-pl;
-  const done = db.books.filter(b=>b.status==='done').length;
-  const spd  = calcSpeed();
-  document.getElementById('dash-metrics').innerHTML = `
-    <div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">${streak}</div><div class="metric-sub">days 🔥</div></div>
-    <div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">${pw.toLocaleString()}</div><div class="metric-sub">${diff===0?'same':(diff>0?'+':'')+diff} vs last wk</div></div>
-    <div class="metric"><div class="metric-label">books done</div><div class="metric-val">${done}</div><div class="metric-sub">of ${db.goal} goal</div></div>
-    <div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">${spd||'—'}</div><div class="metric-sub">pages/hr</div></div>`;
-  const reading = db.books.filter(b=>b.status==='reading');
-  document.getElementById('dash-reading').innerHTML = reading.length ?
-    reading.map(b=>{const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;return`<div class="book-item">
-      <div class="book-spine" style="background:${b.color}" onclick="openColorModal(${b.id})"></div>
-      <div class="book-meta"><div class="book-title-t">${esc(b.title)}</div><div class="book-author-t">${esc(b.author)}</div>
-      ${b.pages?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">${b.pagesRead||0}/${b.pages} · ${pct}%</div>`:''}</div></div>`;}).join('') :
-    '<div class="empty"><p>no books in progress</p></div>';
+  const streak=calcStreak(),pw=pagesInDays(7),pl=pagesInRange(14,7),diff=pw-pl,done=db.books.filter(b=>b.status==='done').length,spd=calcSpeed();
+  document.getElementById('dash-metrics').innerHTML='<div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">'+streak+'</div><div class="metric-sub">days 🔥</div></div><div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">'+pw.toLocaleString()+'</div><div class="metric-sub">'+(diff===0?'same':(diff>0?'+':'')+diff)+' vs last wk</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div><div class="metric-sub">of '+db.goal+' goal</div></div><div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">'+(spd||'—')+'</div><div class="metric-sub">pages/hr</div></div>';
+  const reading=db.books.filter(b=>b.status==='reading');
+  document.getElementById('dash-reading').innerHTML=reading.length?reading.map(b=>{const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;return'<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div>'+(b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">'+(b.pagesRead||0)+'/'+b.pages+' · '+pct+'%</div>':'')+'</div></div>';}).join(''):'<div class="empty"><p>no books in progress</p></div>';
   renderWeekChart(); renderStreakCal();
 }
-
 function renderWeekChart() {
   const labels=[],data=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);labels.push(['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]);data.push(db.logs.filter(l=>l.date===d.toISOString().slice(0,10)).reduce((s,l)=>s+l.pages,0));}
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');labels.push(['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]);data.push(db.logs.filter(l=>l.date===s).reduce((s,l)=>s+l.pages,0));}
   destroyChart('week-chart');
-  const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
   charts['week-chart']=new Chart(document.getElementById('week-chart'),{type:'bar',data:{labels,datasets:[{data,backgroundColor:acc+'cc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
 }
-
 function renderStreakCal() {
   const days=new Set(db.logs.map(l=>l.date));
-  const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
   let html='';
-  for(let i=34;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);html+=`<div class="s-dot" style="background:${days.has(s)?acc:'rgba(128,128,128,0.1)'}" title="${fmtDate(s)}"></div>`;}
+  for(let i=34;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');html+='<div class="s-dot" style="background:'+(days.has(s)?acc:'rgba(128,128,128,0.1)')+'" title="'+fmtDate(s)+'"></div>';}
   document.getElementById('streak-cal').innerHTML=html;
 }
 
 // ── LIBRARY ──
-function libTab(t, el) { libTabCurrent=t; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); if(el)el.classList.add('active'); renderLibrary(); }
-
+function libTab(t,el){ libTabCurrent=t; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); if(el)el.classList.add('active'); renderLibrary(); }
 function renderLibrary() {
-  // populate log book select
-  const sel=document.getElementById('log-book'), prev=sel.value;
+  const sel=document.getElementById('log-book'),prev=sel.value;
   sel.innerHTML='<option value="">select a book...</option>';
   db.books.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.title+(b.status==='done'?' ✓':'');sel.appendChild(o);});
   if(prev) sel.value=prev;
-
-  let books = [...db.books];
+  let books=[...db.books];
   if(libTabCurrent!=='all') books=books.filter(b=>b.status===libTabCurrent);
-
-  const sortBy = document.getElementById('lib-sort')?.value||'added';
-  books.sort((a,b)=>{
-    if(sortBy==='title')    return a.title.localeCompare(b.title);
-    if(sortBy==='author')   return (a.author||'').localeCompare(b.author||'');
-    if(sortBy==='rating')   return (b.rating||0)-(a.rating||0);
-    if(sortBy==='pages')    return (b.pages||0)-(a.pages||0);
-    if(sortBy==='progress') return ((b.pagesRead||0)/(b.pages||1))-((a.pagesRead||0)/(a.pages||1));
-    return b.id-a.id; // added
-  });
-
+  const sortBy=document.getElementById('lib-sort')?.value||'added';
+  books.sort((a,b)=>{ if(sortBy==='title')return a.title.localeCompare(b.title); if(sortBy==='author')return(a.author||'').localeCompare(b.author||''); if(sortBy==='rating')return(b.rating||0)-(a.rating||0); if(sortBy==='pages')return(b.pages||0)-(a.pages||0); if(sortBy==='progress')return((b.pagesRead||0)/(b.pages||1))-((a.pagesRead||0)/(a.pages||1)); return b.id-a.id; });
   const el=document.getElementById('lib-list');
   if(!books.length){el.innerHTML='<div class="card"><div class="empty"><p>nothing here yet</p></div></div>';return;}
-
-  // group by series if series sort
-  const grouped={};
-  books.forEach(b=>{const key=b.series||'__none__';if(!grouped[key])grouped[key]=[];grouped[key].push(b);});
-
+  const grouped={};books.forEach(b=>{const key=b.series||'__none__';if(!grouped[key])grouped[key]=[];grouped[key].push(b);});
   let html='<div class="card"><div class="book-list">';
   Object.entries(grouped).forEach(([serKey,grp])=>{
-    if(serKey!=='__none__') html+=`<div class="series-group-header">📚 ${esc(serKey)}</div>`;
+    if(serKey!=='__none__') html+='<div class="series-group-header">📚 '+esc(serKey)+'</div>';
     grp.forEach(b=>{
       const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;
-      const starHtml=[1,2,3,4,5].map(i=>`<span class="star ${i<=(b.rating||0)?'on':''}" onclick="setRating(event,${b.id},${i})">★</span>`).join('');
-      html+=`<div class="book-item">
-        <div class="book-spine" style="background:${b.color}" onclick="openColorModal(${b.id})" title="click to change colour"></div>
-        <div class="book-meta">
-          <div class="book-title-t">${esc(b.title)}</div>
-          <div class="book-author-t">${esc(b.author)}</div>
-          <div class="book-tags">
-            <span class="pill pill-${b.status}">${b.status==='reading'?'reading':b.status==='want'?'want to read':'finished'}</span>
-            ${b.genre?`<span class="pill pill-genre">${esc(b.genre)}</span>`:''}
-            ${b.series?`<span class="series-badge">◧ ${esc(b.series)}${b.seriesNum?' #'+b.seriesNum:''}</span>`:''}
-            ${b.pages?`<span style="font-size:10px;color:var(--text3)">${b.pages}p</span>`:''}
-            ${b.finishedDate?`<span style="font-size:10px;color:var(--text3)">done ${fmtDate(b.finishedDate)}</span>`:''}
-          </div>
-          ${b.status==='reading'&&b.pages?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${b.color}"></div></div>`:''}
-          <div style="margin-top:4px">${starHtml}</div>
-        </div>
-        <div class="book-actions"><button class="btn-icon" title="edit page count" onclick="editBookPages(${b.id})">✎</button><button class="btn-icon" onclick="deleteBook(${b.id})">×</button></div>
-      </div>`;
+      const starHtml=[1,2,3,4,5].map(i=>'<span class="star '+(i<=(b.rating||0)?'on':'')+'" onclick="setRating(event,'+b.id+','+i+')">★</span>').join('');
+      html+='<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')" title="click to change colour"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div><div class="book-tags"><span class="pill pill-'+b.status+'">'+(b.status==='reading'?'reading':b.status==='want'?'want to read':'finished')+'</span>'+(b.genre?'<span class="pill pill-genre">'+esc(b.genre)+'</span>':'')+(b.series?'<span class="series-badge">◧ '+esc(b.series)+(b.seriesNum?' #'+b.seriesNum:'')+'</span>':'')+(b.pages?'<span style="font-size:10px;color:var(--text3)">'+b.pages+'p</span>':'')+(b.finishedDate?'<span style="font-size:10px;color:var(--text3)">done '+fmtDate(b.finishedDate)+'</span>':'')+'</div>'+(b.status==='reading'&&b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div>':'')+'<div style="margin-top:4px">'+starHtml+'</div></div><div class="book-actions"><button class="btn-icon" title="edit page count" onclick="editBookPages('+b.id+')">✎</button><button class="btn-icon" onclick="deleteBook('+b.id+')">×</button></div></div>';
     });
   });
-  html+='</div></div>';
-  el.innerHTML=html;
+  html+='</div></div>'; el.innerHTML=html;
 }
 
 // ── LOG PAGE ──
@@ -1315,7 +1167,7 @@ function renderLogPage() {
   const sorted=[...db.logs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
   const el=document.getElementById('log-recent');
   if(!sorted.length){el.innerHTML='<div class="empty"><p>no sessions yet</p></div>';return;}
-  el.innerHTML=sorted.map(l=>{const b=db.books.find(x=>x.id===l.bookId);return`<div class="log-item"><div class="log-dot" style="background:${b?b.color:'var(--accent)'}"></div><div class="log-body"><div class="log-book">${esc(b?b.title:'unknown')}</div><div class="log-info">${l.pages} pages${l.minutes?' · '+l.minutes+' min':''}</div>${l.notes?`<div class="log-note">${esc(l.notes.slice(0,80))}</div>`:''}</div><div class="log-right">${fmtDate(l.date)}</div></div>`;}).join('');
+  el.innerHTML=sorted.map(l=>{const b=db.books.find(x=>x.id===l.bookId);return'<div class="log-item"><div class="log-dot" style="background:'+(b?b.color:'var(--accent)')+'"></div><div class="log-body"><div class="log-book">'+esc(b?b.title:'unknown')+'</div><div class="log-info">'+l.pages+' pages'+(l.minutes?' · '+l.minutes+' min':'')+'</div>'+(l.notes?'<div class="log-note">'+esc(l.notes.slice(0,80))+'</div>':'')+'</div><div class="log-right">'+fmtDate(l.date)+'</div></div>';}).join('');
 }
 
 // ── SERIES PAGE ──
@@ -1324,140 +1176,76 @@ function renderSeriesPage() {
   if(!db.series.length){el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">📚</div><p>no series tracked yet</p></div></div>';return;}
   el.innerHTML=db.series.map(s=>{
     const books=db.books.filter(b=>b.series&&b.series.toLowerCase()===s.name.toLowerCase());
-    const done=books.filter(b=>b.status==='done').length;
-    const reading=books.filter(b=>b.status==='reading').length;
-    const total=s.total||books.length;
-    const pct=total?Math.round(done/total*100):0;
-    return`<div class="card">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
-        <div>
-          <div style="font-size:15px;font-weight:500">${esc(s.name)}</div>
-          <div style="font-size:12px;color:var(--text3)">${esc(s.author)}${s.genre?' · '+esc(s.genre):''}</div>
-        </div>
-        <button class="btn-icon" onclick="deleteSeries(${s.id})">×</button>
-      </div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${done}${s.total?' of '+s.total:''} books done${reading?' · '+reading+' in progress':''}</div>
-      ${total?`<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:${pct}%;background:var(--accent)"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">${pct}%</div>`:''}
-      <div class="book-list" style="margin-top:10px">
-        ${books.sort((a,b)=>(a.seriesNum||99)-(b.seriesNum||99)).map(b=>`<div class="book-item">
-          <div class="book-spine" style="background:${b.color};cursor:pointer" onclick="openColorModal(${b.id})"></div>
-          <div class="book-meta"><div class="book-title-t">${esc(b.title)}</div>
-          <div class="book-tags"><span class="pill pill-${b.status}">${b.status==='reading'?'reading':b.status==='want'?'want to read':'done'}</span>${b.seriesNum?`<span style="font-size:10px;color:var(--text3)">book ${b.seriesNum}</span>`:''}</div></div>
-        </div>`).join('')}
-      </div>
-    </div>`;
+    const done=books.filter(b=>b.status==='done').length,reading=books.filter(b=>b.status==='reading').length,total=s.total||books.length,pct=total?Math.round(done/total*100):0;
+    return'<div class="card"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px"><div><div style="font-size:15px;font-weight:500">'+esc(s.name)+'</div><div style="font-size:12px;color:var(--text3)">'+esc(s.author)+(s.genre?' · '+esc(s.genre):'')+'</div></div><button class="btn-icon" onclick="deleteSeries('+s.id+')">×</button></div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">'+done+(s.total?' of '+s.total:'')+' books done'+(reading?' · '+reading+' in progress':'')+'</div>'+(total?'<div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:'+pct+'%;background:var(--accent)"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">'+pct+'%</div>':'')+'<div class="book-list" style="margin-top:10px">'+books.sort((a,b)=>(a.seriesNum||99)-(b.seriesNum||99)).map(b=>'<div class="book-item"><div class="book-spine" style="background:'+b.color+';cursor:pointer" onclick="openColorModal('+b.id+')"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-tags"><span class="pill pill-'+b.status+'">'+(b.status==='reading'?'reading':b.status==='want'?'want to read':'done')+'</span>'+(b.seriesNum?'<span style="font-size:10px;color:var(--text3)">book '+b.seriesNum+'</span>':'')+'</div></div></div>').join('')+'</div></div>';
   }).join('');
 }
 
 // ── STATS ──
 function renderStats() {
-  const tp=db.logs.reduce((s,l)=>s+l.pages,0);
-  const tm=db.logs.reduce((s,l)=>s+l.minutes,0);
-  const done=db.books.filter(b=>b.status==='done').length;
+  const tp=db.logs.reduce((s,l)=>s+l.pages,0),tm=db.logs.reduce((s,l)=>s+l.minutes,0),done=db.books.filter(b=>b.status==='done').length;
   const byDay={};db.logs.forEach(l=>{byDay[l.date]=(byDay[l.date]||0)+l.pages;});
   const best=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('stats-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">total pages</div><div class="metric-val">${tp.toLocaleString()}</div></div>
-    <div class="metric"><div class="metric-label">total hours</div><div class="metric-val">${Math.round(tm/60)}</div></div>
-    <div class="metric"><div class="metric-label">books done</div><div class="metric-val">${done}</div></div>
-    <div class="metric"><div class="metric-label">best day</div><div class="metric-val">${best?best[1]:'—'}</div><div class="metric-sub">${best?fmtDate(best[0]):''}</div></div>`;
-
+  document.getElementById('stats-metrics').innerHTML='<div class="metric"><div class="metric-label">total pages</div><div class="metric-val">'+tp.toLocaleString()+'</div></div><div class="metric"><div class="metric-label">total hours</div><div class="metric-val">'+Math.round(tm/60)+'</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div></div><div class="metric"><div class="metric-label">best day</div><div class="metric-val">'+(best?best[1]:'—')+'</div><div class="metric-sub">'+(best?fmtDate(best[0]):'')+'</div></div>';
   const mc={};db.books.filter(b=>b.status==='done'&&b.finishedDate).forEach(b=>{const m=b.finishedDate.slice(0,7);mc[m]=(mc[m]||0)+1;});
   const months=Object.keys(mc).sort().slice(-10);
   destroyChart('monthly-chart');
-  charts['monthly-chart']=new Chart(document.getElementById('monthly-chart'),{type:'bar',data:{labels:months.map(m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1];})||['none'],datasets:[{data:months.map(m=>mc[m]),backgroundColor:'#5dbf8acc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},stepSize:1,maxTicksLimit:5}}}}});
-
+  charts['monthly-chart']=new Chart(document.getElementById('monthly-chart'),{type:'bar',data:{labels:months.map(m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1];}),datasets:[{data:months.map(m=>mc[m]),backgroundColor:'#5dbf8acc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},stepSize:1,maxTicksLimit:5}}}}});
   const d30l=[],d30d=[];
-  for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);d30l.push(i%5===0?d.getDate()+'':'');d30d.push(db.logs.filter(l=>l.date===s).reduce((a,l)=>a+l.pages,0));}
+  for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const s=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');d30l.push(i%5===0?d.getDate()+'':'');d30d.push(db.logs.filter(l=>l.date===s).reduce((a,l)=>a+l.pages,0));}
   destroyChart('daily30-chart');
   charts['daily30-chart']=new Chart(document.getElementById('daily30-chart'),{type:'line',data:{labels:d30l,datasets:[{data:d30d,borderColor:'#7ab3e0',backgroundColor:'rgba(122,179,224,0.07)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#7ab3e0'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
-
   const gc={};db.books.filter(b=>b.genre).forEach(b=>{gc[b.genre]=(gc[b.genre]||0)+1;});
   const genres=Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,6);
   destroyChart('genre-chart');
-  if(genres.length)charts['genre-chart']=new Chart(document.getElementById('genre-chart'),{type:'doughnut',data:{labels:genres.map(g=>g[0]),datasets:[{data:genres.map(g=>g[1]),backgroundColor:CHART_COLORS.slice(0,genres.length),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#a09690',font:{size:10},boxWidth:8,padding:6}}}}});
-
+  if(genres.length) charts['genre-chart']=new Chart(document.getElementById('genre-chart'),{type:'doughnut',data:{labels:genres.map(g=>g[0]),datasets:[{data:genres.map(g=>g[1]),backgroundColor:CHART_COLORS.slice(0,genres.length),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#a09690',font:{size:10},boxWidth:8,padding:6}}}}});
   const dow=[0,0,0,0,0,0,0];db.logs.forEach(l=>{const d=new Date(l.date+'T12:00:00');dow[d.getDay()]+=l.pages;});
   destroyChart('dow-chart');
   charts['dow-chart']=new Chart(document.getElementById('dow-chart'),{type:'bar',data:{labels:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],datasets:[{data:dow,backgroundColor:'#b39ddbcc',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b6259',font:{size:10}}},y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{color:'#6b6259',font:{size:10},maxTicksLimit:4}}}}});
-
   const finished=[...db.books.filter(b=>b.status==='done')].sort((a,b)=>(b.rating||0)-(a.rating||0));
-  document.getElementById('stats-done-list').innerHTML=finished.length?`<div class="book-list">${finished.map(b=>`<div class="book-item"><div class="book-spine" style="background:${b.color}"></div><div class="book-meta"><div class="book-title-t">${esc(b.title)}</div><div class="book-author-t">${esc(b.author)}${b.finishedDate?' · '+fmtDate(b.finishedDate):''}</div></div><div style="font-size:12px;white-space:nowrap">${starsFixed(b.rating||0)}</div></div>`).join('')}</div>`:'<div class="empty"><p>no finished books yet</p></div>';
+  document.getElementById('stats-done-list').innerHTML=finished.length?'<div class="book-list">'+finished.map(b=>'<div class="book-item"><div class="book-spine" style="background:'+b.color+'"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+(b.finishedDate?' · '+fmtDate(b.finishedDate):'')+'</div></div><div style="font-size:12px;white-space:nowrap">'+starsFixed(b.rating||0)+'</div></div>').join('')+'</div>':'<div class="empty"><p>no finished books yet</p></div>';
 }
 
 // ── GOALS ──
 function renderGoals() {
-  const done=db.books.filter(b=>b.status==='done').length;
-  const pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
+  const done=db.books.filter(b=>b.status==='done').length,pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
   document.getElementById('g-pct').textContent=pct+'%';
-  document.getElementById('g-desc').textContent=`${done} of ${db.goal} books`;
+  document.getElementById('g-desc').textContent=done+' of '+db.goal+' books';
   document.getElementById('goal-in').placeholder=db.goal;
   document.getElementById('daily-g-in').placeholder=db.dailyGoal;
   document.getElementById('weekly-g-in').placeholder=db.weeklyGoal;
-  const todayP=db.logs.filter(l=>l.date===todayStr()).reduce((s,l)=>s+l.pages,0);
-  const weekP=pagesInDays(7);
-  const dpct=Math.min(100,Math.round(todayP/db.dailyGoal*100));
-  const wpct=Math.min(100,Math.round(weekP/db.weeklyGoal*100));
-  document.getElementById('daily-g-status').innerHTML=`today: <strong style="color:${dpct>=100?'var(--green)':'var(--accent)'}">${todayP}/${db.dailyGoal} (${dpct}%)</strong>`;
-  document.getElementById('weekly-g-status').innerHTML=`this week: <strong style="color:${wpct>=100?'var(--green)':'var(--accent)'}">${weekP}/${db.weeklyGoal} (${wpct}%)</strong>`;
+  const todayP=db.logs.filter(l=>l.date===todayStr()).reduce((s,l)=>s+l.pages,0),weekP=pagesInDays(7);
+  const dpct=Math.min(100,Math.round(todayP/db.dailyGoal*100)),wpct=Math.min(100,Math.round(weekP/db.weeklyGoal*100));
+  document.getElementById('daily-g-status').innerHTML='today: <strong style="color:'+(dpct>=100?'var(--green)':'var(--accent)')+'">'+todayP+'/'+db.dailyGoal+' ('+dpct+'%)</strong>';
+  document.getElementById('weekly-g-status').innerHTML='this week: <strong style="color:'+(wpct>=100?'var(--green)':'var(--accent)')+'">'+weekP+'/'+db.weeklyGoal+' ('+wpct+'%)</strong>';
   destroyChart('goal-donut');
   const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
   charts['goal-donut']=new Chart(document.getElementById('goal-donut'),{type:'doughnut',data:{datasets:[{data:[pct,100-pct],backgroundColor:[acc,'rgba(128,128,128,0.08)'],borderWidth:0}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
-  const dLeft=Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000));
-  const bLeft=Math.max(0,db.goal-done);
-  const avgD=calcAvgDays();
-  const dpb=bLeft>0?Math.ceil(dLeft/bLeft):0;
-  const ontrack=avgD&&avgD<=dpb;
-  document.getElementById('pace-info').innerHTML=bLeft===0?'<strong style="color:var(--green)">🎉 annual goal complete!</strong>':
-    `${bLeft} book${bLeft!==1?'s':''} left · ${dLeft} days remaining<br>finish a book every <strong>${dpb}</strong> days to hit your goal<br>${avgD?`your average: <strong>${avgD} days/book</strong> · <span style="color:${ontrack?'var(--green)':'var(--red)'}">${ontrack?'on track ✓':'behind — pick up the pace!'}</span>`:' log more books for pace analysis'}`;
+  const dLeft=Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000)),bLeft=Math.max(0,db.goal-done),avgD=calcAvgDays(),dpb=bLeft>0?Math.ceil(dLeft/bLeft):0,ontrack=avgD&&avgD<=dpb;
+  document.getElementById('pace-info').innerHTML=bLeft===0?'<strong style="color:var(--green)">🎉 annual goal complete!</strong>':bLeft+' book'+(bLeft!==1?'s':'')+' left · '+dLeft+' days remaining<br>finish a book every <strong>'+dpb+'</strong> days to hit your goal<br>'+(avgD?'your average: <strong>'+avgD+' days/book</strong> · <span style="color:'+(ontrack?'var(--green)':'var(--red)')+'">'+(ontrack?'on track ✓':'behind — pick up the pace!')+'</span>':' log more books for pace analysis');
 }
 
-// ── FRIENDS ──
+// ── FRIENDS RENDER ──
 function renderFriends() {
-  const pendingEl=document.getElementById('pending-list');
-  const friendsEl=document.getElementById('friends-list');
-  const countEl=document.getElementById('pending-count');
-  if(!sb||!currentUser){
-    pendingEl.innerHTML='<div class="empty"><p>sign in to connect with friends</p></div>';
-    friendsEl.innerHTML='<div class="empty"><p>sign in to see friends</p></div>';
-    return;
-  }
+  const pendingEl=document.getElementById('pending-list'),friendsEl=document.getElementById('friends-list'),countEl=document.getElementById('pending-count');
+  if(!sb||!currentUser){pendingEl.innerHTML='<div class="empty"><p>sign in to connect with friends</p></div>';friendsEl.innerHTML='<div class="empty"><p>sign in to see friends</p></div>';return;}
   const reqs=db.friendReqs||[];
-  if(reqs.length){countEl.style.display='inline';countEl.textContent=reqs.length;pendingEl.innerHTML=reqs.map(uid=>`<div class="friend-item"><div class="friend-av">?</div><div class="friend-info"><div class="friend-name">${uid.slice(0,8)}...</div><div class="friend-stat">wants to be friends</div></div><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="acceptFriend('${uid}')">accept</button><button class="btn btn-ghost btn-sm" onclick="declineFriend('${uid}')">decline</button></div></div>`).join('');}
+  if(reqs.length){countEl.style.display='inline';countEl.textContent=reqs.length;pendingEl.innerHTML=reqs.map(uid=>'<div class="friend-item"><div class="friend-av">?</div><div class="friend-info"><div class="friend-name">'+uid.slice(0,8)+'...</div><div class="friend-stat">wants to be friends</div></div><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="acceptFriend(\''+uid+'\')">accept</button><button class="btn btn-ghost btn-sm" onclick="declineFriend(\''+uid+'\')">decline</button></div></div>').join('');}
   else {countEl.style.display='none';pendingEl.innerHTML='<div class="empty"><p>no pending requests</p></div>';}
   const fr=db.friends||[];
-  friendsEl.innerHTML=fr.length?fr.map(f=>`<div class="friend-item"><div class="friend-av">${(f.username||'?')[0].toUpperCase()}</div><div class="friend-info"><div class="friend-name">${esc(f.username)}</div><div class="friend-stat">${f.booksRead||0} books done</div>${f.reading&&f.reading.length?`<div class="friend-reading">reading: ${f.reading.slice(0,2).map(t=>esc(t)).join(', ')}</div>`:''}</div></div>`).join(''):'<div class="empty"><p>no friends yet — send a request!</p></div>';
+  friendsEl.innerHTML=fr.length?fr.map(f=>'<div class="friend-item"><div class="friend-av">'+(f.username||'?')[0].toUpperCase()+'</div><div class="friend-info"><div class="friend-name">'+esc(f.username)+'</div><div class="friend-stat">'+(f.booksRead||0)+' books done</div>'+(f.reading&&f.reading.length?'<div class="friend-reading">reading: '+f.reading.slice(0,2).map(t=>esc(t)).join(', ')+'</div>':'')+'</div></div>').join(''):'<div class="empty"><p>no friends yet — send a request!</p></div>';
 }
 
 // ── SHARE ──
 function renderShare() {
-  const done=db.books.filter(b=>b.status==='done').length;
-  const streak=calcStreak();
-  const pages=db.logs.reduce((s,l)=>s+l.pages,0);
-  const reading=db.books.filter(b=>b.status==='reading');
-  const pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
+  const done=db.books.filter(b=>b.status==='done').length,streak=calcStreak(),pages=db.logs.reduce((s,l)=>s+l.pages,0),reading=db.books.filter(b=>b.status==='reading'),pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
   const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
-  document.getElementById('share-pre').innerHTML=`
-    <div style="font-family:'Instrument Serif',serif;font-size:18px;color:${acc};margin-bottom:12px">readtracker</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
-      <div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">streak</div><div style="font-size:22px;color:#ede8e1;font-family:'Instrument Serif',serif">${streak}d</div></div>
-      <div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">books done</div><div style="font-size:22px;color:#ede8e1;font-family:'Instrument Serif',serif">${done}</div></div>
-      <div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">pages</div><div style="font-size:22px;color:#ede8e1;font-family:'Instrument Serif',serif">${pages.toLocaleString()}</div></div>
-    </div>
-    <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:6px"><div style="height:3px;background:${acc};border-radius:2px;width:${pct}%"></div></div>
-    <div style="font-size:11px;color:#a09690">${done}/${db.goal} books · ${pct}% of ${new Date().getFullYear()} goal</div>
-    ${reading.length?`<div style="margin-top:10px;font-size:11px;color:#6b6259">reading now: <span style="color:#ede8e1">${reading.slice(0,2).map(b=>b.title).join(', ')}</span></div>`:''}`;
-
-  document.getElementById('embed-code').value=reading.length?`<!-- readtracker widget -->
-<div style="font-family:sans-serif;background:#141210;color:#ede8e1;padding:14px;border-radius:10px;border:1px solid rgba(201,169,110,0.15);max-width:280px">
-  <div style="font-size:11px;color:${acc};margin-bottom:8px">currently reading</div>
-  ${reading.slice(0,3).map(b=>`<div style="margin-bottom:7px"><div style="font-size:13px;font-weight:500">${esc(b.title)}</div><div style="font-size:11px;color:#a09690">${esc(b.author)}</div>${b.pages?`<div style="height:2px;background:rgba(255,255,255,0.07);border-radius:1px;margin-top:5px"><div style="height:2px;background:${b.color};border-radius:1px;width:${Math.round((b.pagesRead||0)/(b.pages)*100)}%"></div></div>`:''}</div>`).join('')}
-</div>`:'<!-- no books currently reading -->';
+  document.getElementById('share-pre').innerHTML='<div style="font-family:\'Instrument Serif\',serif;font-size:18px;color:'+acc+';margin-bottom:12px">readtracker</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px"><div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">streak</div><div style="font-size:22px;color:#ede8e1;font-family:\'Instrument Serif\',serif">'+streak+'d</div></div><div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">books done</div><div style="font-size:22px;color:#ede8e1;font-family:\'Instrument Serif\',serif">'+done+'</div></div><div><div style="font-size:9px;color:#6b6259;text-transform:uppercase;letter-spacing:0.5px">pages</div><div style="font-size:22px;color:#ede8e1;font-family:\'Instrument Serif\',serif">'+pages.toLocaleString()+'</div></div></div><div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:6px"><div style="height:3px;background:'+acc+';border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:11px;color:#a09690">'+done+'/'+db.goal+' books · '+pct+'% of '+new Date().getFullYear()+' goal</div>'+(reading.length?'<div style="margin-top:10px;font-size:11px;color:#6b6259">reading now: <span style="color:#ede8e1">'+reading.slice(0,2).map(b=>b.title).join(', ')+'</span></div>':'');
+  document.getElementById('embed-code').value=reading.length?'<!-- readtracker widget -->\n<div style="font-family:sans-serif;background:#141210;color:#ede8e1;padding:14px;border-radius:10px;border:1px solid rgba(201,169,110,0.15);max-width:280px">\n  <div style="font-size:11px;color:'+acc+';margin-bottom:8px">currently reading</div>\n  '+reading.slice(0,3).map(b=>'<div style="margin-bottom:7px"><div style="font-size:13px;font-weight:500">'+esc(b.title)+'</div><div style="font-size:11px;color:#a09690">'+esc(b.author)+'</div>'+(b.pages?'<div style="height:2px;background:rgba(255,255,255,0.07);border-radius:1px;margin-top:5px"><div style="height:2px;background:'+b.color+';border-radius:1px;width:'+Math.round((b.pagesRead||0)/b.pages*100)+'%"></div></div>':'')+'</div>').join('')+'\n</div>':'<!-- no books currently reading -->';
 }
-
 function copyShareText() {
   const done=db.books.filter(b=>b.status==='done').length,streak=calcStreak(),pages=db.logs.reduce((s,l)=>s+l.pages,0),reading=db.books.filter(b=>b.status==='reading').slice(0,2).map(b=>b.title).join(', ');
-  navigator.clipboard.writeText(`📚 reading update — ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}\n\n🔥 ${streak}-day streak\n📖 ${done} books done (${Math.round(done/db.goal*100)}% of ${db.goal}-book goal)\n📄 ${pages.toLocaleString()} pages read\n\nreading: ${reading||'nothing right now'}\n\n#readtracker`).then(()=>toast('copied!')).catch(()=>toast('could not copy'));
+  navigator.clipboard.writeText('📚 reading update — '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})+'\n\n🔥 '+streak+'-day streak\n📖 '+done+' books done ('+Math.round(done/db.goal*100)+'% of '+db.goal+'-book goal)\n📄 '+pages.toLocaleString()+' pages read\n\nreading: '+(reading||'nothing right now')+'\n\n#readtracker').then(()=>toast('copied!')).catch(()=>toast('could not copy'));
 }
 function copyEmbed() { navigator.clipboard.writeText(document.getElementById('embed-code').value).then(()=>toast('embed code copied!')).catch(()=>toast('could not copy')); }
 
@@ -1468,488 +1256,198 @@ function importGoodreads(input) {
     try{const lines=e.target.result.split('\n'),headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());let count=0;
     for(let i=1;i<lines.length;i++){const row=parseCSVRow(lines[i]);if(!row.length)continue;const get=n=>{const idx=headers.findIndex(h=>h.includes(n));return idx>=0?(row[idx]||'').replace(/"/g,'').trim():'';};const title=get('title');if(!title)continue;const shelf=(get('shelf')||get('exclusive shelf')||get('bookshelves')||'').toLowerCase();let status='want';if(shelf.includes('currently'))status='reading';else if(shelf.includes('read')&&!shelf.includes('to-read'))status='done';if(db.books.find(b=>b.title.toLowerCase()===title.toLowerCase()))continue;
     db.books.push({id:Date.now()+i,title,author:get('author'),pages:parseInt(get('pages'))||0,genre:'',series:'',seriesNum:0,status,color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:Math.round(parseFloat(get('my rating'))||0),pagesRead:status==='done'?(parseInt(get('pages'))||0):0,startDate:get('date started')||(status!=='want'?todayStr():''),finishedDate:get('date read')||(status==='done'?todayStr():''),addedDate:todayStr()});count++;}
-    save();renderAll();document.getElementById('gr-status').textContent=`✓ imported ${count} books`;toast(`imported ${count} books!`);
+    save();renderAll();document.getElementById('gr-status').textContent='✓ imported '+count+' books';toast('imported '+count+' books!');
     }catch(err){document.getElementById('gr-status').textContent='error: '+err.message;}
   };r.readAsText(file);
 }
-
 function importCSV(input) {
   const file=input.files[0];if(!file)return;
   const r=new FileReader();r.onload=e=>{
     const lines=e.target.result.split('\n').slice(1);let count=0;
     lines.forEach((line,i)=>{const c=parseCSVRow(line).map(x=>x.replace(/"/g,'').trim());if(!c[0])return;const status=(c[3]||'want').toLowerCase();db.books.push({id:Date.now()+i,title:c[0],author:c[1]||'',pages:parseInt(c[2])||0,status:['reading','want','done'].includes(status)?status:'want',genre:c[4]||'',series:c[5]||'',seriesNum:parseInt(c[6])||0,color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:status==='done'?(parseInt(c[2])||0):0,startDate:'',finishedDate:status==='done'?todayStr():'',addedDate:todayStr()});count++;});
-    save();renderAll();toast(`imported ${count} books!`);
+    save();renderAll();toast('imported '+count+' books!');
   };r.readAsText(file);
 }
-
 function parseCSVRow(row){const r=[];let cur='',inQ=false;for(const c of row){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){r.push(cur);cur='';}else cur+=c;}r.push(cur);return r;}
-function exportJSON(){const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`readtracker-${todayStr()}.json`;a.click();toast('backup downloaded!');}
-function exportCSV(){const rows=[['Title','Author','Pages','Status','Genre','Series','SeriesNum','Rating','Started','Finished']];db.books.forEach(b=>rows.push([b.title,b.author,b.pages,b.status,b.genre,b.series,b.seriesNum,b.rating,b.startDate,b.finishedDate]));const csv=rows.map(r=>r.map(c=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`readtracker-books-${todayStr()}.csv`;a.click();toast('CSV downloaded!');}
+function exportJSON(){const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='readtracker-'+todayStr()+'.json';a.click();toast('backup downloaded!');}
+function exportCSV(){const rows=[['Title','Author','Pages','Status','Genre','Series','SeriesNum','Rating','Started','Finished']];db.books.forEach(b=>rows.push([b.title,b.author,b.pages,b.status,b.genre,b.series,b.seriesNum,b.rating,b.startDate,b.finishedDate]));const csv=rows.map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='readtracker-books-'+todayStr()+'.csv';a.click();toast('CSV downloaded!');}
 function restoreJSON(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{db={...db,...JSON.parse(e.target.result)};save();renderAll();toast('data restored!');}catch(e){toast('error reading file');}};r.readAsText(f);}
 function clearAll(){if(!confirm('delete ALL data?'))return;db={books:[],logs:[],series:[],friends:[],friendReqs:[],goal:24,dailyGoal:30,weeklyGoal:200};save();renderAll();toast('cleared');}
 
 // ── CALC HELPERS ──
-function calcStreak(){const days=new Set(db.logs.map(l=>l.date));let s=0,d=new Date();for(let i=0;i<365;i++){const k=d.toISOString().slice(0,10);if(days.has(k)){s++;d.setDate(d.getDate()-1);}else if(i===0){d.setDate(d.getDate()-1);}else break;}return s;}
+function calcStreak(){const days=new Set(db.logs.map(l=>l.date));let s=0,d=new Date();for(let i=0;i<365;i++){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(days.has(k)){s++;d.setDate(d.getDate()-1);}else if(i===0){d.setDate(d.getDate()-1);}else break;}return s;}
 function pagesInDays(n){const c=new Date();c.setDate(c.getDate()-n);return db.logs.filter(l=>new Date(l.date+'T12:00:00')>=c).reduce((s,l)=>s+l.pages,0);}
 function pagesInRange(from,to){const now=new Date();const a=new Date(now);a.setDate(now.getDate()-from);const b=new Date(now);b.setDate(now.getDate()-to);return db.logs.filter(l=>{const d=new Date(l.date+'T12:00:00');return d>=a&&d<b;}).reduce((s,l)=>s+l.pages,0);}
 function calcSpeed(){const p=db.logs.reduce((s,l)=>s+l.pages,0),m=db.logs.reduce((s,l)=>s+l.minutes,0);return m>0?Math.round(p/(m/60)):0;}
 function calcAvgDays(){const books=db.books.filter(b=>b.status==='done'&&b.startDate&&b.finishedDate);if(!books.length)return 0;const avg=books.reduce((s,b)=>s+Math.max(1,(new Date(b.finishedDate)-new Date(b.startDate))/86400000),0)/books.length;return Math.round(avg);}
+function editBookPages(id){const b=db.books.find(x=>x.id===id);if(!b)return;const np=prompt('edit page count for "'+b.title+'"\ncurrent: '+(b.pages||'unknown'),b.pages||'');if(np===null)return;const parsed=parseInt(np);if(isNaN(parsed)||parsed<1){toast('enter a valid page number');return;}b.pages=parsed;if(b.pagesRead>b.pages)b.pagesRead=b.pages;save();renderAll();toast('page count updated!');}
 
-// ── EDIT BOOK PAGES ──
-function editBookPages(id) {
-  const b = db.books.find(x=>x.id===id);
-  if(!b) return;
-  const np = prompt(`edit page count for "${b.title}"\ncurrent: ${b.pages||'unknown'}`, b.pages||'');
-  if(np === null) return;
-  const parsed = parseInt(np);
-  if(isNaN(parsed)||parsed<1){toast('enter a valid page number');return;}
-  b.pages = parsed;
-  if(b.pagesRead > b.pages) b.pagesRead = b.pages;
-  save(); renderAll(); toast('page count updated!');
-}
-
-// ── WORM PETS ──
-const WORM_PARTS = {
-  body: ['#7ecb6e','#e8a87c','#7ab3e0','#b39ddb','#e07070','#f0c060','#88c4a0','#d4a0b8','#80b8c0','#c9a96e','#ff9999','#99ccff'],
-  hat:  ['none','🎩','👑','🎓','🪖','🎀','🌸','🍄','🎵','🌈'],
-  eyes: ['◉◉','ʘʘ','••','◕◕','◔◔','^^','@@','◡◡','òó','ᵔᵔ'],
-  length: [3, 4, 5, 6, 7],
-};
-
+// ── WORMS ──
 function initWorms() {
-  if(!db.worms) db.worms = {
-    list: [],
-    totalPagesMilestone: 0,
-  };
+  if(!db.worms) db.worms={list:[],totalPagesMilestone:0,hunger:0};
+  if(db.worms.hunger==null) db.worms.hunger=0;
 }
 
 function checkWormReward() {
   initWorms();
-  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
-  const newMilestones = Math.floor(totalPages/10);
-  const oldMilestones = db.worms.totalPagesMilestone||0;
-  if(newMilestones > oldMilestones) {
-    const earned = newMilestones - oldMilestones;
-    db.worms.totalPagesMilestone = newMilestones;
-    for(let i=0;i<earned;i++) feedAllWorms();
-    toast(`🐛 +${earned} worm food earned!`);
-    save();
-    if(document.getElementById('page-worms')?.classList.contains('active')) renderWorms();
-  }
-}
-
-function feedAllWorms() {
-  initWorms();
-  db.worms.hunger = (db.worms.hunger||0) + 1;
-}
-
-function addWorm() {
-  initWorms();
-  const name = document.getElementById('worm-name').value.trim()||'wormie';
-  const body = document.getElementById('worm-body').value;
-  const hat  = document.getElementById('worm-hat').value;
-  const eyes = document.getElementById('worm-eyes').value;
-  db.worms.list.push({id:Date.now(),name,body,hat,eyes,hunger:0,happiness:5,age:0,createdDate:todayStr()});
-  document.getElementById('worm-name').value='';
-  save(); renderWorms(); toast(`${name} joined your library!`);
-}
-
-function feedWorm(id) {
-  initWorms();
-  const w = db.worms.list.find(x=>x.id===id);
-  if(!w) return;
-  const foodBank = db.worms.hunger||0;
-  if(foodBank<1){toast('read 10 more pages to earn food!');return;}
-  db.worms.hunger = Math.max(0, foodBank-1);
-  w.hunger = (w.hunger||0)+1;
-  w.happiness = Math.min(10,(w.happiness||5)+2);
-  save(); renderWorms(); toast(`${w.name} says yum! 🐛`);
-}
-
-function deleteWorm(id) {
-  if(!confirm('release this worm back into the wild?')) return;
-  initWorms();
-  db.worms.list = db.worms.list.filter(w=>w.id!==id);
-  save(); renderWorms();
-}
-
-
-//function renderWorms() {
-  //initWorms();
-//  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
-  //const availableFood = Math.floor(totalPages/10) - (db.worms.totalPagesMilestone||0) + (db.worms.hunger||0);
-  //const foodBank = db.worms.hunger||0;
-
-  document.getElementById('worm-food-count').textContent = foodBank;
-  document.getElementById('worm-total-pages').textContent = totalPages.toLocaleString();
-
-  const el = document.getElementById('worm-list');
-  if(!db.worms.list.length) {
-    el.innerHTML='<div class="empty"><div class="empty-icon">🐛</div><p>design your first bookworm companion!</p></div>';
-    return;
-  }
-  el.innerHTML = db.worms.list.map(w=>{
-    const hp = Math.min(10, Math.max(0, w.happiness||5));
-    const hpBar = Array.from({length:10},(_,i)=>i<hp?'💚':'🖤').join('');
-    const mood = hp>=8?'😊':hp>=5?'😐':'😢';
-    const bodyEmoji = w.body||'🟤';
-    const hatEmoji = w.hat&&w.hat!=='none'?w.hat:'';
-    const eyeStr = w.eyes||'◉◉';
-    return `<div class="worm-card">
-      <div class="worm-display">
-        <div class="worm-hat">${hatEmoji}</div>
-        <div class="worm-face">${eyeStr}</div>
-        <div class="worm-body-row">${bodyEmoji}${bodyEmoji}${bodyEmoji}〰️</div>
-      </div>
-      <div class="worm-info">
-        <div class="worm-name-display">${esc(w.name)} ${mood}</div>
-        <div class="worm-hp">${hpBar}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:3px">happiness · ${hp}/10 · fed ${w.hunger||0}× </div>
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <button class="btn btn-primary btn-sm" onclick="feedWorm(${w.id})">🍎 feed</button>
-          <button class="btn btn-ghost btn-sm" onclick="deleteWorm(${w.id})">release</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ── SPOTIFY EMBED ──
-const PRESET_PLAYLISTS = {
-  'deep-focus': '37i9dQZF1DWZeKCadgRdKQ',
-  'cozy':       '37i9dQZF1DX4sWSpwq3LiO',
-  'epic':       '37i9dQZF1DX1s9knjP51Oa',
-  'night':      '37i9dQZF1DX3Ogo9pFvBkY',
-  'baroque':    '37i9dQZF1DWWEJlAGA9gs0',
-  'lofi':       '37i9dQZF1DX8NTLI2TtZa6',
-};
-function loadSpotifyEmbed() {
-  const raw = document.getElementById('spotify-url-input').value.trim();
-  if(raw) embedSpotify(raw);
-}
-function loadPresetPlaylist(key) {
-  const id = PRESET_PLAYLISTS[key];
-  if(id) embedSpotify('https://open.spotify.com/playlist/'+id);
-}
-function embedSpotify(url) {
-  if(!url) return;
-  const match = url.match(/spotify\.com\/(playlist|album|track|artist)\/([A-Za-z0-9]+)/);
-  if(!match){toast('paste a valid spotify link');return;}
-  const [,type,id] = match;
-  const iframe = document.getElementById('spotify-iframe');
-  iframe.src = 'https://open.spotify.com/embed/'+type+'/'+id+'?utm_source=generator&theme=0';
-  iframe.style.display = 'block';
-  document.getElementById('spotify-placeholder').style.display = 'none';
-}
-
-// ── OPENLIBRARY BOOK SEARCH ──
-async function searchBooks() {
-  const q = document.getElementById('book-search-input').value.trim();
-  if(!q) return;
-  const statusEl = document.getElementById('book-search-status');
-  const resultsEl = document.getElementById('book-search-results');
-  statusEl.textContent = 'searching\u2026';
-  resultsEl.innerHTML = '';
-  try {
-    const res = await fetch('https://openlibrary.org/search.json?q='+encodeURIComponent(q)+'&limit=8&fields=title,author_name,number_of_pages_median,cover_i,first_publish_year,key');
-    const data = await res.json();
-    if(!data.docs||!data.docs.length){statusEl.textContent='no results found';return;}
-    statusEl.textContent = data.numFound.toLocaleString()+' results';
-    resultsEl.innerHTML = data.docs.map(function(d){
-      var title = esc(d.title||'Unknown');
-      var author = esc((d.author_name||[]).slice(0,2).join(', ')||'Unknown author');
-      var pages = d.number_of_pages_median||0;
-      var year = d.first_publish_year||'';
-      var cover = d.cover_i ? 'https://covers.openlibrary.org/b/id/'+d.cover_i+'-S.jpg' : '';
-      var alreadyHave = db.books.some(function(b){return b.title.toLowerCase()===d.title.toLowerCase();});
-      var titleEscJs = (d.title||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      var authorEscJs = ((d.author_name||[]).slice(0,2).join(', ')||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      return '<div class="book-search-item">'
-        +(cover?'<img src="'+cover+'" alt="" class="book-search-cover" onerror="this.style.display=\'none\'" />':'<div class="book-search-cover-placeholder">\uD83D\uDCD6</div>')
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+title+'</div>'
-        +'<div style="font-size:11px;color:var(--accent)">'+author+'</div>'
-        +'<div style="font-size:10px;color:var(--text3)">'+(year?year+' \u00B7 ':'')+(pages?pages+' pages':'')+'</div>'
-        +'</div>'
-        +'<div style="flex-shrink:0">'
-        +(alreadyHave
-          ? '<span style="font-size:11px;color:var(--text3)">in library</span>'
-          : '<button class="btn btn-ghost btn-sm" onclick="addSearchedBook(\''+titleEscJs+'\',\''+authorEscJs+'\','+pages+')">+ add</button>')
-        +'</div></div>';
-    }).join('');
-  } catch(e) {
-    statusEl.textContent = 'search failed \u2014 check your connection';
-  }
-}
-function addSearchedBook(title, author, pages) {
-  db.books.push({id:Date.now(),title:title,author:author,pages:pages||0,genre:'',series:'',seriesNum:0,status:'want',color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:0,startDate:'',finishedDate:'',addedDate:todayStr()});
-  save(); renderAll(); toast('"'+title+'" added to want to read!');
-}
-
-// ── WORM TEMPLATES ──
-const WORM_TEMPLATES = [
-  { id:'classic', name:'classic', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="20" rx="18" ry="14" fill="#7ecb6e"/><ellipse cx="36" cy="22" rx="14" ry="11" fill="#6dc05c"/><ellipse cx="50" cy="22" rx="13" ry="10" fill="#7ecb6e"/><ellipse cx="63" cy="21" rx="11" ry="9" fill="#6dc05c"/><ellipse cx="73" cy="20" rx="8" ry="7" fill="#7ecb6e"/><circle cx="13" cy="17" r="3.5" fill="white"/><circle cx="13" cy="17" r="2" fill="#1a1a1a"/><circle cx="22" cy="15" r="3.5" fill="white"/><circle cx="22" cy="15" r="2" fill="#1a1a1a"/><path d="M14 25 Q18 29 22 25" stroke="#3a7a30" stroke-width="1.5" fill="none" stroke-linecap="round"/><line x1="12" y1="8" x2="10" y2="2" stroke="#5ab048" stroke-width="1.5"/><circle cx="10" cy="2" r="2" fill="#e87070"/></svg>' },
-  { id:'chubby', name:'chubby', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="22" rx="17" ry="16" fill="#e8a87c"/><ellipse cx="33" cy="24" rx="15" ry="13" fill="#d9956a"/><ellipse cx="48" cy="24" rx="14" ry="12" fill="#e8a87c"/><ellipse cx="62" cy="23" rx="12" ry="11" fill="#d9956a"/><ellipse cx="73" cy="22" rx="9" ry="8" fill="#e8a87c"/><circle cx="11" cy="18" r="4" fill="white"/><circle cx="11" cy="18" r="2.2" fill="#1a1a1a"/><circle cx="21" cy="16" r="4" fill="white"/><circle cx="21" cy="16" r="2.2" fill="#1a1a1a"/><path d="M12 27 Q17 32 22 27" stroke="#b07050" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="17" cy="30" rx="4" ry="2" fill="#ffb4a0" opacity="0.6"/></svg>' },
-  { id:'cool', name:'cool', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="21" rx="17" ry="13" fill="#7ab3e0"/><ellipse cx="34" cy="23" rx="14" ry="11" fill="#6aa0cc"/><ellipse cx="48" cy="23" rx="13" ry="10" fill="#7ab3e0"/><ellipse cx="62" cy="22" rx="11" ry="9" fill="#6aa0cc"/><ellipse cx="73" cy="21" rx="8" ry="7" fill="#7ab3e0"/><rect x="7" y="14" width="10" height="6" rx="3" fill="#1a1a1a"/><rect x="19" y="12" width="10" height="6" rx="3" fill="#1a1a1a"/><rect x="8" y="15" width="8" height="4" rx="2" fill="#4488cc" opacity="0.5"/><rect x="20" y="13" width="8" height="4" rx="2" fill="#4488cc" opacity="0.5"/><line x1="17" y1="17" x2="19" y2="15" stroke="#1a1a1a" stroke-width="1.5"/><path d="M12 26 Q17 28 22 26" stroke="#4a7aaa" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>' },
-  { id:'fancy', name:'fancy', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="21" rx="17" ry="13" fill="#b39ddb"/><ellipse cx="34" cy="23" rx="14" ry="11" fill="#9f88c8"/><ellipse cx="48" cy="23" rx="13" ry="10" fill="#b39ddb"/><ellipse cx="62" cy="22" rx="11" ry="9" fill="#9f88c8"/><ellipse cx="73" cy="21" rx="8" ry="7" fill="#b39ddb"/><circle cx="12" cy="17" r="3.5" fill="white"/><circle cx="12" cy="17" r="2" fill="#1a1a1a"/><circle cx="21" cy="15" r="3.5" fill="white"/><circle cx="21" cy="15" r="2" fill="#1a1a1a"/><path d="M12 25 Q17 30 22 25" stroke="#7060a8" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="10" y="2" width="18" height="7" rx="3.5" fill="#1a1a1a"/><rect x="9" y="6" width="20" height="3" rx="1.5" fill="#1a1a1a"/></svg>' },
-  { id:'sleepy', name:'sleepy', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="23" rx="17" ry="14" fill="#88c4a0"/><ellipse cx="34" cy="25" rx="14" ry="12" fill="#72b08c"/><ellipse cx="48" cy="25" rx="13" ry="11" fill="#88c4a0"/><ellipse cx="62" cy="24" rx="11" ry="10" fill="#72b08c"/><ellipse cx="73" cy="23" rx="8" ry="7" fill="#88c4a0"/><path d="M9 17 Q12 15 15 17" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M19 15 Q22 13 25 15" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 26 Q17 29 22 26" stroke="#4a9068" stroke-width="1.5" fill="none" stroke-linecap="round"/><text x="27" y="12" font-size="7" fill="#88c4a0">z</text><text x="33" y="7" font-size="9" fill="#88c4a0" opacity="0.7">z</text></svg>' },
-  { id:'grumpy', name:'grumpy', svg:'<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="18" cy="21" rx="17" ry="13" fill="#e07070"/><ellipse cx="34" cy="23" rx="14" ry="11" fill="#cc5c5c"/><ellipse cx="48" cy="23" rx="13" ry="10" fill="#e07070"/><ellipse cx="62" cy="22" rx="11" ry="9" fill="#cc5c5c"/><ellipse cx="73" cy="21" rx="8" ry="7" fill="#e07070"/><circle cx="11" cy="17" r="3.5" fill="white"/><circle cx="12" cy="18" r="2" fill="#1a1a1a"/><circle cx="21" cy="15" r="3.5" fill="white"/><circle cx="22" cy="16" r="2" fill="#1a1a1a"/><path d="M8 12 Q12 15 16 12" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M18 10 Q22 13 26 10" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 27 Q17 23 22 27" stroke="#aa4040" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' },
-];
-
-let selectedTemplateId = WORM_TEMPLATES[0].id;
-let pixelEraserOn = false;
-let pixelColor = '#7ecb6e';
-const PIXEL_COLS = 20, PIXEL_ROWS = 10;
-let pixelData = Array.from({length:PIXEL_ROWS}, function(){return Array(PIXEL_COLS).fill(null);});
-const PIXEL_PALETTE_COLORS = ['#7ecb6e','#e8a87c','#7ab3e0','#b39ddb','#e07070','#f0c060','#88c4a0','#d4a0b8','#80b8c0','#c9a96e','#ffffff','#aaaaaa','#555555','#1a1a1a','#ffaaaa','#aaffaa'];
-
-function initWorms() {
-  if(!db.worms) db.worms = { list:[], totalPagesMilestone:0, hunger:0 };
-  if(db.worms.hunger==null) db.worms.hunger = 0;
-}
-
-function checkWormReward() {
-  initWorms();
-  const totalPages = db.logs.reduce(function(s,l){return s+l.pages;},0);
-  const newMilestones = Math.floor(totalPages/10);
-  const oldMilestones = db.worms.totalPagesMilestone||0;
-  if(newMilestones > oldMilestones) {
-    const earned = newMilestones - oldMilestones;
-    db.worms.totalPagesMilestone = newMilestones;
-    db.worms.hunger = (db.worms.hunger||0) + earned;
-    toast('\uD83D\uDC1B +'+earned+' worm food earned!');
+  const totalPages=db.logs.reduce(function(s,l){return s+l.pages;},0);
+  const newMilestones=Math.floor(totalPages/10),oldMilestones=db.worms.totalPagesMilestone||0;
+  if(newMilestones>oldMilestones){
+    const earned=newMilestones-oldMilestones;
+    db.worms.totalPagesMilestone=newMilestones;
+    db.worms.hunger=(db.worms.hunger||0)+earned;
+    toast('🐛 +'+earned+' worm food earned!');
     save();
     if(document.getElementById('page-worms')&&document.getElementById('page-worms').classList.contains('active')) renderWorms();
   }
 }
 
+function shadeColor(hex,pct){
+  let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  r=Math.max(0,Math.min(255,r+pct));g=Math.max(0,Math.min(255,g+pct));b=Math.max(0,Math.min(255,b+pct));
+  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
+}
 
-  let wormCustom = { color: '#7ecb6e', hat: 'none', eyes: '◉◉', length: 4 };
+function buildWormSVG(w) {
+  const segs=w.length||4,c=w.color||'#7ecb6e',dark=shadeColor(c,-30);
+  const segW=18,segH=13,overlap=6,totalW=segs*(segW-overlap)+overlap+20,cx0=14,cy=20;
+  let rects='';
+  for(let i=segs-1;i>=0;i--){const x=cx0+i*(segW-overlap),fill=i%2===0?c:dark;rects+='<ellipse cx="'+x+'" cy="'+cy+'" rx="'+(segW/2)+'" ry="'+(segH/2)+'" fill="'+fill+'"/>';}
+  const eyeStr=w.eyes||'◉◉',hatStr=w.hat&&w.hat!=='none'?w.hat:'';
+  return '<svg viewBox="0 0 '+totalW+' 40" xmlns="http://www.w3.org/2000/svg" width="100%" height="44">'+rects+'<text x="'+cx0+'" y="'+(cy+5)+'" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.6)">'+eyeStr+'</text>'+(hatStr?'<text x="'+cx0+'" y="'+(cy-segH/2-1)+'" text-anchor="middle" font-size="12">'+hatStr+'</text>':'')+'</svg>';
+}
 
 function buildWormCustomizer() {
-  const bodyEl = document.getElementById('worm-body-swatches');
-  const hatEl  = document.getElementById('worm-hat-swatches');
-  const eyeEl  = document.getElementById('worm-eyes-select');
-  const lenEl  = document.getElementById('worm-length-swatches');
+  const bodyEl=document.getElementById('worm-body-swatches'),hatEl=document.getElementById('worm-hat-swatches'),eyeEl=document.getElementById('worm-eyes-select'),lenEl=document.getElementById('worm-length-swatches');
   if(!bodyEl) return;
-
-  bodyEl.innerHTML = WORM_PARTS.body.map(function(c){
-    return '<div onclick="setWormPart(\'color\',\''+c+'\',this)" title="'+c+'" style="width:24px;height:24px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+(c===wormCustom.color?'var(--text)':'transparent')+';transition:transform .1s" '+(c===wormCustom.color?'class="swatch active"':'class="swatch"')+'></div>';
-  }).join('');
-
-  hatEl.innerHTML = WORM_PARTS.hat.map(function(h){
-    const isNone = h==='none';
-    return '<div onclick="setWormPart(\'hat\',\''+h+'\',this)" style="padding:4px 8px;border-radius:6px;cursor:pointer;font-size:16px;border:1px solid '+(h===wormCustom.hat?'var(--accent)':'var(--border2)')+';background:'+(h===wormCustom.hat?'var(--accent-bg)':'var(--bg3)')+';">'+(isNone?'✕ none':h)+'</div>';
-  }).join('');
-
-  eyeEl.innerHTML = WORM_PARTS.eyes.map(function(e){
-    return '<option value="'+e+'" '+(e===wormCustom.eyes?'selected':'')+'>'+e+'</option>';
-  }).join('');
-  eyeEl.onchange = function(){ wormCustom.eyes = this.value; updateWormPreview(); };
-
-  lenEl.innerHTML = WORM_PARTS.length.map(function(n){
-    return '<div onclick="setWormPart(\'length\','+n+',this)" style="padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;border:1px solid '+(n===wormCustom.length?'var(--accent)':'var(--border2)')+';background:'+(n===wormCustom.length?'var(--accent-bg)':'var(--bg3)')+';">'+n+'</div>';
-  }).join('');
-
+  bodyEl.innerHTML=WORM_PARTS.body.map(function(c){return '<div onclick="setWormPart(\'color\',\''+c+'\',this)" title="'+c+'" style="width:24px;height:24px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+(c===wormCustom.color?'var(--text)':'transparent')+';transition:transform .1s"></div>';}).join('');
+  hatEl.innerHTML=WORM_PARTS.hat.map(function(h){return '<div onclick="setWormPart(\'hat\',\''+h+'\',this)" style="padding:4px 8px;border-radius:6px;cursor:pointer;font-size:16px;border:1px solid '+(h===wormCustom.hat?'var(--accent)':'var(--border2)')+';background:'+(h===wormCustom.hat?'var(--accent-bg)':'var(--bg3)')+';">'+(h==='none'?'✕ none':h)+'</div>';}).join('');
+  eyeEl.innerHTML=WORM_PARTS.eyes.map(function(e){return '<option value="'+e+'" '+(e===wormCustom.eyes?'selected':'')+'>'+e+'</option>';}).join('');
+  eyeEl.onchange=function(){wormCustom.eyes=this.value;updateWormPreview();};
+  lenEl.innerHTML=WORM_PARTS.length.map(function(n){return '<div onclick="setWormPart(\'length\','+n+',this)" style="padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;border:1px solid '+(n===wormCustom.length?'var(--accent)':'var(--border2)')+';background:'+(n===wormCustom.length?'var(--accent-bg)':'var(--bg3)')+';">'+n+'</div>';}).join('');
   updateWormPreview();
 }
 
-function setWormPart(part, val, el) {
-  wormCustom[part] = val;
+function setWormPart(part,val) {
+  wormCustom[part]=val;
   buildWormCustomizer();
 }
 
 function updateWormPreview() {
-  wormCustom.eyes = document.getElementById('worm-eyes-select')?.value || wormCustom.eyes;
-  const el = document.getElementById('worm-preview-svg');
-  if(el) el.innerHTML = buildWormSVG(wormCustom);
-}
-
-function buildWormSVG(w) {
-  const segs = w.length || 4;
-  const c = w.color || '#7ecb6e';
-  const dark = shadeColor(c, -30);
-  const segW = 18, segH = 13, overlap = 6;
-  const totalW = segs * (segW - overlap) + overlap + 20;
-  const cx0 = 14, cy = 20;
-  let rects = '';
-  for(let i = segs-1; i >= 0; i--) {
-    const x = cx0 + i*(segW-overlap);
-    const fill = i%2===0 ? c : dark;
-    rects += '<ellipse cx="'+(x)+'" cy="'+cy+'" rx="'+(segW/2)+'" ry="'+(segH/2)+'" fill="'+fill+'"/>';
-  }
-  const headX = cx0;
-  const eyeStr = w.eyes || '◉◉';
-  const hatStr = w.hat !== 'none' ? w.hat : '';
-  return '<svg viewBox="0 0 '+totalW+' 40" xmlns="http://www.w3.org/2000/svg" width="100%" height="44">'
-    + rects
-    + '<text x="'+(headX)+'" y="'+(cy+5)+'" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.6)">'+eyeStr+'</text>'
-    + (hatStr ? '<text x="'+(headX)+'" y="'+(cy-segH/2-1)+'" text-anchor="middle" font-size="12">'+hatStr+'</text>' : '')
-    + '</svg>';
-}
-
-function shadeColor(hex, pct) {
-  let r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
-  r=Math.max(0,Math.min(255,r+pct)); g=Math.max(0,Math.min(255,g+pct)); b=Math.max(0,Math.min(255,b+pct));
-  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
+  const eyeEl=document.getElementById('worm-eyes-select');
+  if(eyeEl) wormCustom.eyes=eyeEl.value;
+  const el=document.getElementById('worm-preview-svg');
+  if(el) el.innerHTML=buildWormSVG(wormCustom);
 }
 
 function addWorm() {
   initWorms();
-  wormCustom.eyes = document.getElementById('worm-eyes-select')?.value || wormCustom.eyes;
-  const name = document.getElementById('worm-name').value.trim()||'wormie';
-  db.worms.list.push({id:Date.now(),name:name,wormCustom:{...wormCustom},templateId:null,pixelData:null,happiness:7,timesFed:0,createdDate:todayStr()});
+  const eyeEl=document.getElementById('worm-eyes-select');
+  if(eyeEl) wormCustom.eyes=eyeEl.value;
+  const name=document.getElementById('worm-name').value.trim()||'wormie';
+  db.worms.list.push({id:Date.now(),name:name,wormCustom:{...wormCustom},pixelData:null,happiness:7,timesFed:0,createdDate:todayStr()});
   document.getElementById('worm-name').value='';
   save(); renderWorms(); toast(name+' joined your library! 🐛');
 }
 
 function feedWorm(id) {
   initWorms();
-  const w = db.worms.list.find(function(x){return x.id===id;});
-  if(!w) return;
-  if((db.worms.hunger||0)<1){toast('read 10 more pages to earn food! \uD83D\uDCDA');return;}
-  db.worms.hunger = Math.max(0,(db.worms.hunger||0)-1);
-  w.timesFed = (w.timesFed||0)+1;
-  w.happiness = Math.min(10,(w.happiness||5)+2);
-  save(); renderWorms(); toast(w.name+' says yum! \uD83D\uDC1B');
+  const w=db.worms.list.find(function(x){return x.id===id;});
+  if(!w)return;
+  if((db.worms.hunger||0)<1){toast('read 10 more pages to earn food! 📚');return;}
+  db.worms.hunger=Math.max(0,(db.worms.hunger||0)-1);
+  w.timesFed=(w.timesFed||0)+1;
+  w.happiness=Math.min(10,(w.happiness||5)+2);
+  save(); renderWorms(); toast(w.name+' says yum! 🐛');
 }
 
 function deleteWorm(id) {
-  if(!confirm('release this worm back into the wild?')) return;
+  if(!confirm('release this worm back into the wild?'))return;
   initWorms();
-  db.worms.list = db.worms.list.filter(function(w){return w.id!==id;});
-  const el = document.querySelector('.crawl-worm[data-worm-id="'+id+'"]');
-  if(el) el.remove();
+  db.worms.list=db.worms.list.filter(function(w){return w.id!==id;});
+  const crawlEl=document.querySelector('.crawl-worm[data-worm-id="'+id+'"]');
+  if(crawlEl) crawlEl.remove();
   save(); renderWorms();
 }
 
 function renderWorms() {
   initWorms();
-  const totalPages = db.logs.reduce(function(s,l){return s+l.pages;},0);
-  const todayPages = db.logs.filter(function(l){return l.date===todayStr();}).reduce(function(s,l){return s+l.pages;},0);
-  const foodEl = document.getElementById('worm-food-count');
-  const countEl = document.getElementById('worm-count');
-  const todayEl = document.getElementById('worm-today-pages');
-  const subEl   = document.getElementById('pixel-unlock-sub');
-  if(foodEl)  foodEl.textContent  = db.worms.hunger||0;
-  if(countEl) countEl.textContent = db.worms.list.length;
-  if(todayEl) todayEl.textContent = todayPages;
-  const qualifyingSessions = db.logs.filter(function(l){ return l.date === todayStr() && l.pages >= 100; });
-  const usedSessions = db.worms.usedPixelSessions || [];
-  const freshSession = qualifyingSessions.find(function(l){ return !usedSessions.includes(l.id); });
-  const pixelUnlocked = !!freshSession;
-  if(pixelCard) pixelCard.dataset.sessionId = freshSession ? freshSession.id : '';
-  if(subEl) subEl.textContent = pixelUnlocked ? '\uD83C\uDFA8 pixel art unlocked!' : (100-todayPages)+' more to unlock';
-  const pixelCard = document.getElementById('pixel-editor-card');
-  if(pixelCard) { pixelCard.style.display = pixelUnlocked ? 'block' : 'none'; if(pixelUnlocked) initPixelEditor(); }
-  buildTemplateGrid();
-  renderCrawlBar();
-  const el = document.getElementById('worm-list');
-  if(!el) return;
-  if(!db.worms.list.length){el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">\uD83D\uDC1B</div><p>hatch your first bookworm above!</p></div></div>';return;}
-  el.innerHTML = db.worms.list.map(function(w){
-    const hp = Math.min(10,Math.max(0,w.happiness||5));
-    const hpFill = Math.round(hp/10*100);
-    const mood = hp>=8?'happy \uD83D\uDE0A':hp>=5?'content \uD83D\uDE10':'hungry \uD83D\uDE22';
-    const wormSvg = w.pixelData ? pixelDataToImg(w.pixelData) : buildWormSVG(w.wormCustom || {color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4});
-    return '<div class="worm-card">'
-      +'<div class="worm-svg-display">'+wormSvg+'</div>'
-      +'<div class="worm-info">'
-      +'<div class="worm-name-display">'+esc(w.name)+'</div>'
-      +'<div style="font-size:11px;color:var(--text3)">'+mood+' \u00B7 fed '+(w.timesFed||0)+'\u00D7 \u00B7 since '+fmtDate(w.createdDate)+'</div>'
-      +'<div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">happiness '+hp+'/10</div>'
-      +'<div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+hpFill+'%;background:'+(hp>=7?'var(--green)':hp>=4?'var(--accent)':'var(--red)')+';border-radius:3px;transition:width .4s"></div></div></div>'
-      +'<div style="display:flex;gap:6px;margin-top:8px">'
-      +'<button class="btn btn-primary btn-sm" onclick="feedWorm('+w.id+')">\uD83C\uDF4E feed</button>'
-      +'<button class="btn btn-ghost btn-sm" onclick="deleteWorm('+w.id+')">release</button>'
-      +'</div></div></div>';
-  }).join('');
-}
-  
+  const totalPages=db.logs.reduce(function(s,l){return s+l.pages;},0);
+  const todayPages=db.logs.filter(function(l){return l.date===todayStr();}).reduce(function(s,l){return s+l.pages;},0);
+  const foodEl=document.getElementById('worm-food-count'),countEl=document.getElementById('worm-count'),todayEl=document.getElementById('worm-today-pages'),subEl=document.getElementById('pixel-unlock-sub');
+  if(foodEl)  foodEl.textContent=db.worms.hunger||0;
+  if(countEl) countEl.textContent=db.worms.list.length;
+  if(todayEl) todayEl.textContent=todayPages;
 
-function pixelDataToImg(pd) {
-  const cw=8,ch=8;
-  const rects=[];
-  for(var r=0;r<PIXEL_ROWS;r++) for(var c=0;c<PIXEL_COLS;c++) {
-    if(pd[r]&&pd[r][c]) rects.push('<rect x="'+(c*cw)+'" y="'+(r*ch)+'" width="'+cw+'" height="'+ch+'" fill="'+pd[r][c]+'"/>');
+  const qualifyingSessions=db.logs.filter(function(l){return l.date===todayStr()&&l.pages>=100;});
+  const usedSessions=db.worms.usedPixelSessions||[];
+  const freshSession=qualifyingSessions.find(function(l){return !usedSessions.includes(l.id);});
+  const pixelUnlocked=!!freshSession;
+
+  if(subEl) subEl.textContent=pixelUnlocked?'🎨 pixel art unlocked!':(100-todayPages)+' more to unlock';
+  const pixelCard=document.getElementById('pixel-editor-card');
+  if(pixelCard){
+    pixelCard.style.display=pixelUnlocked?'block':'none';
+    pixelCard.dataset.sessionId=freshSession?freshSession.id:'';
+    if(pixelUnlocked) initPixelEditor();
   }
-  return '<svg viewBox="0 0 '+(PIXEL_COLS*cw)+' '+(PIXEL_ROWS*ch)+'" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">'+rects.join('')+'</svg>';
+
+  buildWormCustomizer();
+  renderCrawlBar();
+
+  const el=document.getElementById('worm-list');
+  if(!el) return;
+  if(!db.worms.list.length){el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🐛</div><p>hatch your first bookworm above!</p></div></div>';return;}
+  el.innerHTML=db.worms.list.map(function(w){
+    const hp=Math.min(10,Math.max(0,w.happiness||5)),hpFill=Math.round(hp/10*100);
+    const mood=hp>=8?'happy 😊':hp>=5?'content 😐':'hungry 😢';
+    const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
+    const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
+    return '<div class="worm-card"><div class="worm-svg-display">'+wormSvg+'</div><div class="worm-info"><div class="worm-name-display">'+esc(w.name)+'</div><div style="font-size:11px;color:var(--text3)">'+mood+' · fed '+(w.timesFed||0)+'× · since '+fmtDate(w.createdDate)+'</div><div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">happiness '+hp+'/10</div><div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+hpFill+'%;background:'+(hp>=7?'var(--green)':hp>=4?'var(--accent)':'var(--red)')+';border-radius:3px;transition:width .4s"></div></div></div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="feedWorm('+w.id+')">🍎 feed</button><button class="btn btn-ghost btn-sm" onclick="deleteWorm('+w.id+')">release</button></div></div></div>';
+  }).join('');
 }
 
 // ── PIXEL EDITOR ──
-let pixelEditorInited = false;
+function pixelDataToImg(pd) {
+  const cw=8,ch=8,rects=[];
+  for(var r=0;r<PIXEL_ROWS;r++) for(var c=0;c<PIXEL_COLS;c++){if(pd[r]&&pd[r][c])rects.push('<rect x="'+(c*cw)+'" y="'+(r*ch)+'" width="'+cw+'" height="'+ch+'" fill="'+pd[r][c]+'"/>');}
+  return '<svg viewBox="0 0 '+(PIXEL_COLS*cw)+' '+(PIXEL_ROWS*ch)+'" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">'+rects.join('')+'</svg>';
+}
+
 function initPixelEditor() {
-  if(pixelEditorInited) return;
-  pixelEditorInited = true;
-  const palette = document.getElementById('pixel-palette');
-  if(!palette) return;
-  palette.innerHTML = PIXEL_PALETTE_COLORS.map(function(c){
-    return '<div class="pixel-swatch'+(c===pixelColor?' active':'')+'" style="background:'+c+'" onclick="setPixelColor(\''+c+'\',this)"></div>';
-  }).join('');
+  if(pixelEditorInited)return;
+  pixelEditorInited=true;
+  const palette=document.getElementById('pixel-palette');
+  if(!palette)return;
+  palette.innerHTML=PIXEL_PALETTE_COLORS.map(function(c){return '<div class="pixel-swatch'+(c===pixelColor?' active':'')+'" style="background:'+c+'" onclick="setPixelColor(\''+c+'\',this)"></div>';}).join('');
   drawPixelCanvas();
-  setTimeout(setupPixelCanvas, 50);
+  setTimeout(setupPixelCanvas,50);
 }
-
-function setPixelColor(c, el) {
-  pixelColor = c; pixelEraserOn = false;
-  document.querySelectorAll('.pixel-swatch').forEach(function(s){s.classList.remove('active');});
-  if(el) el.classList.add('active');
-  const eb = document.getElementById('eraser-btn');
-  if(eb) eb.style.background='';
-}
-
-function toggleEraser() {
-  pixelEraserOn = !pixelEraserOn;
-  const btn = document.getElementById('eraser-btn');
-  if(btn) btn.style.background = pixelEraserOn ? 'var(--accent-bg)' : '';
-}
-
-function drawPixelCanvas() {
-  const canvas = document.getElementById('pixel-canvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const cw = canvas.width/PIXEL_COLS, ch = canvas.height/PIXEL_ROWS;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.strokeStyle='rgba(128,128,128,0.15)'; ctx.lineWidth=0.5;
+function setPixelColor(c,el){pixelColor=c;pixelEraserOn=false;document.querySelectorAll('.pixel-swatch').forEach(function(s){s.classList.remove('active');});if(el)el.classList.add('active');const eb=document.getElementById('eraser-btn');if(eb)eb.style.background='';}
+function toggleEraser(){pixelEraserOn=!pixelEraserOn;const btn=document.getElementById('eraser-btn');if(btn)btn.style.background=pixelEraserOn?'var(--accent-bg)':'';}
+function drawPixelCanvas(){
+  const canvas=document.getElementById('pixel-canvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d'),cw=canvas.width/PIXEL_COLS,ch=canvas.height/PIXEL_ROWS;
+  ctx.clearRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='rgba(128,128,128,0.15)';ctx.lineWidth=0.5;
   for(var c=0;c<=PIXEL_COLS;c++){ctx.beginPath();ctx.moveTo(c*cw,0);ctx.lineTo(c*cw,canvas.height);ctx.stroke();}
   for(var r=0;r<=PIXEL_ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*ch);ctx.lineTo(canvas.width,r*ch);ctx.stroke();}
-  for(var row=0;row<PIXEL_ROWS;row++) for(var col=0;col<PIXEL_COLS;col++) {
-    if(pixelData[row]&&pixelData[row][col]){ctx.fillStyle=pixelData[row][col];ctx.fillRect(col*cw+0.5,row*ch+0.5,cw-1,ch-1);}
-  }
+  for(var row=0;row<PIXEL_ROWS;row++) for(var col=0;col<PIXEL_COLS;col++){if(pixelData[row]&&pixelData[row][col]){ctx.fillStyle=pixelData[row][col];ctx.fillRect(col*cw+0.5,row*ch+0.5,cw-1,ch-1);}}
   drawPixelPreview();
 }
-
-function drawPixelPreview() {
-  const pv = document.getElementById('pixel-preview');
-  if(!pv) return;
-  const ctx = pv.getContext('2d');
-  const cw = pv.width/PIXEL_COLS, ch = pv.height/PIXEL_ROWS;
+function drawPixelPreview(){
+  const pv=document.getElementById('pixel-preview');if(!pv)return;
+  const ctx=pv.getContext('2d'),cw=pv.width/PIXEL_COLS,ch=pv.height/PIXEL_ROWS;
   ctx.clearRect(0,0,pv.width,pv.height);
-  for(var r=0;r<PIXEL_ROWS;r++) for(var c=0;c<PIXEL_COLS;c++) {
-    if(pixelData[r]&&pixelData[r][c]){ctx.fillStyle=pixelData[r][c];ctx.fillRect(c*cw,r*ch,cw,ch);}
-  }
+  for(var r=0;r<PIXEL_ROWS;r++) for(var c=0;c<PIXEL_COLS;c++){if(pixelData[r]&&pixelData[r][c]){ctx.fillStyle=pixelData[r][c];ctx.fillRect(c*cw,r*ch,cw,ch);}}
 }
-
-function getPixelRC(e, canvas) {
-  const rect=canvas.getBoundingClientRect();
-  const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
-  const cx=e.touches?e.touches[0].clientX:e.clientX;
-  const cy=e.touches?e.touches[0].clientY:e.clientY;
-  return {c:Math.floor((cx-rect.left)*sx/(canvas.width/PIXEL_COLS)), r:Math.floor((cy-rect.top)*sy/(canvas.height/PIXEL_ROWS))};
+function getPixelRC(e,canvas){
+  const rect=canvas.getBoundingClientRect(),sx=canvas.width/rect.width,sy=canvas.height/rect.height;
+  const cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;
+  return{c:Math.floor((cx-rect.left)*sx/(canvas.width/PIXEL_COLS)),r:Math.floor((cy-rect.top)*sy/(canvas.height/PIXEL_ROWS))};
 }
-
-let pixelPainting = false;
-function setupPixelCanvas() {
-  const canvas = document.getElementById('pixel-canvas');
-  if(!canvas||canvas._setup) return;
-  canvas._setup = true;
-  function paint(e){
-    e.preventDefault();
-    const p=getPixelRC(e,canvas);
-    if(p.r<0||p.r>=PIXEL_ROWS||p.c<0||p.c>=PIXEL_COLS) return;
-    pixelData[p.r][p.c] = pixelEraserOn ? null : pixelColor;
-    drawPixelCanvas();
-  }
+function setupPixelCanvas(){
+  const canvas=document.getElementById('pixel-canvas');if(!canvas||canvas._setup)return;canvas._setup=true;
+  function paint(e){e.preventDefault();const p=getPixelRC(e,canvas);if(p.r<0||p.r>=PIXEL_ROWS||p.c<0||p.c>=PIXEL_COLS)return;pixelData[p.r][p.c]=pixelEraserOn?null:pixelColor;drawPixelCanvas();}
   canvas.addEventListener('mousedown',function(e){pixelPainting=true;paint(e);});
   canvas.addEventListener('mousemove',function(e){if(pixelPainting)paint(e);});
   canvas.addEventListener('mouseup',function(){pixelPainting=false;});
@@ -1958,53 +1456,66 @@ function setupPixelCanvas() {
   canvas.addEventListener('touchmove',function(e){if(pixelPainting)paint(e);},{passive:false});
   canvas.addEventListener('touchend',function(){pixelPainting=false;});
 }
-
 function clearPixelCanvas(){pixelData=Array.from({length:PIXEL_ROWS},function(){return Array(PIXEL_COLS).fill(null);});drawPixelCanvas();}
 function fillPixelCanvas(){pixelData=Array.from({length:PIXEL_ROWS},function(){return Array(PIXEL_COLS).fill(pixelColor);});drawPixelCanvas();}
-
-function savePixelWorm() {
+function savePixelWorm(){
   initWorms();
-  const sessionId = +document.getElementById('pixel-editor-card').dataset.sessionId;
-  if(sessionId) {
-    if(!db.worms.usedPixelSessions) db.worms.usedPixelSessions = [];
-    if(!db.worms.usedPixelSessions.includes(sessionId)) db.worms.usedPixelSessions.push(sessionId);
-  }
-  const name = document.getElementById('pixel-worm-name').value.trim()||'pixel worm';
+  const sessionId=+document.getElementById('pixel-editor-card').dataset.sessionId;
+  if(sessionId){if(!db.worms.usedPixelSessions)db.worms.usedPixelSessions=[];if(!db.worms.usedPixelSessions.includes(sessionId))db.worms.usedPixelSessions.push(sessionId);}
+  const name=document.getElementById('pixel-worm-name').value.trim()||'pixel worm';
   if(!pixelData.some(function(row){return row.some(function(p){return p;});})){toast('draw something first!');return;}
-  const savedData = pixelData.map(function(row){return row.slice();});
-  db.worms.list.push({id:Date.now(),name:name,templateId:null,pixelData:savedData,happiness:10,timesFed:0,createdDate:todayStr()});
-  clearPixelCanvas();
-  document.getElementById('pixel-worm-name').value='';
-  pixelEditorInited=false;
-  save(); renderWorms(); toast(name+' hatched! \uD83C\uDFA8\uD83D\uDC1B');
+  const savedData=pixelData.map(function(row){return row.slice();});
+  db.worms.list.push({id:Date.now(),name:name,wormCustom:null,pixelData:savedData,happiness:10,timesFed:0,createdDate:todayStr()});
+  clearPixelCanvas();document.getElementById('pixel-worm-name').value='';pixelEditorInited=false;
+  save();renderWorms();toast(name+' hatched! 🎨🐛');
 }
 
-// ── WORM CRAWL BAR ──
-function renderCrawlBar() {
+// ── CRAWL BAR ──
+function renderCrawlBar(){
   initWorms();
-  const bar = document.getElementById('worm-crawl-bar');
-  if(!bar) return;
+  const bar=document.getElementById('worm-crawl-bar');if(!bar)return;
   if(!db.worms.list.length){bar.innerHTML='';return;}
-  const existingIds = new Set(Array.from(bar.querySelectorAll('.crawl-worm')).map(function(el){return +el.dataset.wormId;}));
-  db.worms.list.forEach(function(w){if(!existingIds.has(w.id)) spawnWormEl(bar,w);});
-  bar.querySelectorAll('.crawl-worm').forEach(function(el){if(!db.worms.list.find(function(w){return w.id===+el.dataset.wormId;})) el.remove();});
+  const existingIds=new Set(Array.from(bar.querySelectorAll('.crawl-worm')).map(function(el){return+el.dataset.wormId;}));
+  db.worms.list.forEach(function(w){if(!existingIds.has(w.id))spawnWormEl(bar,w);});
+  bar.querySelectorAll('.crawl-worm').forEach(function(el){if(!db.worms.list.find(function(w){return w.id===+el.dataset.wormId;}))el.remove();});
 }
-
-function spawnWormEl(bar, w) {
-  const t = WORM_TEMPLATES.find(function(x){return x.id===w.templateId;})||WORM_TEMPLATES[0];
-  const wormSvg = w.pixelData ? pixelDataToImg(w.pixelData) : t.svg;
-  const el = document.createElement('div');
-  el.className = 'crawl-worm';
-  el.dataset.wormId = w.id;
-  el.innerHTML = wormSvg;
-  el.title = w.name;
-  const speed = 20 + Math.random()*25;
-  const delay = -(Math.random()*speed);
-  const flip = Math.random()>0.5;
-  el.style.cssText = 'position:absolute;bottom:2px;width:72px;height:36px;transform:scaleX('+(flip?-1:1)+');animation:wormCrawl '+speed+'s '+delay+'s linear infinite;pointer-events:none;';
+function spawnWormEl(bar,w){
+  const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
+  const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
+  const el=document.createElement('div');
+  el.className='crawl-worm';el.dataset.wormId=w.id;el.innerHTML=wormSvg;el.title=w.name;
+  const speed=20+Math.random()*25,delay=-(Math.random()*speed),flip=Math.random()>0.5;
+  el.style.cssText='position:absolute;bottom:2px;width:72px;height:36px;transform:scaleX('+(flip?-1:1)+');animation:wormCrawl '+speed+'s '+delay+'s linear infinite;pointer-events:none;';
   bar.appendChild(el);
 }
 
+// ── SPOTIFY ──
+const PRESET_PLAYLISTS={'deep-focus':'37i9dQZF1DWZeKCadgRdKQ','cozy':'37i9dQZF1DX4sWSpwq3LiO','epic':'37i9dQZF1DX1s9knjP51Oa','night':'37i9dQZF1DX3Ogo9pFvBkY','baroque':'37i9dQZF1DWWEJlAGA9gs0','lofi':'37i9dQZF1DX8NTLI2TtZa6'};
+function loadSpotifyEmbed(){const raw=document.getElementById('spotify-url-input').value.trim();if(raw)embedSpotify(raw);}
+function loadPresetPlaylist(key){const id=PRESET_PLAYLISTS[key];if(id)embedSpotify('https://open.spotify.com/playlist/'+id);}
+function embedSpotify(url){if(!url)return;const match=url.match(/spotify\.com\/(playlist|album|track|artist)\/([A-Za-z0-9]+)/);if(!match){toast('paste a valid spotify link');return;}const[,type,id]=match;const iframe=document.getElementById('spotify-iframe');iframe.src='https://open.spotify.com/embed/'+type+'/'+id+'?utm_source=generator&theme=0';iframe.style.display='block';document.getElementById('spotify-placeholder').style.display='none';}
+
+// ── BOOK SEARCH ──
+async function searchBooks(){
+  const q=document.getElementById('book-search-input').value.trim();if(!q)return;
+  const statusEl=document.getElementById('book-search-status'),resultsEl=document.getElementById('book-search-results');
+  statusEl.textContent='searching…';resultsEl.innerHTML='';
+  try{
+    const res=await fetch('https://openlibrary.org/search.json?q='+encodeURIComponent(q)+'&limit=8&fields=title,author_name,number_of_pages_median,cover_i,first_publish_year,key');
+    const data=await res.json();
+    if(!data.docs||!data.docs.length){statusEl.textContent='no results found';return;}
+    statusEl.textContent=data.numFound.toLocaleString()+' results';
+    resultsEl.innerHTML=data.docs.map(function(d){
+      var title=esc(d.title||'Unknown'),author=esc((d.author_name||[]).slice(0,2).join(', ')||'Unknown author'),pages=d.number_of_pages_median||0,year=d.first_publish_year||'';
+      var cover=d.cover_i?'https://covers.openlibrary.org/b/id/'+d.cover_i+'-S.jpg':'';
+      var alreadyHave=db.books.some(function(b){return b.title.toLowerCase()===d.title.toLowerCase();});
+      var titleEscJs=(d.title||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      var authorEscJs=((d.author_name||[]).slice(0,2).join(', ')||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<div class="book-search-item">'+(cover?'<img src="'+cover+'" alt="" class="book-search-cover" onerror="this.style.display=\'none\'" />':'<div class="book-search-cover-placeholder">📖</div>')+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+title+'</div><div style="font-size:11px;color:var(--accent)">'+author+'</div><div style="font-size:10px;color:var(--text3)">'+(year?year+' · ':'')+( pages?pages+' pages':'')+'</div></div><div style="flex-shrink:0">'+(alreadyHave?'<span style="font-size:11px;color:var(--text3)">in library</span>':'<button class="btn btn-ghost btn-sm" onclick="addSearchedBook(\''+titleEscJs+'\',\''+authorEscJs+'\','+pages+')">+ add</button>')+'</div></div>';
+    }).join('');
+  }catch(e){statusEl.textContent='search failed — check your connection';}
+}
+function addSearchedBook(title,author,pages){db.books.push({id:Date.now(),title:title,author:author,pages:pages||0,genre:'',series:'',seriesNum:0,status:'want',color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:0,startDate:'',finishedDate:'',addedDate:todayStr()});save();renderAll();toast('"'+title+'" added to want to read!');}
 
 boot();
 </script>
