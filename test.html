@@ -1573,11 +1573,12 @@ function deleteWorm(id) {
   save(); renderWorms();
 }
 
-function renderWorms() {
-  initWorms();
-  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
-  const availableFood = Math.floor(totalPages/10) - (db.worms.totalPagesMilestone||0) + (db.worms.hunger||0);
-  const foodBank = db.worms.hunger||0;
+
+//function renderWorms() {
+  //initWorms();
+//  const totalPages = db.logs.reduce((s,l)=>s+l.pages,0);
+  //const availableFood = Math.floor(totalPages/10) - (db.worms.totalPagesMilestone||0) + (db.worms.hunger||0);
+  //const foodBank = db.worms.hunger||0;
 
   document.getElementById('worm-food-count').textContent = foodBank;
   document.getElementById('worm-total-pages').textContent = totalPages.toLocaleString();
@@ -1864,6 +1865,7 @@ function renderWorms() {
       +'</div></div></div>';
   }).join('');
 }
+  
 
 function pixelDataToImg(pd) {
   const cw=8,ch=8;
