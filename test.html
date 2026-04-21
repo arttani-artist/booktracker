@@ -691,8 +691,11 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="page-header"><h1 class="page-title">discover</h1><p class="page-sub ui-text">find books &amp; music for your reading sessions</p></div>
 
         <div class="card">
-          <div class="card-title">✨ recommended for you</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:4px" id="rec-why">based on your library</p>
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>✨ recommended for you</span>
+            <button class="btn btn-ghost btn-sm" onclick="refreshRecommendations()" style="font-size:11px">↻ refresh</button>
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:8px" id="rec-why">based on your library</p>
           <div id="rec-list"><div class="empty"><p>add some books first and we'll suggest more!</p></div></div>
         </div>
 
@@ -1682,64 +1685,183 @@ function makeCrawlWormDraggable(el) {
   window.addEventListener('touchend',stopDrag);
 }
 
-//  BOOK RECOMMENDATIONS (no AI — genre + tag matching)
-function renderRecommendations() {
+//  BOOK RECOMMENDATIONS — OpenLibrary subject search
+// Maps genre strings the user might enter to clean OpenLibrary subject slugs
+const GENRE_SUBJECT_MAP = {
+  'fantasy':          'fantasy',
+  'epic fantasy':     'fantasy',
+  'dark fantasy':     'fantasy',
+  'sci-fi':           'science_fiction',
+  'science fiction':  'science_fiction',
+  'sci fi':           'science_fiction',
+  'horror':           'horror',
+  'gothic horror':    'horror',
+  'thriller':         'thriller',
+  'mystery':          'mystery_and_detective_stories',
+  'detective':        'mystery_and_detective_stories',
+  'romance':          'romance',
+  'fantasy romance':  'romance',
+  'historical fiction':'historical_fiction',
+  'literary fiction': 'fiction',
+  'fiction':          'fiction',
+  'memoir':           'biography_and_autobiography',
+  'biography':        'biography_and_autobiography',
+  'non-fiction':      'nonfiction',
+  'nonfiction':       'nonfiction',
+  'mythology':        'mythology',
+  'young adult':      'young_adult_fiction',
+  'ya':               'young_adult_fiction',
+  'dystopian':        'dystopian_fiction',
+  'graphic novel':    'comics_and_graphic_novels',
+  'poetry':           'poetry',
+  'self-help':        'self-help',
+  'philosophy':       'philosophy',
+  'classic':          'classic_literature',
+};
+
+function getSubjectSlug(genre) {
+  if(!genre) return null;
+  const g = genre.toLowerCase().trim();
+  if(GENRE_SUBJECT_MAP[g]) return GENRE_SUBJECT_MAP[g];
+  // partial match
+  for(const key of Object.keys(GENRE_SUBJECT_MAP)) {
+    if(g.includes(key) || key.includes(g)) return GENRE_SUBJECT_MAP[key];
+  }
+  // fallback: slugify the genre itself and hope OpenLibrary has it
+  return g.replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+}
+
+async function renderRecommendations() {
   const el=document.getElementById('rec-list');
   if(!el) return;
   const library=db.books;
-  const done=library.filter(function(b){return b.status==='done';});
-  const want=library.filter(function(b){return b.status==='want';});
-  if(done.length<1 && want.length<1){ el.innerHTML='<div class="empty"><p>add some books to your library first and we\'ll suggest more!</p></div>'; return; }
-  // build genre/author frequency map
+  if(!library.length){
+    el.innerHTML='<div class="empty"><p>add some books to your library first and we\'ll suggest more!</p></div>';
+    return;
+  }
+
+  // Build taste profile
   const genreCount={}, authorCount={};
-  done.concat(want).forEach(function(b){
-    if(b.genre) genreCount[b.genre.toLowerCase()]=(genreCount[b.genre.toLowerCase()]||0)+1;
-    if(b.author) authorCount[b.author.toLowerCase()]=(authorCount[b.author.toLowerCase()]||0)+1;
+  library.forEach(function(b){
+    if(b.genre) genreCount[b.genre.toLowerCase()]=(genreCount[b.genre.toLowerCase()]||0)+(b.status==='done'?2:1);
+    if(b.author) authorCount[b.author.toLowerCase()]=(authorCount[b.author.toLowerCase()]||0)+(b.status==='done'?2:1);
   });
   const topGenres=Object.entries(genreCount).sort(function(a,b){return b[1]-a[1];}).slice(0,3).map(function(e){return e[0];});
   const topAuthors=Object.entries(authorCount).sort(function(a,b){return b[1]-a[1];}).slice(0,2).map(function(e){return e[0];});
-  // static recommendation pool organised by genre keywords
-  const pool = [
-    {title:'The Name of the Wind',author:'Patrick Rothfuss',genre:'fantasy',pages:662,why:'top-rated epic fantasy beloved by readers who enjoy world-building'},
-    {title:'Project Hail Mary',author:'Andy Weir',genre:'sci-fi',pages:476,why:'fast-paced science fiction with clever problem-solving'},
-    {title:'The Seven Husbands of Evelyn Hugo',author:'Taylor Jenkins Reid',genre:'fiction',pages:400,why:'beloved literary fiction about secrets, love and ambition'},
-    {title:'Piranesi',author:'Susanna Clarke',genre:'fantasy',pages:272,why:'beautifully strange fantasy unlike anything else'},
-    {title:'Daisy Jones & The Six',author:'Taylor Jenkins Reid',genre:'fiction',pages:355,why:'compelling oral-history style novel about music and fame'},
-    {title:'Mexican Gothic',author:'Silvia Moreno-Garcia',genre:'gothic horror',pages:320,why:'atmospheric gothic thriller set in 1950s Mexico'},
-    {title:'A Little Life',author:'Hanya Yanagihara',genre:'literary fiction',pages:720,why:'devastating and beautiful literary fiction about friendship'},
-    {title:'Babel',author:'R.F. Kuang',genre:'fantasy',pages:545,why:'dark academia fantasy exploring language, colonialism and power'},
-    {title:'Fourth Wing',author:'Rebecca Yarros',genre:'fantasy romance',pages:528,why:'dragon-riding fantasy romance — highly addictive'},
-    {title:'The Hitchhiker\'s Guide to the Galaxy',author:'Douglas Adams',genre:'sci-fi',pages:193,why:'essential comedic sci-fi that everyone should read'},
-    {title:'Klara and the Sun',author:'Kazuo Ishiguro',genre:'sci-fi',pages:307,why:'quiet and moving story about an artificial friend and what it means to be human'},
-    {title:'Normal People',author:'Sally Rooney',genre:'literary fiction',pages:266,why:'sharply observed modern romance with brilliant character dynamics'},
-    {title:'The Midnight Library',author:'Matt Haig',genre:'fiction',pages:304,why:'uplifting story about parallel lives and finding meaning'},
-    {title:'Circe',author:'Madeline Miller',genre:'mythology',pages:393,why:'gorgeous feminist retelling of Greek mythology'},
-    {title:'All the Light We Cannot See',author:'Anthony Doerr',genre:'historical fiction',pages:531,why:'Pulitzer-winning WWII novel of extraordinary beauty'},
-    {title:'Educated',author:'Tara Westover',genre:'memoir',pages:334,why:'remarkable memoir about self-invention and the cost of knowledge'},
-    {title:'Dark Matter',author:'Blake Crouch',genre:'sci-fi thriller',pages:342,why:'mind-bending thriller about quantum physics and identity'},
-    {title:'The Poppy War',author:'R.F. Kuang',genre:'fantasy',pages:545,why:'brutal, epic military fantasy inspired by Chinese history'},
-    {title:'Anxious People',author:'Fredrik Backman',genre:'fiction',pages:352,why:'warm, funny and deeply moving story about human connection'},
-    {title:'The Invisible Life of Addie LaRue',author:'V.E. Schwab',genre:'fantasy',pages:444,why:'lyrical fantasy about a woman cursed to be forgotten'},
-  ];
-  const libraryTitles=new Set(library.map(function(b){return b.title.toLowerCase();}));
-  // score each recommendation
-  const scored=pool.filter(function(r){return !libraryTitles.has(r.title.toLowerCase());}).map(function(r){
-    let score=0;
-    const rg=r.genre.toLowerCase();
-    topGenres.forEach(function(g){ if(rg.includes(g)||g.includes(rg)) score+=3; });
-    topAuthors.forEach(function(a){ if(r.author.toLowerCase().includes(a)||a.includes(r.author.toLowerCase())) score+=5; });
-    return {...r,score};
-  }).sort(function(a,b){return b.score-a.score||Math.random()-0.5;}).slice(0,6);
-  if(!scored.length){ el.innerHTML='<div class="empty"><p>you\'ve read everything we\'d suggest! 🎉</p></div>'; return; }
-  el.innerHTML=scored.map(function(r){
-    const tEsc=r.title.replace(/'/g,"\\'");
-    const aEsc=(r.author||'').replace(/'/g,"\\'");
-    return '<div class="suggest-item"><div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(r.title)+'</div><div style="font-size:11px;color:var(--accent);margin-bottom:3px">'+esc(r.author)+'</div><div style="font-size:11px;color:var(--text2)">'+esc(r.why)+'</div></div><button class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="addSearchedBook(\''+tEsc+'\',\''+aEsc+'\','+r.pages+')">+ add</button></div></div>';
-  }).join('');
-  // show why we recommended based on top genres
+
+  // Update label
   const whyEl=document.getElementById('rec-why');
-  if(whyEl) whyEl.textContent=topGenres.length?'based on your interest in: '+topGenres.join(', '):'based on your library';
+  const subjectSlugs=[...new Set(topGenres.map(getSubjectSlug).filter(Boolean))].slice(0,2);
+
+  if(!subjectSlugs.length){
+    // No genres entered — fall back to searching by top author
+    if(!topAuthors.length){ el.innerHTML='<div class="empty"><p>add genre info to your books so we can find recommendations!</p></div>'; return; }
+    if(whyEl) whyEl.textContent='books by authors you like';
+    await fetchRecsByAuthor(topAuthors[0], library);
+    return;
+  }
+
+  if(whyEl) whyEl.textContent='fetching picks for: '+topGenres.slice(0,2).join(', ')+'…';
+  el.innerHTML='<div class="empty" style="padding:20px"><div style="font-size:22px;margin-bottom:8px">⏳</div><p>finding books for you…</p></div>';
+
+  try {
+    const libraryTitles=new Set(library.map(function(b){return b.title.toLowerCase();}));
+    // Fetch from up to 2 subject slugs in parallel, then merge + dedupe
+    const fetches = subjectSlugs.map(function(slug){
+      return fetch('https://openlibrary.org/subjects/'+slug+'.json?limit=20&offset='+Math.floor(Math.random()*40))
+        .then(function(r){return r.json();})
+        .catch(function(){return null;});
+    });
+    const results = await Promise.all(fetches);
+    const seen = new Set();
+    let pool = [];
+    results.forEach(function(data, si){
+      if(!data||!data.works) return;
+      data.works.forEach(function(w){
+        const title=(w.title||'').trim();
+        const author=((w.authors||[])[0]||{}).name||'';
+        const pages=w.number_of_pages||0;
+        const coverId=w.cover_id||w.cover_edition_key;
+        const key=title.toLowerCase();
+        if(!title||seen.has(key)||libraryTitles.has(key)) return;
+        seen.add(key);
+        // score: prefer books with covers, more pages (not too short), matching authors
+        let score = coverId ? 2 : 0;
+        if(pages>100&&pages<900) score+=1;
+        topAuthors.forEach(function(a){ if(author.toLowerCase().includes(a)||a.includes(author.toLowerCase())) score+=4; });
+        pool.push({title, author, pages, coverId, subject: topGenres[si]||topGenres[0], score});
+      });
+    });
+    pool.sort(function(a,b){ return b.score-a.score || Math.random()-0.5; });
+    pool = pool.slice(0,8);
+
+    if(!pool.length){
+      el.innerHTML='<div class="empty"><p>couldn\'t find recommendations right now — try adding genres to your books!</p></div>';
+      if(whyEl) whyEl.textContent='based on your library';
+      return;
+    }
+
+    if(whyEl) whyEl.textContent='based on your interest in: '+topGenres.slice(0,2).join(', ');
+    el.innerHTML=pool.map(function(r){
+      const coverUrl=r.coverId?'https://covers.openlibrary.org/b/id/'+r.coverId+'-M.jpg':'';
+      const tEsc=(r.title||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const aEsc=(r.author||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<div class="suggest-item">'
+        +'<div style="display:flex;gap:12px;align-items:flex-start">'
+        +(coverUrl?'<img src="'+coverUrl+'" alt="" style="width:42px;height:60px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display=\'none\'" />'
+                  :'<div style="width:42px;height:60px;background:var(--bg4);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">📖</div>')
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(r.title)+'</div>'
+        +'<div style="font-size:11px;color:var(--accent);margin-bottom:3px">'+esc(r.author)+'</div>'
+        +'<div style="font-size:10px;color:var(--text3)">'+(r.pages?r.pages+' pages · ':'')+esc(r.subject)+'</div>'
+        +'</div>'
+        +'<button class="btn btn-ghost btn-sm" style="flex-shrink:0;margin-top:4px" onclick="addSearchedBook(\''+tEsc+'\',\''+aEsc+'\','+r.pages+')">+ add</button>'
+        +'</div></div>';
+    }).join('');
+
+  } catch(e) {
+    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary — check your connection</p></div>';
+    if(whyEl) whyEl.textContent='based on your library';
+  }
 }
+
+async function fetchRecsByAuthor(authorName, library) {
+  const el=document.getElementById('rec-list');
+  el.innerHTML='<div class="empty" style="padding:20px"><div style="font-size:22px;margin-bottom:8px">⏳</div><p>finding books for you…</p></div>';
+  try {
+    const libraryTitles=new Set(library.map(function(b){return b.title.toLowerCase();}));
+    const res=await fetch('https://openlibrary.org/search.json?author='+encodeURIComponent(authorName)+'&limit=20&fields=title,author_name,number_of_pages_median,cover_i,first_publish_year');
+    const data=await res.json();
+    const works=(data.docs||[]).filter(function(d){
+      return d.title && !libraryTitles.has(d.title.toLowerCase());
+    }).slice(0,8);
+    if(!works.length){ el.innerHTML='<div class="empty"><p>no new books found for this author</p></div>'; return; }
+    el.innerHTML=works.map(function(d){
+      const title=(d.title||'').trim();
+      const author=((d.author_name||[])[0]||'');
+      const pages=d.number_of_pages_median||0;
+      const coverUrl=d.cover_i?'https://covers.openlibrary.org/b/id/'+d.cover_i+'-M.jpg':'';
+      const tEsc=title.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const aEsc=author.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<div class="suggest-item">'
+        +'<div style="display:flex;gap:12px;align-items:flex-start">'
+        +(coverUrl?'<img src="'+coverUrl+'" alt="" style="width:42px;height:60px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display=\'none\'" />'
+                  :'<div style="width:42px;height:60px;background:var(--bg4);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">📖</div>')
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(title)+'</div>'
+        +'<div style="font-size:11px;color:var(--accent);margin-bottom:3px">'+esc(author)+'</div>'
+        +'<div style="font-size:10px;color:var(--text3)">'+(pages?pages+' pages':'')+(d.first_publish_year?' · '+d.first_publish_year:'')+'</div>'
+        +'</div>'
+        +'<button class="btn btn-ghost btn-sm" style="flex-shrink:0;margin-top:4px" onclick="addSearchedBook(\''+tEsc+'\',\''+aEsc+'\','+pages+')">+ add</button>'
+        +'</div></div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary — check your connection</p></div>';
+  }
+}
+
+// Refresh button for recommendations
+function refreshRecommendations() { renderRecommendations(); }
 
 //  PDF READER
 let pdfDoc=null, pdfPage=1, pdfZoom=1.0;
