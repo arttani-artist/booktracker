@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-/* ── THEME TOKENS ── */
+/*  THEME TOKENS  */
 :root {
   --accent: #c9a96e;
   --accent2: #e8c99a;
@@ -86,17 +86,17 @@
 [data-case="proper"] .btn:not(.btn-icon), [data-case="proper"] .tab-btn,
 [data-case="proper"] .pill, [data-case="proper"] label { text-transform: capitalize; }
 
-/* ── RESET & BASE ── */
+/*  RESET & BASE  */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; padding-bottom: 48px; }
 ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
 
-/* ── LAYOUT ── */
+/*  LAYOUT  */
 .app { display: flex; min-height: 100vh; }
 .sidebar { width: 210px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .main-content { flex: 1; min-width: 0; padding: var(--pad, 20px) calc(var(--pad, 20px) * 1.6); max-width: 900px; }
 
-/* ── SIDEBAR ── */
+/*  SIDEBAR  */
 .logo-wrap { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
 .logo-name { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--accent); letter-spacing: -0.3px; }
 .logo-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
@@ -113,7 +113,7 @@ body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--tex
 .user-name { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .user-email { font-size: 10px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ── PAGES ── */
+/*  PAGES  */
 .page { display: none; animation: fadeIn .2s ease; }
 .page.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -121,13 +121,13 @@ body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--tex
 .page-title { font-family: 'Instrument Serif', serif; font-size: 30px; color: var(--text); font-weight: 400; line-height: 1.1; }
 .page-sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
 
-/* ── CARDS ── */
+/*  CARDS  */
 .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: var(--pad, 20px); margin-bottom: var(--gap, 14px); }
 .card-title { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
 .card-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap, 14px); margin-bottom: var(--gap, 14px); }
 .card-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap, 14px); margin-bottom: var(--gap, 14px); }
 
-/* ── METRICS ── */
+/*  METRICS  */
 .metrics-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: var(--gap, 14px); }
 .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
 .metric.hi { border-color: rgba(var(--accent-rgb),0.25); background: var(--accent-bg); }
@@ -136,7 +136,7 @@ body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--tex
 .metric.hi .metric-val { color: var(--accent); }
 .metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
-/* ── FORMS ── */
+/*  FORMS  */
 .form-group { margin-bottom: 12px; }
 label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; letter-spacing: 0.3px; }
 input, select, textarea { width: 100%; padding: 8px 11px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-family: 'Geist', sans-serif; font-size: 13px; outline: none; transition: border-color .15s; -webkit-appearance: none; }
@@ -146,7 +146,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-/* ── BUTTONS ── */
+/*  BUTTONS  */
 .btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 400; transition: all .12s; border: 1px solid transparent; }
 .btn-primary { background: var(--accent); color: #100c06; border-color: var(--accent); }
 .btn-primary:hover { filter: brightness(1.1); }
@@ -158,12 +158,12 @@ textarea { resize: vertical; line-height: 1.5; }
 .btn-icon { padding: 5px 7px; background: transparent; border: none; color: var(--text3); cursor: pointer; border-radius: 6px; font-size: 14px; transition: all .12s; }
 .btn-icon:hover { color: var(--red); background: var(--red-bg); }
 
-/* ── TABS ── */
+/*  TABS  */
 .tab-bar { display: flex; gap: 2px; background: var(--bg3); border-radius: 9px; padding: 3px; margin-bottom: 14px; }
 .tab-btn { flex: 1; padding: 6px; text-align: center; cursor: pointer; font-size: 12px; border-radius: 7px; color: var(--text3); border: none; background: transparent; font-family: 'Geist', sans-serif; transition: all .12s; }
 .tab-btn.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px var(--shadow); }
 
-/* ── BOOK ITEMS ── */
+/*  BOOK ITEMS  */
 .book-list { display: flex; flex-direction: column; }
 .book-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
 .book-item:last-child { border-bottom: none; }
@@ -181,7 +181,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .star { font-size: 12px; cursor: pointer; color: var(--text3); transition: color .1s; }
 .star.on { color: var(--accent); }
 
-/* ── PILLS ── */
+/*  PILLS  */
 .pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
 .pill-reading { background: var(--blue-bg); color: var(--blue); }
 .pill-want    { background: var(--bg4);    color: var(--text3); }
@@ -190,7 +190,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .pill-series  { background: rgba(176,160,224,0.1); color: #b0a0e0; }
 .series-badge { font-size: 10px; color: #b0a0e0; display: flex; align-items: center; gap: 3px; }
 
-/* ── LOG ITEMS ── */
+/*  LOG ITEMS  */
 .log-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
 .log-item:last-child { border-bottom: none; }
 .log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
@@ -200,11 +200,11 @@ textarea { resize: vertical; line-height: 1.5; }
 .log-note { font-size: 11px; color: var(--text2); font-style: italic; margin-top: 2px; }
 .log-right { font-size: 11px; color: var(--text3); flex-shrink: 0; padding-top: 2px; }
 
-/* ── STREAK ── */
+/*  STREAK  */
 .streak-grid { display: flex; flex-wrap: wrap; gap: 3px; }
 .s-dot { width: 13px; height: 13px; border-radius: 3px; cursor: default; }
 
-/* ── FRIENDS ── */
+/*  FRIENDS  */
 .friend-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .friend-item:last-child { border-bottom: none; }
 .friend-av { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: var(--accent); flex-shrink: 0; }
@@ -213,7 +213,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .friend-stat { font-size: 11px; color: var(--text3); }
 .friend-reading { font-size: 11px; color: var(--text2); font-style: italic; }
 
-/* ── COLOUR PICKER ── */
+/*  COLOUR PICKER  */
 .color-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .12s, border-color .12s; }
 .swatch.active { border-color: var(--text); transform: scale(1.15); }
@@ -221,7 +221,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .theme-swatch { width: 44px; height: 32px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; transition: all .12s; position: relative; overflow: hidden; }
 .theme-swatch.active { border-color: var(--accent); }
 
-/* ── AUTH ── */
+/*  AUTH  */
 .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .auth-card { width: 100%; max-width: 380px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
 .auth-logo { font-family: 'Instrument Serif', serif; font-size: 28px; color: var(--accent); margin-bottom: 4px; }
@@ -234,29 +234,29 @@ textarea { resize: vertical; line-height: 1.5; }
 .setup-note code { color: var(--accent); font-size: 11px; }
 .setup-note a { color: var(--accent); }
 
-/* ── GOAL RING ── */
+/*  GOAL RING  */
 .goal-wrap { display: flex; align-items: center; gap: 20px; }
 .goal-text .g-big { font-family: 'Instrument Serif', serif; font-size: 42px; color: var(--accent); line-height: 1; }
 .goal-text .g-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
 
-/* ── IMPORT ZONE ── */
+/*  IMPORT ZONE  */
 .drop-zone { border: 1px dashed var(--border2); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all .15s; }
 .drop-zone:hover { border-color: var(--accent); background: var(--accent-bg); }
 .dz-icon { font-size: 28px; margin-bottom: 8px; }
 .dz-label { font-size: 14px; color: var(--text); }
 .dz-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
 
-/* ── SHARE PREVIEW ── */
+/*  SHARE PREVIEW  */
 .share-pre { background: linear-gradient(135deg, #1a140a 0%, #261b08 100%); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
 
-/* ── MOBILE NAV ── */
+/*  MOBILE NAV  */
 .mobile-nav { display: none; position: sticky; bottom: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 0 10px; z-index: 100; }
 .mob-inner { display: flex; justify-content: space-around; }
 .mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 10px; padding: 4px 10px; border-radius: 8px; border: none; background: transparent; font-family: 'Geist', sans-serif; transition: color .12s; }
 .mob-btn.active { color: var(--accent); }
 .mob-icon { font-size: 19px; }
 
-/* ── MISC ── */
+/*  MISC  */
 .empty { text-align: center; padding: 28px; color: var(--text3); }
 .empty-icon { font-size: 32px; margin-bottom: 8px; }
 .empty p { font-size: 13px; }
@@ -272,47 +272,47 @@ textarea { resize: vertical; line-height: 1.5; }
 .order-controls label { margin-bottom: 0; }
 .pending-chip { font-size: 10px; background: var(--accent-bg); color: var(--accent); padding: 2px 7px; border-radius: 10px; }
 
-/* ── WORM CARDS ── */
+/*  WORM CARDS  */
 .worm-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; }
 .worm-svg-display { width: 90px; flex-shrink: 0; }
 .worm-svg-display svg { width: 100%; height: auto; }
 .worm-info { flex: 1; }
 .worm-name-display { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
 
-/* ── WORM TEMPLATES ── */
+/*  WORM TEMPLATES  */
 .worm-template-pick { border: 2px solid var(--border2); border-radius: 10px; padding: 8px; cursor: pointer; transition: border-color .12s, background .12s; background: var(--bg3); }
 .worm-template-pick:hover { border-color: var(--accent); background: var(--accent-bg); }
 .worm-template-pick.selected { border-color: var(--accent); background: var(--accent-bg); }
 .worm-template-pick svg { width: 100%; height: auto; display: block; }
 
-/* ── PIXEL EDITOR ── */
+/*  PIXEL EDITOR  */
 .pixel-swatch { width: 22px; height: 22px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: transform .1s; }
 .pixel-swatch:hover { transform: scale(1.15); }
 .pixel-swatch.active { border-color: var(--text); transform: scale(1.15); }
 #pixel-canvas { display: block; width: 100%; max-width: 320px; touch-action: none; }
 #pixel-preview { display: block; touch-action: none; }
 
-/* ── CRAWL BAR ── */
+/*  CRAWL BAR  */
 @keyframes wormCrawl {
   from { left: -80px; }
   to   { left: 100%; }
 }
 .crawl-worm svg { width: 100%; height: 100%; }
 
-/* ── BOOK SEARCH ── */
+/*  BOOK SEARCH  */
 .book-search-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .book-search-item:last-child { border-bottom: none; }
 .book-search-cover { width: 36px; height: 48px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
 .book-search-cover-placeholder { width: 36px; height: 48px; background: var(--bg4); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
-/* ── PLAYLIST PRESETS ── */
+/*  PLAYLIST PRESETS  */
 .playlist-preset-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 10px; cursor: pointer; text-align: left; transition: all .12s; font-family: 'Geist', sans-serif; }
 .playlist-preset-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
 .playlist-preset-icon { font-size: 20px; margin-bottom: 5px; }
 .playlist-preset-name { font-size: 13px; font-weight: 500; color: var(--text); }
 .playlist-preset-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
-/* ── SUGGEST ITEMS ── */
+/*  SUGGEST ITEMS  */
 .suggest-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
 .suggest-item:last-child { border-bottom: none; }
 
@@ -401,7 +401,7 @@ textarea { resize: vertical; line-height: 1.5; }
         </div>
         <div class="card-grid2">
           <div class="card"><div class="card-title">currently reading</div><div id="dash-reading"></div></div>
-          <div class="card"><div class="card-title">streak — 35 days</div><div class="streak-grid" id="streak-cal"></div></div>
+          <div class="card"><div class="card-title">streak (past 35 days)</div><div class="streak-grid" id="streak-cal"></div></div>
         </div>
       </div>
 
@@ -516,20 +516,20 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="page-header"><h1 class="page-title">stats</h1><p class="page-sub ui-text">deep dive</p></div>
         <div class="metrics-row" id="stats-metrics"></div>
         <div class="card"><div class="card-title">books finished by month</div><div class="chart-wrap" style="height:170px"><canvas id="monthly-chart" role="img" aria-label="Books per month">monthly</canvas></div></div>
-        <div class="card"><div class="card-title">pages per day — last 30 days</div><div class="chart-wrap" style="height:150px"><canvas id="daily30-chart" role="img" aria-label="Daily pages 30d">daily30</canvas></div></div>
+        <div class="card"><div class="card-title">pages per day: last 30 days</div><div class="chart-wrap" style="height:150px"><canvas id="daily30-chart" role="img" aria-label="Daily pages 30d">daily30</canvas></div></div>
         <div class="card-grid2">
           <div class="card"><div class="card-title">by genre</div><div class="chart-wrap" style="height:150px"><canvas id="genre-chart" role="img" aria-label="By genre">genre</canvas></div></div>
           <div class="card"><div class="card-title">by day of week</div><div class="chart-wrap" style="height:150px"><canvas id="dow-chart" role="img" aria-label="Day of week">dow</canvas></div></div>
         </div>
         <div class="card">
-          <div class="card-title">finished books — sorted by rating</div>
+          <div class="card-title">finished books: sorted by rating</div>
           <div id="stats-done-list"></div>
         </div>
       </div>
 
       <!-- GOALS -->
       <div id="page-goals" class="page">
-        <div class="page-header"><h1 class="page-title">goals</h1><p class="page-sub ui-text">set targets, track pace</p></div>
+        <div class="page-header"><h1 class="page-title">goals</h1><p class="page-sub ui-text">track ur reading!</p></div>
         <div class="card">
           <div class="card-title">annual reading goal</div>
           <div class="goal-wrap">
@@ -673,7 +673,7 @@ textarea { resize: vertical; line-height: 1.5; }
             <button class="btn btn-ghost btn-sm active-case" onclick="setCase('lower',this)">lowercase everything</button>
             <button class="btn btn-ghost btn-sm" onclick="setCase('proper',this)">Proper Case</button>
           </div>
-          <p style="font-size:11px;color:var(--text3);margin-top:8px">applies to UI labels — book titles always keep their original casing</p>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">applies to UI labels: book titles always keep their original casing</p>
         </div>
       </div>
 
@@ -694,7 +694,7 @@ textarea { resize: vertical; line-height: 1.5; }
 
         <div class="card">
           <div class="card-title">🎵 reading playlists</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">curated spotify playlists for every reading mood — pick one or paste your own link</p>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">curated spotify playlists for every reading mood: pick one or paste your own link</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
             <button class="playlist-preset-btn" onclick="loadPresetPlaylist('deep-focus')"><div class="playlist-preset-icon">🎹</div><div class="playlist-preset-name">deep focus</div><div class="playlist-preset-sub">piano &amp; strings</div></button>
             <button class="playlist-preset-btn" onclick="loadPresetPlaylist('cozy')"><div class="playlist-preset-icon">☕</div><div class="playlist-preset-name">cozy reading</div><div class="playlist-preset-sub">warm &amp; calm</div></button>
@@ -718,7 +718,7 @@ textarea { resize: vertical; line-height: 1.5; }
       <div id="page-worms" class="page">
         <div class="page-header">
           <h1 class="page-title">my bookworms 🐛</h1>
-          <p class="page-sub ui-text">earn food every 10 pages · read 100 pages in a day to unlock custom pixel worms</p>
+          <p class="page-sub ui-text">earn food every 10 pages + read 100 pages in a day to unlock custom pixel worms</p>
         </div>
 
         <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
@@ -780,7 +780,7 @@ textarea { resize: vertical; line-height: 1.5; }
         <!-- Pixel art editor (unlocked at 100 pages/day) -->
         <div class="card" id="pixel-editor-card" style="display:none">
           <div class="card-title">🎨 pixel worm editor <span style="color:var(--green);font-size:10px">· unlocked!</span></div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">you read 100 pages today — draw your own worm! use the palette then click pixels to paint.</p>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">you read 100 pages today: draw your own worm! use the palette then click pixels to paint.</p>
           <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
             <div>
               <div id="pixel-palette" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;max-width:160px"></div>
@@ -847,7 +847,7 @@ const WORM_PARTS = {
   body:   ['#7ecb6e','#e8a87c','#7ab3e0','#b39ddb','#e07070','#f0c060','#88c4a0','#d4a0b8','#80b8c0','#c9a96e','#ff9999','#99ccff'],
   hat:    ['none','🎩','👑','🎓','🪖','🎀','🌸','🍄','🎵','🌈'],
   eyes:   ['◉◉','ʘʘ','••','◕◕','◔◔','^^','@@','◡◡','òó','ᵔᵔ'],
-  length: [3,4,5,6,7],
+  length: [1,2,3,4,5,6,7],
 };
 
 let sb = null, currentUser = null, isOffline = false;
@@ -856,7 +856,7 @@ let prefs = { theme:'dark', accent:'gold', texture:'none', density:'normal', tex
 let charts = {}, libTabCurrent = 'reading', colorModalTarget = null;
 let wormCustom = { color:'#7ecb6e', hat:'none', eyes:'◉◉', length:4 };
 
-// ── PIXEL EDITOR STATE ──
+//  PIXEL EDITOR STATE 
 let pixelEraserOn = false;
 let pixelColor = '#7ecb6e';
 const PIXEL_COLS = 20, PIXEL_ROWS = 10;
@@ -880,7 +880,7 @@ async function boot() {
   else showAuth();
 }
 
-// ── AUTH ──
+//  AUTH 
 let authMode = 'signin';
 function showAuth() { document.getElementById('auth-screen').style.display='block'; document.getElementById('app-screen').style.display='none'; }
 function showApp() {
@@ -894,7 +894,7 @@ function showApp() {
     document.getElementById('sidebar-email').textContent = currentUser.email;
     document.getElementById('account-info').textContent = 'signed in as '+currentUser.email;
   } else {
-    document.getElementById('account-info').textContent = 'offline mode — data saved locally only';
+    document.getElementById('account-info').textContent = 'offline mode: data saved locally only';
     document.getElementById('signout-btn').textContent = 'sign in';
     document.getElementById('signout-btn').onclick = function(){ showAuth(); };
   }
@@ -938,7 +938,7 @@ async function doSignOut() {
   showAuth();
 }
 
-// ── DATA ──
+//  DATA 
 function loadLocal() { try { const d=localStorage.getItem('rt_db'); if(d) db={...db,...JSON.parse(d)}; } catch(e){} }
 function saveLocal() { try { localStorage.setItem('rt_db', JSON.stringify(db)); } catch(e){} }
 async function loadFromCloud() {
@@ -951,7 +951,7 @@ async function save() {
   try { await sb.from('userdata').upsert({user_id:currentUser.id,data:db,updated_at:new Date().toISOString()},{onConflict:'user_id'}); } catch(e){}
 }
 
-// ── PREFS ──
+//  PREFS 
 function loadPrefs() { try { const p=localStorage.getItem('rt_prefs'); if(p) prefs={...prefs,...JSON.parse(p)}; } catch(e){} applyPrefs(); }
 function savePrefs() { try { localStorage.setItem('rt_prefs', JSON.stringify(prefs)); } catch(e){} }
 function applyPrefs() {
@@ -979,7 +979,7 @@ function setTexture(t,el) { prefs.texture=t; savePrefs(); applyPrefs(); document
 function setDensity(d,el) { prefs.density=d; savePrefs(); applyPrefs(); document.querySelectorAll('#density-btns .btn').forEach(b=>b.classList.remove('active-density')); if(el)el.classList.add('active-density'); }
 function setCase(c,el) { prefs.textCase=c; savePrefs(); applyPrefs(); document.querySelectorAll('#case-btns .btn').forEach(b=>b.classList.remove('active-case')); if(el)el.classList.add('active-case'); }
 
-// ── HELPERS ──
+//  HELPERS 
 function todayStr() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtDate(s) { if(!s)return''; const[y,m,d]=s.split('-'); return m+'/'+d+'/'+y; }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -993,7 +993,7 @@ function buildSwatches(containerId, onPick) {
 }
 buildSwatches('quick-swatches', (c)=>`document.getElementById('b-color').value='${c}'`);
 
-// ── NAV ──
+//  NAV 
 function nav(id, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item, .mob-btn').forEach(n=>n.classList.remove('active'));
@@ -1014,7 +1014,7 @@ function syncSettingsUI() {
   document.querySelectorAll('#accent-swatches .swatch').forEach(s=>s.classList.toggle('active', s.dataset.accent===prefs.accent));
 }
 
-// ── ADD BOOK ──
+//  ADD BOOK 
 function addBook() {
   const title=document.getElementById('b-title').value.trim(); if(!title){toast('please enter a title');return;}
   const status=document.getElementById('b-status').value;
@@ -1036,7 +1036,7 @@ function deleteBook(id) {
 }
 function setRating(e,bookId,r) { e.stopPropagation(); const b=db.books.find(x=>x.id===bookId); if(b){b.rating=r;save();renderLibrary();} }
 
-// ── SPINE COLOR MODAL ──
+//  SPINE COLOR MODAL 
 function openColorModal(bookId) {
   colorModalTarget=bookId; const book=db.books.find(b=>b.id===bookId);
   if(book) document.getElementById('modal-color-picker').value=book.color||'#c9a96e';
@@ -1050,7 +1050,7 @@ function applySpineColor() {
   closeColorModal();
 }
 
-// ── LOG SESSION ──
+//  LOG SESSION 
 function logSession() {
   const bid=parseInt(document.getElementById('log-book').value);
   const pages=parseInt(document.getElementById('log-pages').value)||0;
@@ -1067,7 +1067,7 @@ function logSession() {
   save(); renderAll(); checkWormReward();
 }
 
-// ── SERIES ──
+//  SERIES 
 function addSeries() {
   const name=document.getElementById('ser-name').value.trim(); if(!name){toast('enter a series name');return;}
   if(db.series.find(s=>s.name.toLowerCase()===name.toLowerCase())){toast('series already exists');return;}
@@ -1077,12 +1077,12 @@ function addSeries() {
 }
 function deleteSeries(id) { db.series=db.series.filter(s=>s.id!==id); save(); renderSeriesPage(); }
 
-// ── GOALS ──
+//  GOALS 
 function setGoal()       { const v=parseInt(document.getElementById('goal-in').value);    if(v>0){db.goal=v;save();renderGoals();toast('goal set!');} }
 function setDailyGoal()  { const v=parseInt(document.getElementById('daily-g-in').value); if(v>0){db.dailyGoal=v;save();renderGoals();toast('daily goal set!');} }
 function setWeeklyGoal() { const v=parseInt(document.getElementById('weekly-g-in').value);if(v>0){db.weeklyGoal=v;save();renderGoals();toast('weekly goal set!');} }
 
-// ── FRIENDS ──
+//  FRIENDS 
 async function sendFriendRequest() {
   if(!sb||!currentUser){toast('sign in to add friends');return;}
   const username=document.getElementById('friend-username').value.trim(); if(!username)return;
@@ -1110,10 +1110,10 @@ async function loadFriends() {
 async function acceptFriend(uid) { if(!sb||!currentUser)return; await sb.from('friendships').update({status:'accepted'}).eq('requester_id',uid).eq('addressee_id',currentUser.id); loadFriends(); }
 async function declineFriend(uid) { if(!sb||!currentUser)return; await sb.from('friendships').delete().eq('requester_id',uid).eq('addressee_id',currentUser.id); db.friendReqs=db.friendReqs.filter(i=>i!==uid); renderFriends(); }
 
-// ── RENDER ALL ──
+//  RENDER ALL 
 function renderAll() { renderDashboard(); renderLibrary(); renderLogPage(); renderGoals(); renderShare(); }
 
-// ── DASHBOARD ──
+//  DASHBOARD 
 function renderDashboard() {
   const streak=calcStreak(),pw=pagesInDays(7),pl=pagesInRange(14,7),diff=pw-pl,done=db.books.filter(b=>b.status==='done').length,spd=calcSpeed();
   document.getElementById('dash-metrics').innerHTML='<div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">'+streak+'</div><div class="metric-sub">days 🔥</div></div><div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">'+pw.toLocaleString()+'</div><div class="metric-sub">'+(diff===0?'same':(diff>0?'+':'')+diff)+' vs last wk</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div><div class="metric-sub">of '+db.goal+' goal</div></div><div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">'+(spd||'—')+'</div><div class="metric-sub">pages/hr</div></div>';
@@ -1136,7 +1136,7 @@ function renderStreakCal() {
   document.getElementById('streak-cal').innerHTML=html;
 }
 
-// ── LIBRARY ──
+//  LIBRARY 
 function libTab(t,el){ libTabCurrent=t; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); if(el)el.classList.add('active'); renderLibrary(); }
 function renderLibrary() {
   const sel=document.getElementById('log-book'),prev=sel.value;
@@ -1162,7 +1162,7 @@ function renderLibrary() {
   html+='</div></div>'; el.innerHTML=html;
 }
 
-// ── LOG PAGE ──
+//  LOG PAGE 
 function renderLogPage() {
   const sorted=[...db.logs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
   const el=document.getElementById('log-recent');
@@ -1170,7 +1170,7 @@ function renderLogPage() {
   el.innerHTML=sorted.map(l=>{const b=db.books.find(x=>x.id===l.bookId);return'<div class="log-item"><div class="log-dot" style="background:'+(b?b.color:'var(--accent)')+'"></div><div class="log-body"><div class="log-book">'+esc(b?b.title:'unknown')+'</div><div class="log-info">'+l.pages+' pages'+(l.minutes?' · '+l.minutes+' min':'')+'</div>'+(l.notes?'<div class="log-note">'+esc(l.notes.slice(0,80))+'</div>':'')+'</div><div class="log-right">'+fmtDate(l.date)+'</div></div>';}).join('');
 }
 
-// ── SERIES PAGE ──
+//  SERIES PAGE 
 function renderSeriesPage() {
   const el=document.getElementById('series-list');
   if(!db.series.length){el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">📚</div><p>no series tracked yet</p></div></div>';return;}
@@ -1181,7 +1181,7 @@ function renderSeriesPage() {
   }).join('');
 }
 
-// ── STATS ──
+//  STATS 
 function renderStats() {
   const tp=db.logs.reduce((s,l)=>s+l.pages,0),tm=db.logs.reduce((s,l)=>s+l.minutes,0),done=db.books.filter(b=>b.status==='done').length;
   const byDay={};db.logs.forEach(l=>{byDay[l.date]=(byDay[l.date]||0)+l.pages;});
@@ -1206,7 +1206,7 @@ function renderStats() {
   document.getElementById('stats-done-list').innerHTML=finished.length?'<div class="book-list">'+finished.map(b=>'<div class="book-item"><div class="book-spine" style="background:'+b.color+'"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+(b.finishedDate?' · '+fmtDate(b.finishedDate):'')+'</div></div><div style="font-size:12px;white-space:nowrap">'+starsFixed(b.rating||0)+'</div></div>').join('')+'</div>':'<div class="empty"><p>no finished books yet</p></div>';
 }
 
-// ── GOALS ──
+//  GOALS 
 function renderGoals() {
   const done=db.books.filter(b=>b.status==='done').length,pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
   document.getElementById('g-pct').textContent=pct+'%';
@@ -1222,10 +1222,10 @@ function renderGoals() {
   const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
   charts['goal-donut']=new Chart(document.getElementById('goal-donut'),{type:'doughnut',data:{datasets:[{data:[pct,100-pct],backgroundColor:[acc,'rgba(128,128,128,0.08)'],borderWidth:0}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
   const dLeft=Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000)),bLeft=Math.max(0,db.goal-done),avgD=calcAvgDays(),dpb=bLeft>0?Math.ceil(dLeft/bLeft):0,ontrack=avgD&&avgD<=dpb;
-  document.getElementById('pace-info').innerHTML=bLeft===0?'<strong style="color:var(--green)">🎉 annual goal complete!</strong>':bLeft+' book'+(bLeft!==1?'s':'')+' left · '+dLeft+' days remaining<br>finish a book every <strong>'+dpb+'</strong> days to hit your goal<br>'+(avgD?'your average: <strong>'+avgD+' days/book</strong> · <span style="color:'+(ontrack?'var(--green)':'var(--red)')+'">'+(ontrack?'on track ✓':'behind — pick up the pace!')+'</span>':' log more books for pace analysis');
+  document.getElementById('pace-info').innerHTML=bLeft===0?'<strong style="color:var(--green)">🎉 annual goal complete!</strong>':bLeft+' book'+(bLeft!==1?'s':'')+' left · '+dLeft+' days remaining<br>finish a book every <strong>'+dpb+'</strong> days to hit your goal<br>'+(avgD?'your average: <strong>'+avgD+' days/book</strong> · <span style="color:'+(ontrack?'var(--green)':'var(--red)')+'">'+(ontrack?'on track ✓':'behind: pick up the pace!')+'</span>':' log more books for pace analysis');
 }
 
-// ── FRIENDS RENDER ──
+//  FRIENDS RENDER 
 function renderFriends() {
   const pendingEl=document.getElementById('pending-list'),friendsEl=document.getElementById('friends-list'),countEl=document.getElementById('pending-count');
   if(!sb||!currentUser){pendingEl.innerHTML='<div class="empty"><p>sign in to connect with friends</p></div>';friendsEl.innerHTML='<div class="empty"><p>sign in to see friends</p></div>';return;}
@@ -1233,10 +1233,10 @@ function renderFriends() {
   if(reqs.length){countEl.style.display='inline';countEl.textContent=reqs.length;pendingEl.innerHTML=reqs.map(uid=>'<div class="friend-item"><div class="friend-av">?</div><div class="friend-info"><div class="friend-name">'+uid.slice(0,8)+'...</div><div class="friend-stat">wants to be friends</div></div><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="acceptFriend(\''+uid+'\')">accept</button><button class="btn btn-ghost btn-sm" onclick="declineFriend(\''+uid+'\')">decline</button></div></div>').join('');}
   else {countEl.style.display='none';pendingEl.innerHTML='<div class="empty"><p>no pending requests</p></div>';}
   const fr=db.friends||[];
-  friendsEl.innerHTML=fr.length?fr.map(f=>'<div class="friend-item"><div class="friend-av">'+(f.username||'?')[0].toUpperCase()+'</div><div class="friend-info"><div class="friend-name">'+esc(f.username)+'</div><div class="friend-stat">'+(f.booksRead||0)+' books done</div>'+(f.reading&&f.reading.length?'<div class="friend-reading">reading: '+f.reading.slice(0,2).map(t=>esc(t)).join(', ')+'</div>':'')+'</div></div>').join(''):'<div class="empty"><p>no friends yet — send a request!</p></div>';
+  friendsEl.innerHTML=fr.length?fr.map(f=>'<div class="friend-item"><div class="friend-av">'+(f.username||'?')[0].toUpperCase()+'</div><div class="friend-info"><div class="friend-name">'+esc(f.username)+'</div><div class="friend-stat">'+(f.booksRead||0)+' books done</div>'+(f.reading&&f.reading.length?'<div class="friend-reading">reading: '+f.reading.slice(0,2).map(t=>esc(t)).join(', ')+'</div>':'')+'</div></div>').join(''):'<div class="empty"><p>no friends yet: send a request!</p></div>';
 }
 
-// ── SHARE ──
+//  SHARE 
 function renderShare() {
   const done=db.books.filter(b=>b.status==='done').length,streak=calcStreak(),pages=db.logs.reduce((s,l)=>s+l.pages,0),reading=db.books.filter(b=>b.status==='reading'),pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
   const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c9a96e';
@@ -1245,11 +1245,11 @@ function renderShare() {
 }
 function copyShareText() {
   const done=db.books.filter(b=>b.status==='done').length,streak=calcStreak(),pages=db.logs.reduce((s,l)=>s+l.pages,0),reading=db.books.filter(b=>b.status==='reading').slice(0,2).map(b=>b.title).join(', ');
-  navigator.clipboard.writeText('📚 reading update — '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})+'\n\n🔥 '+streak+'-day streak\n📖 '+done+' books done ('+Math.round(done/db.goal*100)+'% of '+db.goal+'-book goal)\n📄 '+pages.toLocaleString()+' pages read\n\nreading: '+(reading||'nothing right now')+'\n\n#readtracker').then(()=>toast('copied!')).catch(()=>toast('could not copy'));
+  navigator.clipboard.writeText('📚 reading update: '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})+'\n\n🔥 '+streak+'-day streak\n📖 '+done+' books done ('+Math.round(done/db.goal*100)+'% of '+db.goal+'-book goal)\n📄 '+pages.toLocaleString()+' pages read\n\nreading: '+(reading||'nothing right now')+'\n\n#readtracker').then(()=>toast('copied!')).catch(()=>toast('could not copy'));
 }
 function copyEmbed() { navigator.clipboard.writeText(document.getElementById('embed-code').value).then(()=>toast('embed code copied!')).catch(()=>toast('could not copy')); }
 
-// ── IMPORT / EXPORT ──
+//  IMPORT / EXPORT 
 function importGoodreads(input) {
   const file=input.files[0];if(!file)return;
   const r=new FileReader();r.onload=e=>{
@@ -1274,7 +1274,7 @@ function exportCSV(){const rows=[['Title','Author','Pages','Status','Genre','Ser
 function restoreJSON(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{db={...db,...JSON.parse(e.target.result)};save();renderAll();toast('data restored!');}catch(e){toast('error reading file');}};r.readAsText(f);}
 function clearAll(){if(!confirm('delete ALL data?'))return;db={books:[],logs:[],series:[],friends:[],friendReqs:[],goal:24,dailyGoal:30,weeklyGoal:200};save();renderAll();toast('cleared');}
 
-// ── CALC HELPERS ──
+//  CALC HELPERS 
 function calcStreak(){const days=new Set(db.logs.map(l=>l.date));let s=0,d=new Date();for(let i=0;i<365;i++){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(days.has(k)){s++;d.setDate(d.getDate()-1);}else if(i===0){d.setDate(d.getDate()-1);}else break;}return s;}
 function pagesInDays(n){const c=new Date();c.setDate(c.getDate()-n);return db.logs.filter(l=>new Date(l.date+'T12:00:00')>=c).reduce((s,l)=>s+l.pages,0);}
 function pagesInRange(from,to){const now=new Date();const a=new Date(now);a.setDate(now.getDate()-from);const b=new Date(now);b.setDate(now.getDate()-to);return db.logs.filter(l=>{const d=new Date(l.date+'T12:00:00');return d>=a&&d<b;}).reduce((s,l)=>s+l.pages,0);}
@@ -1282,7 +1282,7 @@ function calcSpeed(){const p=db.logs.reduce((s,l)=>s+l.pages,0),m=db.logs.reduce
 function calcAvgDays(){const books=db.books.filter(b=>b.status==='done'&&b.startDate&&b.finishedDate);if(!books.length)return 0;const avg=books.reduce((s,b)=>s+Math.max(1,(new Date(b.finishedDate)-new Date(b.startDate))/86400000),0)/books.length;return Math.round(avg);}
 function editBookPages(id){const b=db.books.find(x=>x.id===id);if(!b)return;const np=prompt('edit page count for "'+b.title+'"\ncurrent: '+(b.pages||'unknown'),b.pages||'');if(np===null)return;const parsed=parseInt(np);if(isNaN(parsed)||parsed<1){toast('enter a valid page number');return;}b.pages=parsed;if(b.pagesRead>b.pages)b.pagesRead=b.pages;save();renderAll();toast('page count updated!');}
 
-// ── WORMS ──
+//  WORMS 
 function initWorms() {
   if(!db.worms) db.worms={list:[],totalPagesMilestone:0,hunger:0};
   if(db.worms.hunger==null) db.worms.hunger=0;
@@ -1407,7 +1407,7 @@ function renderWorms() {
   }).join('');
 }
 
-// ── PIXEL EDITOR ──
+//  PIXEL EDITOR 
 function pixelDataToImg(pd) {
   const cw=8,ch=8,rects=[];
   for(var r=0;r<PIXEL_ROWS;r++) for(var c=0;c<PIXEL_COLS;c++){if(pd[r]&&pd[r][c])rects.push('<rect x="'+(c*cw)+'" y="'+(r*ch)+'" width="'+cw+'" height="'+ch+'" fill="'+pd[r][c]+'"/>');}
@@ -1470,7 +1470,7 @@ function savePixelWorm(){
   save();renderWorms();toast(name+' hatched! 🎨🐛');
 }
 
-// ── CRAWL BAR ──
+//  CRAWL BAR 
 function renderCrawlBar(){
   initWorms();
   const bar=document.getElementById('worm-crawl-bar');if(!bar)return;
@@ -1489,13 +1489,13 @@ function spawnWormEl(bar,w){
   bar.appendChild(el);
 }
 
-// ── SPOTIFY ──
+//  SPOTIFY 
 const PRESET_PLAYLISTS={'deep-focus':'37i9dQZF1DWZeKCadgRdKQ','cozy':'37i9dQZF1DX4sWSpwq3LiO','epic':'37i9dQZF1DX1s9knjP51Oa','night':'37i9dQZF1DX3Ogo9pFvBkY','baroque':'37i9dQZF1DWWEJlAGA9gs0','lofi':'37i9dQZF1DX8NTLI2TtZa6'};
 function loadSpotifyEmbed(){const raw=document.getElementById('spotify-url-input').value.trim();if(raw)embedSpotify(raw);}
 function loadPresetPlaylist(key){const id=PRESET_PLAYLISTS[key];if(id)embedSpotify('https://open.spotify.com/playlist/'+id);}
 function embedSpotify(url){if(!url)return;const match=url.match(/spotify\.com\/(playlist|album|track|artist)\/([A-Za-z0-9]+)/);if(!match){toast('paste a valid spotify link');return;}const[,type,id]=match;const iframe=document.getElementById('spotify-iframe');iframe.src='https://open.spotify.com/embed/'+type+'/'+id+'?utm_source=generator&theme=0';iframe.style.display='block';document.getElementById('spotify-placeholder').style.display='none';}
 
-// ── BOOK SEARCH ──
+//  BOOK SEARCH 
 async function searchBooks(){
   const q=document.getElementById('book-search-input').value.trim();if(!q)return;
   const statusEl=document.getElementById('book-search-status'),resultsEl=document.getElementById('book-search-results');
@@ -1513,7 +1513,7 @@ async function searchBooks(){
       var authorEscJs=((d.author_name||[]).slice(0,2).join(', ')||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
       return '<div class="book-search-item">'+(cover?'<img src="'+cover+'" alt="" class="book-search-cover" onerror="this.style.display=\'none\'" />':'<div class="book-search-cover-placeholder">📖</div>')+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+title+'</div><div style="font-size:11px;color:var(--accent)">'+author+'</div><div style="font-size:10px;color:var(--text3)">'+(year?year+' · ':'')+( pages?pages+' pages':'')+'</div></div><div style="flex-shrink:0">'+(alreadyHave?'<span style="font-size:11px;color:var(--text3)">in library</span>':'<button class="btn btn-ghost btn-sm" onclick="addSearchedBook(\''+titleEscJs+'\',\''+authorEscJs+'\','+pages+')">+ add</button>')+'</div></div>';
     }).join('');
-  }catch(e){statusEl.textContent='search failed — check your connection';}
+  }catch(e){statusEl.textContent='search failed: check your connection';}
 }
 function addSearchedBook(title,author,pages){db.books.push({id:Date.now(),title:title,author:author,pages:pages||0,genre:'',series:'',seriesNum:0,status:'want',color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:0,startDate:'',finishedDate:'',addedDate:todayStr()});save();renderAll();toast('"'+title+'" added to want to read!');}
 
