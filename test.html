@@ -2,12 +2,15 @@
 <html lang="en" data-theme="dark" data-case="lower" data-density="normal">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>readtracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 /*  THEME TOKENS  */
 :root {
@@ -88,7 +91,7 @@
 
 /*  RESET & BASE  */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; padding-bottom: 48px; }
+body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; padding-bottom: 80px; -webkit-text-size-adjust: 100%; }
 ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
 
 /*  LAYOUT  */
@@ -250,11 +253,12 @@ textarea { resize: vertical; line-height: 1.5; }
 .share-pre { background: linear-gradient(135deg, #1a140a 0%, #261b08 100%); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
 
 /*  MOBILE NAV  */
-.mobile-nav { display: none; position: sticky; bottom: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 0 10px; z-index: 100; }
-.mob-inner { display: flex; justify-content: space-around; }
-.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 10px; padding: 4px 10px; border-radius: 8px; border: none; background: transparent; font-family: 'Geist', sans-serif; transition: color .12s; }
+.mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 0 env(safe-area-inset-bottom, 10px); z-index: 200; }
+.mob-inner { display: flex; justify-content: space-around; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.mob-inner::-webkit-scrollbar { display: none; }
+.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 10px; padding: 4px 8px; border-radius: 8px; border: none; background: transparent; font-family: 'Geist', sans-serif; transition: color .12s; flex-shrink: 0; min-width: 52px; }
 .mob-btn.active { color: var(--accent); }
-.mob-icon { font-size: 19px; }
+.mob-icon { font-size: 18px; }
 
 /*  MISC  */
 .empty { text-align: center; padding: 28px; color: var(--text3); }
@@ -318,12 +322,14 @@ textarea { resize: vertical; line-height: 1.5; }
 
 @media (max-width: 680px) {
   .sidebar { display: none; }
-  .main-content { padding: 14px 14px 80px; }
+  .main-content { padding: 14px 14px 90px; overflow-x: hidden; }
   .mobile-nav { display: block; }
   .metrics-row { grid-template-columns: 1fr 1fr; }
   .card-grid2, .card-grid3 { grid-template-columns: 1fr; }
   .form-row2, .form-row3 { grid-template-columns: 1fr; }
   .goal-wrap { flex-direction: column; align-items: flex-start; }
+  .app { overflow-x: hidden; }
+  .worm-card { flex-wrap: wrap; }
 }
 </style>
 </head>
@@ -369,6 +375,9 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="nav-divider"></div>
         <div class="nav-item" data-page="discover" onclick="nav('discover',this)"><span class="nav-icon">✦</span><span class="nav-label">discover</span></div>
         <div class="nav-item" data-page="worms" onclick="nav('worms',this)"><span class="nav-icon">🐛</span><span class="nav-label">my worms</span></div>
+        <div class="nav-item" data-page="graveyard" onclick="nav('graveyard',this)"><span class="nav-icon">🪦</span><span class="nav-label">graveyard</span></div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" data-page="reader" onclick="nav('reader',this)"><span class="nav-icon">📖</span><span class="nav-label">pdf reader</span></div>
         <div class="nav-divider"></div>
         <div class="nav-item" data-page="friends" onclick="nav('friends',this)"><span class="nav-icon">◑</span><span class="nav-label">friends</span></div>
         <div class="nav-item" data-page="share" onclick="nav('share',this)"><span class="nav-icon">◐</span><span class="nav-label">share</span></div>
@@ -682,6 +691,12 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="page-header"><h1 class="page-title">discover</h1><p class="page-sub ui-text">find books &amp; music for your reading sessions</p></div>
 
         <div class="card">
+          <div class="card-title">✨ recommended for you</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:4px" id="rec-why">based on your library</p>
+          <div id="rec-list"><div class="empty"><p>add some books first and we'll suggest more!</p></div></div>
+        </div>
+
+        <div class="card">
           <div class="card-title">🔍 find books</div>
           <p style="font-size:12px;color:var(--text2);margin-bottom:12px">search OpenLibrary for any book and add it straight to your library</p>
           <div class="inline-flex" style="margin-bottom:4px">
@@ -804,6 +819,42 @@ textarea { resize: vertical; line-height: 1.5; }
         <div id="worm-list"></div>
       </div>
 
+      <!-- GRAVEYARD -->
+      <div id="page-graveyard" class="page">
+        <div class="page-header"><h1 class="page-title">🪦 worm graveyard</h1><p class="page-sub ui-text">rest in peace, little ones</p></div>
+        <div id="graveyard-list"></div>
+      </div>
+
+      <!-- PDF READER -->
+      <div id="page-reader" class="page">
+        <div class="page-header"><h1 class="page-title">📖 pdf reader</h1><p class="page-sub ui-text">upload and read PDFs right here</p></div>
+        <div class="card" id="reader-upload-card">
+          <div class="card-title">upload a PDF</div>
+          <label class="drop-zone" for="pdf-file-input" id="pdf-drop-zone">
+            <div class="dz-icon">📄</div>
+            <div class="dz-label">drop a PDF here</div>
+            <div class="dz-sub">or click to browse</div>
+          </label>
+          <input type="file" id="pdf-file-input" accept=".pdf" style="display:none" onchange="loadPDF(this)" />
+        </div>
+        <div id="reader-controls" style="display:none;margin-bottom:10px">
+          <div class="card" style="padding:12px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="pdfPrevPage()">← prev</button>
+              <span style="font-size:13px;color:var(--text2)">page <span id="pdf-page-num">1</span> of <span id="pdf-page-total">?</span></span>
+              <button class="btn btn-ghost btn-sm" onclick="pdfNextPage()">next →</button>
+              <button class="btn btn-ghost btn-sm" onclick="pdfZoomOut()">−</button>
+              <span style="font-size:12px;color:var(--text3)" id="pdf-zoom-label">100%</span>
+              <button class="btn btn-ghost btn-sm" onclick="pdfZoomIn()">+</button>
+              <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="closePDF()">close PDF</button>
+            </div>
+          </div>
+        </div>
+        <div id="pdf-canvas-wrap" style="overflow:auto;background:var(--bg3);border-radius:10px;display:none">
+          <canvas id="pdf-canvas" style="display:block;margin:0 auto"></canvas>
+        </div>
+      </div>
+
     </main>
   </div>
   <div class="mobile-nav">
@@ -813,6 +864,11 @@ textarea { resize: vertical; line-height: 1.5; }
       <button class="mob-btn" onclick="nav('log',this)" data-p="log"><span class="mob-icon">◎</span>log</button>
       <button class="mob-btn" onclick="nav('stats',this)" data-p="stats"><span class="mob-icon">◉</span>stats</button>
       <button class="mob-btn" onclick="nav('goals',this)" data-p="goals"><span class="mob-icon">◌</span>goals</button>
+      <button class="mob-btn" onclick="nav('discover',this)" data-p="discover"><span class="mob-icon">✦</span>discover</button>
+      <button class="mob-btn" onclick="nav('worms',this)" data-p="worms"><span class="mob-icon">🐛</span>worms</button>
+      <button class="mob-btn" onclick="nav('series',this)" data-p="series"><span class="mob-icon">◧</span>series</button>
+      <button class="mob-btn" onclick="nav('reader',this)" data-p="reader"><span class="mob-icon">📖</span>reader</button>
+      <button class="mob-btn" onclick="nav('settings',this)" data-p="settings"><span class="mob-icon">◓</span>settings</button>
     </div>
   </div>
 </div>
@@ -831,6 +887,86 @@ textarea { resize: vertical; line-height: 1.5; }
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-primary" onclick="applySpineColor()">apply</button>
       <button class="btn btn-ghost" onclick="closeColorModal()">cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- full book edit modal -->
+<div id="edit-book-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:501;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:500;margin-bottom:16px">✎ edit book</div>
+    <input type="hidden" id="edit-book-id" />
+    <div class="form-row2">
+      <div class="form-group"><label>title</label><input id="edit-b-title" /></div>
+      <div class="form-group"><label>author</label><input id="edit-b-author" /></div>
+    </div>
+    <div class="form-row3">
+      <div class="form-group"><label>pages</label><input id="edit-b-pages" type="number" min="1" /></div>
+      <div class="form-group"><label>pages read</label><input id="edit-b-pagesread" type="number" min="0" /></div>
+      <div class="form-group"><label>genre</label><input id="edit-b-genre" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>series</label><input id="edit-b-series" /></div>
+      <div class="form-group"><label>series #</label><input id="edit-b-seriesnum" type="number" min="1" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>status</label>
+        <select id="edit-b-status">
+          <option value="reading">currently reading</option>
+          <option value="want">want to read</option>
+          <option value="done">finished</option>
+        </select>
+      </div>
+      <div class="form-group"><label>rating</label>
+        <select id="edit-b-rating">
+          <option value="0">no rating</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★☆</option>
+          <option value="3">★★★☆☆</option>
+          <option value="2">★★☆☆☆</option>
+          <option value="1">★☆☆☆☆</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>start date</label><input id="edit-b-start" type="date" /></div>
+      <div class="form-group"><label>finished date</label><input id="edit-b-finished" type="date" /></div>
+    </div>
+    <div class="form-group"><label>spine colour</label>
+      <div class="inline-flex" style="margin-top:4px">
+        <input type="color" id="edit-b-color" value="#c9a96e" class="color-picker-inline" />
+        <div class="color-swatches" id="edit-quick-swatches"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveEditBook()">save changes</button>
+      <button class="btn btn-ghost" onclick="closeEditBook()">cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- worm edit modal -->
+<div id="edit-worm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:501;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:500;margin-bottom:16px">✎ edit worm</div>
+    <input type="hidden" id="edit-worm-id" />
+    <div class="form-group"><label>name</label><input id="edit-worm-name" /></div>
+    <div class="form-group"><label>body colour</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="edit-worm-body-swatches"></div>
+    </div>
+    <div class="form-group"><label>hat</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="edit-worm-hat-swatches"></div>
+    </div>
+    <div class="form-group"><label>eyes</label>
+      <select id="edit-worm-eyes"></select>
+    </div>
+    <div class="form-group"><label>length</label>
+      <div style="display:flex;gap:6px;margin-top:4px" id="edit-worm-length-swatches"></div>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center" id="edit-worm-preview"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveEditWorm()">save worm</button>
+      <button class="btn btn-ghost" onclick="closeEditWorm()">cancel</button>
     </div>
   </div>
 </div>
@@ -875,6 +1011,23 @@ async function boot() {
   sb = initSupabase();
   loadPrefs();
   if (!sb) { document.getElementById('supabase-setup-note').style.display='block'; showAuth(); return; }
+  // Handle email confirmation links (Supabase sends tokens in URL hash)
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    try {
+      const params = new URLSearchParams(hash.replace('#','?'));
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (access_token) {
+        const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
+        if (data?.session) {
+          currentUser = data.session.user;
+          window.location.hash = '';
+          await loadFromCloud(); showApp(); return;
+        }
+      }
+    } catch(e) { console.error('session restore error', e); }
+  }
   const { data: { session } } = await sb.auth.getSession();
   if (session) { currentUser = session.user; await loadFromCloud(); showApp(); }
   else showAuth();
@@ -902,7 +1055,7 @@ function showApp() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   renderAll();
   loadFriends();
-  setTimeout(function(){ initWorms(); renderCrawlBar(); }, 200);
+  setTimeout(function(){ initWorms(); checkWormDepletion(); renderCrawlBar(); }, 200);
 }
 function toggleAuthMode() {
   authMode = authMode==='signin'?'signup':'signin';
@@ -1007,6 +1160,8 @@ function nav(id, el) {
     if(id==='share')    renderShare();
     if(id==='series')   renderSeriesPage();
     if(id==='settings') syncSettingsUI();
+    if(id==='graveyard') renderGraveyard();
+    if(id==='discover') renderRecommendations();
   }, 30);
 }
 function syncSettingsUI() {
@@ -1156,7 +1311,7 @@ function renderLibrary() {
     grp.forEach(b=>{
       const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;
       const starHtml=[1,2,3,4,5].map(i=>'<span class="star '+(i<=(b.rating||0)?'on':'')+'" onclick="setRating(event,'+b.id+','+i+')">★</span>').join('');
-      html+='<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')" title="click to change colour"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div><div class="book-tags"><span class="pill pill-'+b.status+'">'+(b.status==='reading'?'reading':b.status==='want'?'want to read':'finished')+'</span>'+(b.genre?'<span class="pill pill-genre">'+esc(b.genre)+'</span>':'')+(b.series?'<span class="series-badge">◧ '+esc(b.series)+(b.seriesNum?' #'+b.seriesNum:'')+'</span>':'')+(b.pages?'<span style="font-size:10px;color:var(--text3)">'+b.pages+'p</span>':'')+(b.finishedDate?'<span style="font-size:10px;color:var(--text3)">done '+fmtDate(b.finishedDate)+'</span>':'')+'</div>'+(b.status==='reading'&&b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div>':'')+'<div style="margin-top:4px">'+starHtml+'</div></div><div class="book-actions"><button class="btn-icon" title="edit page count" onclick="editBookPages('+b.id+')">✎</button><button class="btn-icon" onclick="deleteBook('+b.id+')">×</button></div></div>';
+      html+='<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')" title="click to change colour"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div><div class="book-tags"><span class="pill pill-'+b.status+'">'+(b.status==='reading'?'reading':b.status==='want'?'want to read':'finished')+'</span>'+(b.genre?'<span class="pill pill-genre">'+esc(b.genre)+'</span>':'')+(b.series?'<span class="series-badge">◧ '+esc(b.series)+(b.seriesNum?' #'+b.seriesNum:'')+'</span>':'')+(b.pages?'<span style="font-size:10px;color:var(--text3)">'+b.pages+'p</span>':'')+(b.finishedDate?'<span style="font-size:10px;color:var(--text3)">done '+fmtDate(b.finishedDate)+'</span>':'')+'</div>'+(b.status==='reading'&&b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div>':'')+'<div style="margin-top:4px">'+starHtml+'</div></div><div class="book-actions"><button class="btn-icon" title="edit book" onclick="openEditBook('+b.id+')" style="font-size:13px">✎</button><button class="btn-icon" onclick="deleteBook('+b.id+')">×</button></div></div>';
     });
   });
   html+='</div></div>'; el.innerHTML=html;
@@ -1370,6 +1525,266 @@ function deleteWorm(id) {
   save(); renderWorms();
 }
 
+function killWorm(id, reason) {
+  initWorms();
+  const w=db.worms.list.find(function(x){return x.id===id;});
+  if(!w)return;
+  if(!db.worms.graveyard) db.worms.graveyard=[];
+  db.worms.graveyard.push({...w, diedDate:todayStr(), diedReason:reason||'starvation 💀'});
+  db.worms.list=db.worms.list.filter(function(x){return x.id!==id;});
+  const crawlEl=document.querySelector('.crawl-worm[data-worm-id="'+id+'"]');
+  if(crawlEl) crawlEl.remove();
+  toast('💀 '+w.name+' has perished... rest in peace 🪦');
+  save(); renderWorms();
+  if(document.getElementById('page-graveyard').classList.contains('active')) renderGraveyard();
+}
+
+function checkWormDepletion() {
+  initWorms();
+  if(!db.worms.list.length) return;
+  if(!db.worms.lastDepleteDate) db.worms.lastDepleteDate = todayStr();
+  const today = todayStr();
+  if(db.worms.lastDepleteDate === today) return;
+  // count days missed
+  const last = new Date(db.worms.lastDepleteDate+'T12:00:00');
+  const now  = new Date(today+'T12:00:00');
+  const daysMissed = Math.round((now-last)/86400000);
+  db.worms.lastDepleteDate = today;
+  const toKill=[];
+  db.worms.list.forEach(function(w){
+    w.happiness = Math.max(0,(w.happiness||5) - daysMissed*2);
+    if(w.happiness<=0) toKill.push(w.id);
+  });
+  save();
+  toKill.forEach(function(id){ killWorm(id,'starvation 💀'); });
+}
+
+function renderGraveyard() {
+  initWorms();
+  const el=document.getElementById('graveyard-list');
+  if(!el) return;
+  const dead = (db.worms.graveyard||[]);
+  if(!dead.length){
+    el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🌿</div><p>no worms have died yet — keep feeding them!</p></div></div>';
+    return;
+  }
+  el.innerHTML=dead.slice().reverse().map(function(w){
+    const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
+    const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
+    return '<div class="card" style="opacity:0.7;filter:grayscale(0.6)"><div style="display:flex;gap:14px;align-items:center"><div style="width:80px;flex-shrink:0">'+wormSvg+'</div><div><div style="font-size:14px;font-weight:500;color:var(--text)">'+esc(w.name)+'</div><div style="font-size:12px;color:var(--text3)">born '+fmtDate(w.createdDate)+' · died '+fmtDate(w.diedDate)+'</div><div style="font-size:11px;color:var(--red);margin-top:2px">cause: '+esc(w.diedReason)+'</div><div style="font-size:11px;color:var(--text3)">fed '+( w.timesFed||0)+'× in their lifetime</div></div></div></div>';
+  }).join('');
+}
+
+//  BOOK EDIT MODAL
+function openEditBook(id) {
+  const b=db.books.find(function(x){return x.id===id;});
+  if(!b) return;
+  document.getElementById('edit-book-id').value=id;
+  document.getElementById('edit-b-title').value=b.title||'';
+  document.getElementById('edit-b-author').value=b.author||'';
+  document.getElementById('edit-b-pages').value=b.pages||'';
+  document.getElementById('edit-b-pagesread').value=b.pagesRead||'';
+  document.getElementById('edit-b-genre').value=b.genre||'';
+  document.getElementById('edit-b-series').value=b.series||'';
+  document.getElementById('edit-b-seriesnum').value=b.seriesNum||'';
+  document.getElementById('edit-b-status').value=b.status||'want';
+  document.getElementById('edit-b-rating').value=b.rating||0;
+  document.getElementById('edit-b-start').value=b.startDate||'';
+  document.getElementById('edit-b-finished').value=b.finishedDate||'';
+  document.getElementById('edit-b-color').value=b.color||'#c9a96e';
+  buildSwatches('edit-quick-swatches', (c)=>`document.getElementById('edit-b-color').value='${c}'`);
+  document.getElementById('edit-book-modal').style.display='flex';
+}
+function closeEditBook() { document.getElementById('edit-book-modal').style.display='none'; }
+function saveEditBook() {
+  const id=parseInt(document.getElementById('edit-book-id').value);
+  const b=db.books.find(function(x){return x.id===id;});
+  if(!b) return;
+  b.title=document.getElementById('edit-b-title').value.trim()||b.title;
+  b.author=document.getElementById('edit-b-author').value.trim();
+  b.pages=parseInt(document.getElementById('edit-b-pages').value)||b.pages;
+  b.pagesRead=Math.min(parseInt(document.getElementById('edit-b-pagesread').value)||b.pagesRead, b.pages||99999);
+  b.genre=document.getElementById('edit-b-genre').value.trim();
+  b.series=document.getElementById('edit-b-series').value.trim();
+  b.seriesNum=parseInt(document.getElementById('edit-b-seriesnum').value)||0;
+  b.status=document.getElementById('edit-b-status').value;
+  b.rating=parseInt(document.getElementById('edit-b-rating').value)||0;
+  b.startDate=document.getElementById('edit-b-start').value;
+  b.finishedDate=document.getElementById('edit-b-finished').value;
+  b.color=document.getElementById('edit-b-color').value;
+  closeEditBook();
+  save(); renderAll(); toast('book updated!');
+}
+
+//  WORM EDIT MODAL
+let editWormCustom = {};
+function openEditWorm(id) {
+  const w=db.worms.list.find(function(x){return x.id===id;});
+  if(!w) return;
+  editWormCustom = w.pixelData ? {} : {...(w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4})};
+  document.getElementById('edit-worm-id').value=id;
+  document.getElementById('edit-worm-name').value=w.name||'';
+  buildEditWormCustomizer();
+  document.getElementById('edit-worm-modal').style.display='flex';
+}
+function closeEditWorm() { document.getElementById('edit-worm-modal').style.display='none'; }
+function buildEditWormCustomizer() {
+  const bodyEl=document.getElementById('edit-worm-body-swatches');
+  const hatEl=document.getElementById('edit-worm-hat-swatches');
+  const eyeEl=document.getElementById('edit-worm-eyes');
+  const lenEl=document.getElementById('edit-worm-length-swatches');
+  if(!bodyEl) return;
+  bodyEl.innerHTML=WORM_PARTS.body.map(function(c){return '<div onclick="setEditWormPart(\'color\',\''+c+'\',this)" style="width:24px;height:24px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+(c===editWormCustom.color?'var(--text)':'transparent')+';transition:transform .1s"></div>';}).join('');
+  hatEl.innerHTML=WORM_PARTS.hat.map(function(h){return '<div onclick="setEditWormPart(\'hat\',\''+h+'\',this)" style="padding:4px 8px;border-radius:6px;cursor:pointer;font-size:16px;border:1px solid '+(h===editWormCustom.hat?'var(--accent)':'var(--border2)')+';background:'+(h===editWormCustom.hat?'var(--accent-bg)':'var(--bg3)')+';">'+(h==='none'?'✕ none':h)+'</div>';}).join('');
+  eyeEl.innerHTML=WORM_PARTS.eyes.map(function(e){return '<option value="'+e+'" '+(e===editWormCustom.eyes?'selected':'')+'>'+e+'</option>';}).join('');
+  eyeEl.onchange=function(){editWormCustom.eyes=this.value;updateEditWormPreview();};
+  lenEl.innerHTML=WORM_PARTS.length.map(function(n){return '<div onclick="setEditWormPart(\'length\','+n+',this)" style="padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;border:1px solid '+(n===editWormCustom.length?'var(--accent)':'var(--border2)')+';background:'+(n===editWormCustom.length?'var(--accent-bg)':'var(--bg3)')+';">'+n+'</div>';}).join('');
+  updateEditWormPreview();
+}
+function setEditWormPart(part, val) { editWormCustom[part]=val; buildEditWormCustomizer(); }
+function updateEditWormPreview() {
+  const eyeEl=document.getElementById('edit-worm-eyes');
+  if(eyeEl) editWormCustom.eyes=eyeEl.value;
+  const el=document.getElementById('edit-worm-preview');
+  if(el && editWormCustom.color) el.innerHTML=buildWormSVG(editWormCustom);
+}
+function saveEditWorm() {
+  const id=parseInt(document.getElementById('edit-worm-id').value);
+  const w=db.worms.list.find(function(x){return x.id===id;});
+  if(!w) return;
+  w.name=document.getElementById('edit-worm-name').value.trim()||w.name;
+  if(editWormCustom.color) { w.wormCustom={...editWormCustom}; w.pixelData=null; }
+  closeEditWorm();
+  save(); renderWorms(); toast(w.name+' updated! 🐛');
+}
+
+//  DRAG WORMS ON CRAWL BAR
+function makeCrawlWormDraggable(el) {
+  let dragging=false, startX=0, startLeft=0;
+  el.style.pointerEvents='auto';
+  el.style.cursor='grab';
+  function getX(e){ return e.touches?e.touches[0].clientX:e.clientX; }
+  el.addEventListener('mousedown',function(e){
+    dragging=true; startX=getX(e);
+    startLeft=parseFloat(el.style.left)||0;
+    el.style.animation='none'; el.style.cursor='grabbing';
+    e.preventDefault();
+  });
+  el.addEventListener('touchstart',function(e){
+    dragging=true; startX=getX(e);
+    startLeft=parseFloat(el.style.left)||0;
+    el.style.animation='none'; el.style.cursor='grabbing';
+  },{passive:true});
+  window.addEventListener('mousemove',function(e){ if(!dragging)return; const dx=getX(e)-startX; el.style.left=(startLeft+dx)+'px'; });
+  window.addEventListener('touchmove',function(e){ if(!dragging)return; const dx=getX(e)-startX; el.style.left=(startLeft+dx)+'px'; },{passive:true});
+  function stopDrag(){ if(!dragging)return; dragging=false; el.style.cursor='grab'; }
+  window.addEventListener('mouseup',stopDrag);
+  window.addEventListener('touchend',stopDrag);
+}
+
+//  BOOK RECOMMENDATIONS (no AI — genre + tag matching)
+function renderRecommendations() {
+  const el=document.getElementById('rec-list');
+  if(!el) return;
+  const library=db.books;
+  const done=library.filter(function(b){return b.status==='done';});
+  const want=library.filter(function(b){return b.status==='want';});
+  if(done.length<1 && want.length<1){ el.innerHTML='<div class="empty"><p>add some books to your library first and we\'ll suggest more!</p></div>'; return; }
+  // build genre/author frequency map
+  const genreCount={}, authorCount={};
+  done.concat(want).forEach(function(b){
+    if(b.genre) genreCount[b.genre.toLowerCase()]=(genreCount[b.genre.toLowerCase()]||0)+1;
+    if(b.author) authorCount[b.author.toLowerCase()]=(authorCount[b.author.toLowerCase()]||0)+1;
+  });
+  const topGenres=Object.entries(genreCount).sort(function(a,b){return b[1]-a[1];}).slice(0,3).map(function(e){return e[0];});
+  const topAuthors=Object.entries(authorCount).sort(function(a,b){return b[1]-a[1];}).slice(0,2).map(function(e){return e[0];});
+  // static recommendation pool organised by genre keywords
+  const pool = [
+    {title:'The Name of the Wind',author:'Patrick Rothfuss',genre:'fantasy',pages:662,why:'top-rated epic fantasy beloved by readers who enjoy world-building'},
+    {title:'Project Hail Mary',author:'Andy Weir',genre:'sci-fi',pages:476,why:'fast-paced science fiction with clever problem-solving'},
+    {title:'The Seven Husbands of Evelyn Hugo',author:'Taylor Jenkins Reid',genre:'fiction',pages:400,why:'beloved literary fiction about secrets, love and ambition'},
+    {title:'Piranesi',author:'Susanna Clarke',genre:'fantasy',pages:272,why:'beautifully strange fantasy unlike anything else'},
+    {title:'Daisy Jones & The Six',author:'Taylor Jenkins Reid',genre:'fiction',pages:355,why:'compelling oral-history style novel about music and fame'},
+    {title:'Mexican Gothic',author:'Silvia Moreno-Garcia',genre:'gothic horror',pages:320,why:'atmospheric gothic thriller set in 1950s Mexico'},
+    {title:'A Little Life',author:'Hanya Yanagihara',genre:'literary fiction',pages:720,why:'devastating and beautiful literary fiction about friendship'},
+    {title:'Babel',author:'R.F. Kuang',genre:'fantasy',pages:545,why:'dark academia fantasy exploring language, colonialism and power'},
+    {title:'Fourth Wing',author:'Rebecca Yarros',genre:'fantasy romance',pages:528,why:'dragon-riding fantasy romance — highly addictive'},
+    {title:'The Hitchhiker\'s Guide to the Galaxy',author:'Douglas Adams',genre:'sci-fi',pages:193,why:'essential comedic sci-fi that everyone should read'},
+    {title:'Klara and the Sun',author:'Kazuo Ishiguro',genre:'sci-fi',pages:307,why:'quiet and moving story about an artificial friend and what it means to be human'},
+    {title:'Normal People',author:'Sally Rooney',genre:'literary fiction',pages:266,why:'sharply observed modern romance with brilliant character dynamics'},
+    {title:'The Midnight Library',author:'Matt Haig',genre:'fiction',pages:304,why:'uplifting story about parallel lives and finding meaning'},
+    {title:'Circe',author:'Madeline Miller',genre:'mythology',pages:393,why:'gorgeous feminist retelling of Greek mythology'},
+    {title:'All the Light We Cannot See',author:'Anthony Doerr',genre:'historical fiction',pages:531,why:'Pulitzer-winning WWII novel of extraordinary beauty'},
+    {title:'Educated',author:'Tara Westover',genre:'memoir',pages:334,why:'remarkable memoir about self-invention and the cost of knowledge'},
+    {title:'Dark Matter',author:'Blake Crouch',genre:'sci-fi thriller',pages:342,why:'mind-bending thriller about quantum physics and identity'},
+    {title:'The Poppy War',author:'R.F. Kuang',genre:'fantasy',pages:545,why:'brutal, epic military fantasy inspired by Chinese history'},
+    {title:'Anxious People',author:'Fredrik Backman',genre:'fiction',pages:352,why:'warm, funny and deeply moving story about human connection'},
+    {title:'The Invisible Life of Addie LaRue',author:'V.E. Schwab',genre:'fantasy',pages:444,why:'lyrical fantasy about a woman cursed to be forgotten'},
+  ];
+  const libraryTitles=new Set(library.map(function(b){return b.title.toLowerCase();}));
+  // score each recommendation
+  const scored=pool.filter(function(r){return !libraryTitles.has(r.title.toLowerCase());}).map(function(r){
+    let score=0;
+    const rg=r.genre.toLowerCase();
+    topGenres.forEach(function(g){ if(rg.includes(g)||g.includes(rg)) score+=3; });
+    topAuthors.forEach(function(a){ if(r.author.toLowerCase().includes(a)||a.includes(r.author.toLowerCase())) score+=5; });
+    return {...r,score};
+  }).sort(function(a,b){return b.score-a.score||Math.random()-0.5;}).slice(0,6);
+  if(!scored.length){ el.innerHTML='<div class="empty"><p>you\'ve read everything we\'d suggest! 🎉</p></div>'; return; }
+  el.innerHTML=scored.map(function(r){
+    const tEsc=r.title.replace(/'/g,"\\'");
+    const aEsc=(r.author||'').replace(/'/g,"\\'");
+    return '<div class="suggest-item"><div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(r.title)+'</div><div style="font-size:11px;color:var(--accent);margin-bottom:3px">'+esc(r.author)+'</div><div style="font-size:11px;color:var(--text2)">'+esc(r.why)+'</div></div><button class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="addSearchedBook(\''+tEsc+'\',\''+aEsc+'\','+r.pages+')">+ add</button></div></div>';
+  }).join('');
+  // show why we recommended based on top genres
+  const whyEl=document.getElementById('rec-why');
+  if(whyEl) whyEl.textContent=topGenres.length?'based on your interest in: '+topGenres.join(', '):'based on your library';
+}
+
+//  PDF READER
+let pdfDoc=null, pdfPage=1, pdfZoom=1.0;
+function loadPDF(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const data=new Uint8Array(e.target.result);
+    if(!window.pdfjsLib){ toast('PDF library not loaded — check connection'); return; }
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    window.pdfjsLib.getDocument({data}).promise.then(function(doc){
+      pdfDoc=doc; pdfPage=1;
+      document.getElementById('pdf-page-total').textContent=doc.numPages;
+      document.getElementById('reader-controls').style.display='block';
+      document.getElementById('pdf-canvas-wrap').style.display='block';
+      document.getElementById('reader-upload-card').style.display='none';
+      renderPDFPage();
+    }).catch(function(){ toast('could not read PDF'); });
+  };
+  reader.readAsArrayBuffer(file);
+}
+function renderPDFPage() {
+  if(!pdfDoc) return;
+  pdfDoc.getPage(pdfPage).then(function(page){
+    const vp=page.getViewport({scale:pdfZoom});
+    const canvas=document.getElementById('pdf-canvas');
+    canvas.width=vp.width; canvas.height=vp.height;
+    canvas.style.maxWidth='100%';
+    page.render({canvasContext:canvas.getContext('2d'),viewport:vp});
+    document.getElementById('pdf-page-num').textContent=pdfPage;
+    document.getElementById('pdf-zoom-label').textContent=Math.round(pdfZoom*100)+'%';
+  });
+}
+function pdfNextPage() { if(pdfDoc&&pdfPage<pdfDoc.numPages){pdfPage++;renderPDFPage();} }
+function pdfPrevPage() { if(pdfDoc&&pdfPage>1){pdfPage--;renderPDFPage();} }
+function pdfZoomIn()  { pdfZoom=Math.min(3,pdfZoom+0.2); renderPDFPage(); }
+function pdfZoomOut() { pdfZoom=Math.max(0.4,pdfZoom-0.2); renderPDFPage(); }
+function closePDF() {
+  pdfDoc=null; pdfPage=1; pdfZoom=1.0;
+  document.getElementById('reader-controls').style.display='none';
+  document.getElementById('pdf-canvas-wrap').style.display='none';
+  document.getElementById('reader-upload-card').style.display='block';
+  document.getElementById('pdf-file-input').value='';
+}
+
 function renderWorms() {
   initWorms();
   const totalPages=db.logs.reduce(function(s,l){return s+l.pages;},0);
@@ -1379,16 +1794,14 @@ function renderWorms() {
   if(countEl) countEl.textContent=db.worms.list.length;
   if(todayEl) todayEl.textContent=todayPages;
 
-  const qualifyingSessions=db.logs.filter(function(l){return l.date===todayStr()&&l.pages>=100;});
-  const usedSessions=db.worms.usedPixelSessions||[];
-  const freshSession=qualifyingSessions.find(function(l){return !usedSessions.includes(l.id);});
-  const pixelUnlocked=!!freshSession;
+  const qualifyingSessions=db.logs.filter(function(l){return l.date===todayStr();});
+  const pixelUnlocked = todayPages >= 100;
 
   if(subEl) subEl.textContent=pixelUnlocked?'🎨 pixel art unlocked!':(100-todayPages)+' more to unlock';
   const pixelCard=document.getElementById('pixel-editor-card');
   if(pixelCard){
     pixelCard.style.display=pixelUnlocked?'block':'none';
-    pixelCard.dataset.sessionId=freshSession?freshSession.id:'';
+    pixelCard.dataset.sessionId=qualifyingSessions.length?qualifyingSessions[qualifyingSessions.length-1].id:'';
     if(pixelUnlocked) initPixelEditor();
   }
 
@@ -1403,7 +1816,7 @@ function renderWorms() {
     const mood=hp>=8?'happy 😊':hp>=5?'content 😐':'hungry 😢';
     const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
     const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
-    return '<div class="worm-card"><div class="worm-svg-display">'+wormSvg+'</div><div class="worm-info"><div class="worm-name-display">'+esc(w.name)+'</div><div style="font-size:11px;color:var(--text3)">'+mood+' · fed '+(w.timesFed||0)+'× · since '+fmtDate(w.createdDate)+'</div><div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">happiness '+hp+'/10</div><div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+hpFill+'%;background:'+(hp>=7?'var(--green)':hp>=4?'var(--accent)':'var(--red)')+';border-radius:3px;transition:width .4s"></div></div></div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="feedWorm('+w.id+')">🍎 feed</button><button class="btn btn-ghost btn-sm" onclick="deleteWorm('+w.id+')">release</button></div></div></div>';
+    return '<div class="worm-card" id="worm-el-'+w.id+'" draggable="false"><div class="worm-svg-display" style="cursor:grab">'+wormSvg+'</div><div class="worm-info"><div class="worm-name-display">'+esc(w.name)+'</div><div style="font-size:11px;color:var(--text3)">'+mood+' · fed '+(w.timesFed||0)+'× · since '+fmtDate(w.createdDate)+'</div><div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">happiness '+hp+'/10</div><div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+hpFill+'%;background:'+(hp>=7?'var(--green)':hp>=4?'var(--accent)':'var(--red)')+';border-radius:3px;transition:width .4s"></div></div></div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="feedWorm('+w.id+')">🍎 feed</button><button class="btn btn-ghost btn-sm" onclick="openEditWorm('+w.id+')">✎ edit</button><button class="btn btn-ghost btn-sm" onclick="deleteWorm('+w.id+')">release</button></div></div></div>';
   }).join('');
 }
 
@@ -1483,10 +1896,11 @@ function spawnWormEl(bar,w){
   const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
   const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
   const el=document.createElement('div');
-  el.className='crawl-worm';el.dataset.wormId=w.id;el.innerHTML=wormSvg;el.title=w.name;
+  el.className='crawl-worm';el.dataset.wormId=w.id;el.innerHTML=wormSvg;el.title=w.name+' (drag me!)';
   const speed=20+Math.random()*25,delay=-(Math.random()*speed),flip=Math.random()>0.5;
-  el.style.cssText='position:absolute;bottom:2px;width:72px;height:36px;transform:scaleX('+(flip?-1:1)+');animation:wormCrawl '+speed+'s '+delay+'s linear infinite;pointer-events:none;';
+  el.style.cssText='position:absolute;bottom:2px;width:72px;height:36px;transform:scaleX('+(flip?-1:1)+');animation:wormCrawl '+speed+'s '+delay+'s linear infinite;pointer-events:auto;cursor:grab;';
   bar.appendChild(el);
+  makeCrawlWormDraggable(el);
 }
 
 //  SPOTIFY 
