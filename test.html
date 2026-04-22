@@ -1568,7 +1568,7 @@ function renderGraveyard() {
   if(!el) return;
   const dead = (db.worms.graveyard||[]);
   if(!dead.length){
-    el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🌿</div><p>no worms have died yet — keep feeding them!</p></div></div>';
+    el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🌿</div><p>no worms have died yet, keep feeding them!</p></div></div>';
     return;
   }
   el.innerHTML=dead.slice().reverse().map(function(w){
@@ -1685,7 +1685,7 @@ function makeCrawlWormDraggable(el) {
   window.addEventListener('touchend',stopDrag);
 }
 
-//  BOOK RECOMMENDATIONS — OpenLibrary subject search
+//  BOOK RECOMMENDATIONS, OpenLibrary subject search
 // Maps genre strings the user might enter to clean OpenLibrary subject slugs
 const GENRE_SUBJECT_MAP = {
   'fantasy':          'fantasy',
@@ -1754,7 +1754,7 @@ async function renderRecommendations() {
   const subjectSlugs=[...new Set(topGenres.map(getSubjectSlug).filter(Boolean))].slice(0,2);
 
   if(!subjectSlugs.length){
-    // No genres entered — fall back to searching by top author
+    // No genres entered, fall back to searching by top author
     if(!topAuthors.length){ el.innerHTML='<div class="empty"><p>add genre info to your books so we can find recommendations!</p></div>'; return; }
     if(whyEl) whyEl.textContent='books by authors you like';
     await fetchRecsByAuthor(topAuthors[0], library);
@@ -1796,7 +1796,7 @@ async function renderRecommendations() {
     pool = pool.slice(0,8);
 
     if(!pool.length){
-      el.innerHTML='<div class="empty"><p>couldn\'t find recommendations right now — try adding genres to your books!</p></div>';
+      el.innerHTML='<div class="empty"><p>couldn\'t find recommendations right now, try adding genres to your books!</p></div>';
       if(whyEl) whyEl.textContent='based on your library';
       return;
     }
@@ -1820,7 +1820,7 @@ async function renderRecommendations() {
     }).join('');
 
   } catch(e) {
-    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary — check your connection</p></div>';
+    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary, check your connection</p></div>';
     if(whyEl) whyEl.textContent='based on your library';
   }
 }
@@ -1856,7 +1856,7 @@ async function fetchRecsByAuthor(authorName, library) {
         +'</div></div>';
     }).join('');
   } catch(e) {
-    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary — check your connection</p></div>';
+    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary, check your connection</p></div>';
   }
 }
 
@@ -1870,7 +1870,7 @@ function loadPDF(input) {
   const reader=new FileReader();
   reader.onload=function(e){
     const data=new Uint8Array(e.target.result);
-    if(!window.pdfjsLib){ toast('PDF library not loaded — check connection'); return; }
+    if(!window.pdfjsLib){ toast('PDF library not loaded, check connection'); return; }
     window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
     window.pdfjsLib.getDocument({data}).promise.then(function(doc){
       pdfDoc=doc; pdfPage=1;
