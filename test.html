@@ -563,6 +563,55 @@ textarea { resize: vertical; line-height: 1.5; }
           </div>
         </div>
         <div class="card"><div class="card-title">pace analysis</div><div id="pace-info" style="font-size:13px;color:var(--text2);line-height:1.8"></div></div>
+
+        <!-- Custom theme designer: unlocks when annual goal is met -->
+        <div class="card" id="custom-theme-card" style="display:none;border-color:rgba(var(--accent-rgb),0.3)">
+          <div class="card-title" style="color:var(--accent)">🎨 goal reward: design your theme <span style="color:var(--green);font-size:10px">· unlocked!</span></div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7">you smashed your reading goal! as a reward, you can design a completely custom colour scheme. it'll apply across the whole app.</p>
+          <div class="form-row3" style="margin-bottom:14px">
+            <div class="form-group">
+              <label>background colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-bg" value="#0d0b09" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-bg-hex" style="font-size:11px;color:var(--text3)">#0d0b09</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>text colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-text" value="#ede8e1" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-text-hex" style="font-size:11px;color:var(--text3)">#ede8e1</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>accent colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-accent" value="#c9a96e" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-accent-hex" style="font-size:11px;color:var(--text3)">#c9a96e</span>
+              </div>
+            </div>
+          </div>
+          <!-- live mini preview -->
+          <div id="custom-theme-preview" style="border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid rgba(128,128,128,0.2);font-size:12px;transition:all .2s">
+            <div style="font-size:15px;font-weight:500;margin-bottom:6px" id="prev-title">readtracker</div>
+            <div style="height:3px;border-radius:2px;width:60%;margin-bottom:8px" id="prev-bar"></div>
+            <div style="font-size:11px;opacity:0.6" id="prev-sub">reading progress · 2025</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="applyCustomTheme()">✓ apply my theme</button>
+            <button class="btn btn-ghost" onclick="resetCustomTheme()">↺ reset to default</button>
+          </div>
+        </div>
+        <!-- locked hint shown before goal is met -->
+        <div class="card" id="custom-theme-locked" style="border-style:dashed;border-color:var(--border2)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:24px">🔒</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--text2)">custom theme designer</div>
+              <div style="font-size:12px;color:var(--text3)" id="theme-lock-hint">meet your annual reading goal to unlock</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- FRIENDS -->
@@ -734,9 +783,12 @@ textarea { resize: vertical; line-height: 1.5; }
 
       <!-- WORMS -->
       <div id="page-worms" class="page">
-        <div class="page-header">
-          <h1 class="page-title">my bookworms 🐛</h1>
-          <p class="page-sub ui-text">earn food every 10 pages + read 100 pages in a day to unlock custom pixel worms</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div>
+            <h1 class="page-title">my bookworms 🐛</h1>
+            <p class="page-sub ui-text">earn food every 10 pages + read 100 pages in a day to unlock custom pixel worms</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="worm-crawl-toggle" onclick="toggleCrawlBar()" style="flex-shrink:0;margin-top:6px">🐛 hide worms</button>
         </div>
 
         <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
@@ -903,10 +955,83 @@ textarea { resize: vertical; line-height: 1.5; }
       <div class="form-group"><label>title</label><input id="edit-b-title" /></div>
       <div class="form-group"><label>author</label><input id="edit-b-author" /></div>
     </div>
-    <div class="form-row3">
+    <div class="form-row2">
       <div class="form-group"><label>pages</label><input id="edit-b-pages" type="number" min="1" /></div>
       <div class="form-group"><label>pages read</label><input id="edit-b-pagesread" type="number" min="0" /></div>
-      <div class="form-group"><label>genre</label><input id="edit-b-genre" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>primary genre</label>
+        <select id="edit-b-genre">
+          <option value=""> none </option>
+          <option value="Classic Literature">Classic Literature</option>
+          <option value="Contemporary Fiction">Contemporary Fiction</option>
+          <option value="Historical Fiction">Historical Fiction</option>
+          <option value="Literary Fiction">Literary Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Epic Fantasy">Epic Fantasy</option>
+          <option value="Dark Fantasy">Dark Fantasy</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Horror">Horror</option>
+          <option value="Gothic Horror">Gothic Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Crime">Crime</option>
+          <option value="Romance">Romance</option>
+          <option value="Young Adult">Young Adult</option>
+          <option value="Middle Grade">Middle Grade</option>
+          <option value="Children's">Children's</option>
+          <option value="Dystopian">Dystopian</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Mythology">Mythology</option>
+          <option value="Graphic Novel">Graphic Novel</option>
+          <option value="Short Stories">Short Stories</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Memoir">Memoir</option>
+          <option value="Biography">Biography</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+          <option value="Self-Help">Self-Help</option>
+          <option value="Philosophy">Philosophy</option>
+          <option value="History">History</option>
+          <option value="Science">Science</option>
+          <option value="True Crime">True Crime</option>
+        </select>
+      </div>
+      <div class="form-group"><label>secondary genre</label>
+        <select id="edit-b-genre2">
+          <option value=""> none </option>
+          <option value="Classic Literature">Classic Literature</option>
+          <option value="Contemporary Fiction">Contemporary Fiction</option>
+          <option value="Historical Fiction">Historical Fiction</option>
+          <option value="Literary Fiction">Literary Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Epic Fantasy">Epic Fantasy</option>
+          <option value="Dark Fantasy">Dark Fantasy</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Horror">Horror</option>
+          <option value="Gothic Horror">Gothic Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Crime">Crime</option>
+          <option value="Romance">Romance</option>
+          <option value="Young Adult">Young Adult</option>
+          <option value="Middle Grade">Middle Grade</option>
+          <option value="Children's">Children's</option>
+          <option value="Dystopian">Dystopian</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Mythology">Mythology</option>
+          <option value="Graphic Novel">Graphic Novel</option>
+          <option value="Short Stories">Short Stories</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Memoir">Memoir</option>
+          <option value="Biography">Biography</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+          <option value="Self-Help">Self-Help</option>
+          <option value="Philosophy">Philosophy</option>
+          <option value="History">History</option>
+          <option value="Science">Science</option>
+          <option value="True Crime">True Crime</option>
+        </select>
+      </div>
     </div>
     <div class="form-row2">
       <div class="form-group"><label>series</label><input id="edit-b-series" /></div>
@@ -1116,6 +1241,13 @@ function applyPrefs() {
   h.setAttribute('data-accent',  prefs.accent);
   h.setAttribute('data-density', prefs.density);
   h.setAttribute('data-case',    prefs.textCase);
+  // Apply custom theme CSS variables if active
+  if(prefs.theme==='custom'&&prefs.customTheme) {
+    applyCustomThemeCSSVars(prefs.customTheme);
+  } else {
+    var existing=document.getElementById('custom-theme-style');
+    if(existing) existing.textContent='';
+  }
   const accentRGBs = { gold:'201,169,110', rose:'232,160,176', sage:'136,196,160', sky:'122,184,232', lavender:'176,160,224', coral:'232,144,112' };
   const rgb = accentRGBs[prefs.accent]||'201,169,110';
   const textures = {
@@ -1134,6 +1266,78 @@ function setAccent(a,el) { prefs.accent=a; savePrefs(); applyPrefs(); document.q
 function setTexture(t,el) { prefs.texture=t; savePrefs(); applyPrefs(); document.querySelectorAll('#texture-btns .btn').forEach(b=>b.classList.remove('active-texture')); if(el)el.classList.add('active-texture'); }
 function setDensity(d,el) { prefs.density=d; savePrefs(); applyPrefs(); document.querySelectorAll('#density-btns .btn').forEach(b=>b.classList.remove('active-density')); if(el)el.classList.add('active-density'); }
 function setCase(c,el) { prefs.textCase=c; savePrefs(); applyPrefs(); document.querySelectorAll('#case-btns .btn').forEach(b=>b.classList.remove('active-case')); if(el)el.classList.add('active-case'); }
+
+//  CUSTOM THEME (goal reward)
+function hexToRgb(hex) {
+  var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return r+','+g+','+b;
+}
+function lighten(hex,amt) {
+  var r=Math.min(255,parseInt(hex.slice(1,3),16)+amt);
+  var g=Math.min(255,parseInt(hex.slice(3,5),16)+amt);
+  var b=Math.min(255,parseInt(hex.slice(5,7),16)+amt);
+  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
+}
+function darken(hex,amt){ return lighten(hex,-amt); }
+function syncCustomThemePickers() {
+  var ct=prefs.customTheme||{bg:'#0d0b09',text:'#ede8e1',accent:'#c9a96e'};
+  var bgEl=document.getElementById('custom-bg'),txEl=document.getElementById('custom-text'),acEl=document.getElementById('custom-accent');
+  if(bgEl){bgEl.value=ct.bg;document.getElementById('custom-bg-hex').textContent=ct.bg;}
+  if(txEl){txEl.value=ct.text;document.getElementById('custom-text-hex').textContent=ct.text;}
+  if(acEl){acEl.value=ct.accent;document.getElementById('custom-accent-hex').textContent=ct.accent;}
+  previewCustomTheme();
+}
+function previewCustomTheme() {
+  var bg=document.getElementById('custom-bg').value;
+  var text=document.getElementById('custom-text').value;
+  var accent=document.getElementById('custom-accent').value;
+  document.getElementById('custom-bg-hex').textContent=bg;
+  document.getElementById('custom-text-hex').textContent=text;
+  document.getElementById('custom-accent-hex').textContent=accent;
+  var prev=document.getElementById('custom-theme-preview');
+  if(prev){
+    prev.style.background=bg;
+    prev.style.borderColor=accent+'44';
+    document.getElementById('prev-title').style.color=accent;
+    document.getElementById('prev-bar').style.background=accent;
+    document.getElementById('prev-sub').style.color=text;
+  }
+}
+function applyCustomTheme() {
+  var bg=document.getElementById('custom-bg').value;
+  var text=document.getElementById('custom-text').value;
+  var accent=document.getElementById('custom-accent').value;
+  prefs.customTheme={bg,text,accent};
+  prefs.theme='custom';
+  savePrefs(); applyPrefs();
+  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
+  toast('🎨 your custom theme is live!');
+}
+function resetCustomTheme() {
+  prefs.theme='dark'; delete prefs.customTheme;
+  savePrefs(); applyPrefs();
+  syncCustomThemePickers();
+  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme==='dark'));
+  toast('theme reset');
+}
+function applyCustomThemeCSSVars(ct) {
+  var h=document.documentElement;
+  var bg=ct.bg, text=ct.text, accent=ct.accent;
+  var bg2=lighten(bg,8),bg3=lighten(bg,16),bg4=lighten(bg,24);
+  var text2=darken(text,40),text3=darken(text,80);
+  var rgb=hexToRgb(accent);
+  // Override CSS vars inline on :root
+  var style=document.getElementById('custom-theme-style');
+  if(!style){style=document.createElement('style');style.id='custom-theme-style';document.head.appendChild(style);}
+  style.textContent=':root, [data-theme="custom"] {'
+    +'--bg:'+bg+';--bg2:'+bg2+';--bg3:'+bg3+';--bg4:'+bg4+';'
+    +'--text:'+text+';--text2:'+text2+';--text3:'+text3+';'
+    +'--border:rgba('+hexToRgb(text)+',0.07);--border2:rgba('+hexToRgb(text)+',0.13);'
+    +'--accent:'+accent+';--accent2:'+lighten(accent,24)+';--accent-bg:rgba('+rgb+',0.12);--accent-rgb:'+rgb+';'
+    +'--green:#5dbf8a;--green-bg:rgba(93,191,138,0.1);--red:#e07070;--red-bg:rgba(224,112,112,0.08);'
+    +'--blue:#7ab3e0;--blue-bg:rgba(122,179,224,0.1);--shadow:rgba(0,0,0,0.4);'
+    +'}';
+}
 
 //  HELPERS 
 function todayStr() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -1274,7 +1478,7 @@ function renderAll() { renderDashboard(); renderLibrary(); renderLogPage(); rend
 //  DASHBOARD 
 function renderDashboard() {
   const streak=calcStreak(),pw=pagesInDays(7),pl=pagesInRange(14,7),diff=pw-pl,done=db.books.filter(b=>b.status==='done').length,spd=calcSpeed();
-  document.getElementById('dash-metrics').innerHTML='<div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">'+streak+'</div><div class="metric-sub">days 🔥</div></div><div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">'+pw.toLocaleString()+'</div><div class="metric-sub">'+(diff===0?'same':(diff>0?'+':'')+diff)+' vs last wk</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div><div class="metric-sub">of '+db.goal+' goal</div></div><div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">'+(spd||'—')+'</div><div class="metric-sub">pages/hr</div></div>';
+  document.getElementById('dash-metrics').innerHTML='<div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">'+streak+'</div><div class="metric-sub">days 🔥</div></div><div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">'+pw.toLocaleString()+'</div><div class="metric-sub">'+(diff===0?'same':(diff>0?'+':'')+diff)+' vs last wk</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div><div class="metric-sub">of '+db.goal+' goal</div></div><div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">'+(spd||'')+'</div><div class="metric-sub">pages/hr</div></div>';
   const reading=db.books.filter(b=>b.status==='reading');
   document.getElementById('dash-reading').innerHTML=reading.length?reading.map(b=>{const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;return'<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div>'+(b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">'+(b.pagesRead||0)+'/'+b.pages+' · '+pct+'%</div>':'')+'</div></div>';}).join(''):'<div class="empty"><p>no books in progress</p></div>';
   renderWeekChart(); renderStreakCal();
@@ -1344,7 +1548,7 @@ function renderStats() {
   const tp=db.logs.reduce((s,l)=>s+l.pages,0),tm=db.logs.reduce((s,l)=>s+l.minutes,0),done=db.books.filter(b=>b.status==='done').length;
   const byDay={};db.logs.forEach(l=>{byDay[l.date]=(byDay[l.date]||0)+l.pages;});
   const best=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('stats-metrics').innerHTML='<div class="metric"><div class="metric-label">total pages</div><div class="metric-val">'+tp.toLocaleString()+'</div></div><div class="metric"><div class="metric-label">total hours</div><div class="metric-val">'+Math.round(tm/60)+'</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div></div><div class="metric"><div class="metric-label">best day</div><div class="metric-val">'+(best?best[1]:'—')+'</div><div class="metric-sub">'+(best?fmtDate(best[0]):'')+'</div></div>';
+  document.getElementById('stats-metrics').innerHTML='<div class="metric"><div class="metric-label">total pages</div><div class="metric-val">'+tp.toLocaleString()+'</div></div><div class="metric"><div class="metric-label">total hours</div><div class="metric-val">'+Math.round(tm/60)+'</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div></div><div class="metric"><div class="metric-label">best day</div><div class="metric-val">'+(best?best[1]:'')+'</div><div class="metric-sub">'+(best?fmtDate(best[0]):'')+'</div></div>';
   const mc={};db.books.filter(b=>b.status==='done'&&b.finishedDate).forEach(b=>{const m=b.finishedDate.slice(0,7);mc[m]=(mc[m]||0)+1;});
   const months=Object.keys(mc).sort().slice(-10);
   destroyChart('monthly-chart');
@@ -1367,6 +1571,7 @@ function renderStats() {
 //  GOALS 
 function renderGoals() {
   const done=db.books.filter(b=>b.status==='done').length,pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
+  const goalMet = db.goal > 0 && done >= db.goal;
   document.getElementById('g-pct').textContent=pct+'%';
   document.getElementById('g-desc').textContent=done+' of '+db.goal+' books';
   document.getElementById('goal-in').placeholder=db.goal;
@@ -1381,6 +1586,14 @@ function renderGoals() {
   charts['goal-donut']=new Chart(document.getElementById('goal-donut'),{type:'doughnut',data:{datasets:[{data:[pct,100-pct],backgroundColor:[acc,'rgba(128,128,128,0.08)'],borderWidth:0}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
   const dLeft=Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000)),bLeft=Math.max(0,db.goal-done),avgD=calcAvgDays(),dpb=bLeft>0?Math.ceil(dLeft/bLeft):0,ontrack=avgD&&avgD<=dpb;
   document.getElementById('pace-info').innerHTML=bLeft===0?'<strong style="color:var(--green)">🎉 annual goal complete!</strong>':bLeft+' book'+(bLeft!==1?'s':'')+' left · '+dLeft+' days remaining<br>finish a book every <strong>'+dpb+'</strong> days to hit your goal<br>'+(avgD?'your average: <strong>'+avgD+' days/book</strong> · <span style="color:'+(ontrack?'var(--green)':'var(--red)')+'">'+(ontrack?'on track ✓':'behind: pick up the pace!')+'</span>':' log more books for pace analysis');
+  // custom theme unlock
+  const unlockedCard=document.getElementById('custom-theme-card');
+  const lockedCard=document.getElementById('custom-theme-locked');
+  const lockHint=document.getElementById('theme-lock-hint');
+  if(unlockedCard) unlockedCard.style.display=goalMet?'block':'none';
+  if(lockedCard)   lockedCard.style.display=goalMet?'none':'block';
+  if(lockHint&&!goalMet) lockHint.textContent=db.goal>0?(done+' of '+db.goal+' books done  '+Math.max(0,db.goal-done)+' to go!'):'set a goal above to unlock';
+  if(goalMet) syncCustomThemePickers();
 }
 
 //  FRIENDS RENDER 
@@ -1579,6 +1792,21 @@ function renderGraveyard() {
 }
 
 //  BOOK EDIT MODAL
+function setSelectOrAdd(selId, val) {
+  var sel=document.getElementById(selId); if(!sel) return;
+  // Try to find the option (case-insensitive)
+  var found=false;
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].value.toLowerCase()===val.toLowerCase()){sel.value=sel.options[i].value;found=true;break;}
+  }
+  // If not found and there's a value, add a custom option and select it
+  if(!found && val) {
+    var opt=document.createElement('option');opt.value=val;opt.textContent=val;
+    sel.appendChild(opt);sel.value=val;
+  } else if(!found) {
+    sel.value='';
+  }
+}
 function openEditBook(id) {
   const b=db.books.find(function(x){return x.id===id;});
   if(!b) return;
@@ -1587,7 +1815,10 @@ function openEditBook(id) {
   document.getElementById('edit-b-author').value=b.author||'';
   document.getElementById('edit-b-pages').value=b.pages||'';
   document.getElementById('edit-b-pagesread').value=b.pagesRead||'';
-  document.getElementById('edit-b-genre').value=b.genre||'';
+  // Support genre2 stored as "Genre1 / Genre2" or just single
+  var genreParts=(b.genre||'').split('/').map(function(s){return s.trim();});
+  setSelectOrAdd('edit-b-genre', genreParts[0]||'');
+  setSelectOrAdd('edit-b-genre2', genreParts[1]||'');
   document.getElementById('edit-b-series').value=b.series||'';
   document.getElementById('edit-b-seriesnum').value=b.seriesNum||'';
   document.getElementById('edit-b-status').value=b.status||'want';
@@ -1607,7 +1838,9 @@ function saveEditBook() {
   b.author=document.getElementById('edit-b-author').value.trim();
   b.pages=parseInt(document.getElementById('edit-b-pages').value)||b.pages;
   b.pagesRead=Math.min(parseInt(document.getElementById('edit-b-pagesread').value)||b.pagesRead, b.pages||99999);
-  b.genre=document.getElementById('edit-b-genre').value.trim();
+  var g1=document.getElementById('edit-b-genre').value.trim();
+  var g2=document.getElementById('edit-b-genre2').value.trim();
+  b.genre=g2?g1+' / '+g2:g1;
   b.series=document.getElementById('edit-b-series').value.trim();
   b.seriesNum=parseInt(document.getElementById('edit-b-seriesnum').value)||0;
   b.status=document.getElementById('edit-b-status').value;
@@ -1680,7 +1913,31 @@ function makeCrawlWormDraggable(el) {
   },{passive:true});
   window.addEventListener('mousemove',function(e){ if(!dragging)return; const dx=getX(e)-startX; el.style.left=(startLeft+dx)+'px'; });
   window.addEventListener('touchmove',function(e){ if(!dragging)return; const dx=getX(e)-startX; el.style.left=(startLeft+dx)+'px'; },{passive:true});
-  function stopDrag(){ if(!dragging)return; dragging=false; el.style.cursor='grab'; }
+  function stopDrag(){
+    if(!dragging)return; dragging=false; el.style.cursor='grab';
+    // Resume crawl animation from current position
+    var bar=document.getElementById('worm-crawl-bar');
+    var barW=bar?bar.offsetWidth:window.innerWidth;
+    var curLeft=parseFloat(el.style.left)||0;
+    // Calculate remaining distance and time proportionally
+    var speed=parseFloat(el.style.animationDuration)||25;
+    var remaining=Math.max(0,barW-curLeft);
+    var total=barW+80;
+    var fraction=remaining/total;
+    var timeLeft=Math.max(2,speed*fraction);
+    // Use a one-shot animation to reach the end, then restore looping
+    el.style.transition='none';
+    el.style.animation='none';
+    // Force reflow
+    void el.offsetWidth;
+    el.style.animation='wormCrawl '+timeLeft+'s 0s linear 1';
+    el.addEventListener('animationend',function onEnd(){
+      el.removeEventListener('animationend',onEnd);
+      el.style.left='-80px';
+      var newSpeed=20+Math.random()*25;
+      el.style.animation='wormCrawl '+newSpeed+'s 0s linear infinite';
+    });
+  }
   window.addEventListener('mouseup',stopDrag);
   window.addEventListener('touchend',stopDrag);
 }
@@ -1688,46 +1945,76 @@ function makeCrawlWormDraggable(el) {
 //  BOOK RECOMMENDATIONS, OpenLibrary subject search
 // Maps genre strings the user might enter to clean OpenLibrary subject slugs
 const GENRE_SUBJECT_MAP = {
-  'fantasy':          'fantasy',
-  'epic fantasy':     'fantasy',
-  'dark fantasy':     'fantasy',
-  'sci-fi':           'science_fiction',
-  'science fiction':  'science_fiction',
-  'sci fi':           'science_fiction',
-  'horror':           'horror',
-  'gothic horror':    'horror',
-  'thriller':         'thriller',
-  'mystery':          'mystery_and_detective_stories',
-  'detective':        'mystery_and_detective_stories',
-  'romance':          'romance',
-  'fantasy romance':  'romance',
-  'historical fiction':'historical_fiction',
-  'literary fiction': 'fiction',
-  'fiction':          'fiction',
-  'memoir':           'biography_and_autobiography',
-  'biography':        'biography_and_autobiography',
-  'non-fiction':      'nonfiction',
-  'nonfiction':       'nonfiction',
-  'mythology':        'mythology',
-  'young adult':      'young_adult_fiction',
-  'ya':               'young_adult_fiction',
-  'dystopian':        'dystopian_fiction',
-  'graphic novel':    'comics_and_graphic_novels',
-  'poetry':           'poetry',
-  'self-help':        'self-help',
-  'philosophy':       'philosophy',
-  'classic':          'classic_literature',
+  'fantasy':            'fantasy',
+  'epic fantasy':       'fantasy',
+  'dark fantasy':       'fantasy',
+  'sci-fi':             'science_fiction',
+  'science fiction':    'science_fiction',
+  'sci fi':             'science_fiction',
+  'horror':             'horror',
+  'gothic horror':      'horror',
+  'gothic fiction':     'gothic_fiction',
+  'thriller':           'thriller',
+  'mystery':            'mystery_and_detective_stories',
+  'detective':          'mystery_and_detective_stories',
+  'crime':              'crime_fiction',
+  'true crime':         'true_crime',
+  'romance':            'romance',
+  'fantasy romance':    'romance',
+  'historical fiction': 'historical_fiction',
+  'historical romance': 'historical_fiction',
+  'literary fiction':   'fiction',
+  'contemporary fiction':'fiction',
+  'fiction':            'fiction',
+  'women\'s fiction':   'fiction',
+  "women's fiction":    'fiction',
+  'domestic fiction':   'fiction',
+  'coming of age':      'bildungsroman',
+  'family saga':        'family_stories',
+  'adventure':          'adventure_stories',
+  'memoir':             'biography_and_autobiography',
+  'biography':          'biography_and_autobiography',
+  'autobiography':      'biography_and_autobiography',
+  'non-fiction':        'nonfiction',
+  'nonfiction':         'nonfiction',
+  'mythology':          'mythology',
+  'young adult':        'young_adult_fiction',
+  'ya':                 'young_adult_fiction',
+  'middle grade':       'juvenile_fiction',
+  "children's":         'juvenile_fiction',
+  'dystopian':          'dystopian_fiction',
+  'dystopian fiction':  'dystopian_fiction',
+  'graphic novel':      'comics_and_graphic_novels',
+  'comics':             'comics_and_graphic_novels',
+  'poetry':             'poetry',
+  'short stories':      'short_stories',
+  'self-help':          'self-help',
+  'philosophy':         'philosophy',
+  'classic literature': 'classic_literature',
+  'classics':           'classic_literature',
+  'classic':            'classic_literature',
+  'victorian':          'english_fiction',
+  'history':            'history',
+  'science':            'science',
+  'psychology':         'psychology',
+  'spirituality':       'spirituality',
+  'travel':             'travel',
 };
 
 function getSubjectSlug(genre) {
   if(!genre) return null;
-  const g = genre.toLowerCase().trim();
+  // Handle compound genres like "Classic Literature / Romance"  use most specific first part
+  var primary = genre.split('/')[0].trim();
+  var g = primary.toLowerCase().replace(/['']/g,"'");
+  // Direct match
   if(GENRE_SUBJECT_MAP[g]) return GENRE_SUBJECT_MAP[g];
-  // partial match
-  for(const key of Object.keys(GENRE_SUBJECT_MAP)) {
+  // Partial / substring match (longer keys first for specificity)
+  var keys = Object.keys(GENRE_SUBJECT_MAP).sort(function(a,b){return b.length-a.length;});
+  for(var i=0;i<keys.length;i++){
+    var key=keys[i];
     if(g.includes(key) || key.includes(g)) return GENRE_SUBJECT_MAP[key];
   }
-  // fallback: slugify the genre itself and hope OpenLibrary has it
+  // Fallback: slugify
   return g.replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
 }
 
@@ -2006,9 +2293,33 @@ function savePixelWorm(){
 }
 
 //  CRAWL BAR 
+function toggleCrawlBar(){
+  var bar=document.getElementById('worm-crawl-bar');
+  var btn=document.getElementById('worm-crawl-toggle');
+  if(!bar) return;
+  var hidden = bar.dataset.hidden==='1';
+  if(hidden){
+    bar.dataset.hidden='0';
+    bar.style.display='';
+    if(btn) btn.textContent='🐛 hide worms';
+    prefs.wormsHidden=false;
+  } else {
+    bar.dataset.hidden='1';
+    bar.style.display='none';
+    if(btn) btn.textContent='🐛 show worms';
+    prefs.wormsHidden=true;
+  }
+  savePrefs();
+}
 function renderCrawlBar(){
   initWorms();
-  const bar=document.getElementById('worm-crawl-bar');if(!bar)return;
+  var bar=document.getElementById('worm-crawl-bar');if(!bar)return;
+  // Restore hidden state
+  if(prefs.wormsHidden){
+    bar.dataset.hidden='1';bar.style.display='none';
+    var btn=document.getElementById('worm-crawl-toggle');if(btn)btn.textContent='🐛 show worms';
+  }
+  if(bar.dataset.hidden==='1') return;
   if(!db.worms.list.length){bar.innerHTML='';return;}
   const existingIds=new Set(Array.from(bar.querySelectorAll('.crawl-worm')).map(function(el){return+el.dataset.wormId;}));
   db.worms.list.forEach(function(w){if(!existingIds.has(w.id))spawnWormEl(bar,w);});
