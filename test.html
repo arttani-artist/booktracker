@@ -1533,7 +1533,7 @@ function killWorm(id, reason) {
   const w=db.worms.list.find(function(x){return x.id===id;});
   if(!w)return;
   if(!db.worms.graveyard) db.worms.graveyard=[];
-  db.worms.graveyard.push({...w, diedDate:todayStr(), diedReason:reason||'starvation 💀'});
+  db.worms.graveyard.push({...w, diedDate:todayStr(), diedReason:reason||'starvation :('});
   db.worms.list=db.worms.list.filter(function(x){return x.id!==id;});
   const crawlEl=document.querySelector('.crawl-worm[data-worm-id="'+id+'"]');
   if(crawlEl) crawlEl.remove();
