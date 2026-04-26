@@ -2,12 +2,15 @@
 <html lang="en" data-theme="dark" data-case="lower" data-density="normal">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>readtracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 /*  THEME TOKENS  */
 :root {
@@ -88,7 +91,7 @@
 
 /*  RESET & BASE  */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; padding-bottom: 48px; }
+body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; padding-bottom: 80px; -webkit-text-size-adjust: 100%; }
 ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
 
 /*  LAYOUT  */
@@ -250,11 +253,12 @@ textarea { resize: vertical; line-height: 1.5; }
 .share-pre { background: linear-gradient(135deg, #1a140a 0%, #261b08 100%); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
 
 /*  MOBILE NAV  */
-.mobile-nav { display: none; position: sticky; bottom: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 0 10px; z-index: 100; }
-.mob-inner { display: flex; justify-content: space-around; }
-.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 10px; padding: 4px 10px; border-radius: 8px; border: none; background: transparent; font-family: 'Geist', sans-serif; transition: color .12s; }
+.mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 0 env(safe-area-inset-bottom, 10px); z-index: 200; }
+.mob-inner { display: flex; justify-content: space-around; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.mob-inner::-webkit-scrollbar { display: none; }
+.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 10px; padding: 4px 8px; border-radius: 8px; border: none; background: transparent; font-family: 'Geist', sans-serif; transition: color .12s; flex-shrink: 0; min-width: 52px; }
 .mob-btn.active { color: var(--accent); }
-.mob-icon { font-size: 19px; }
+.mob-icon { font-size: 18px; }
 
 /*  MISC  */
 .empty { text-align: center; padding: 28px; color: var(--text3); }
@@ -318,12 +322,14 @@ textarea { resize: vertical; line-height: 1.5; }
 
 @media (max-width: 680px) {
   .sidebar { display: none; }
-  .main-content { padding: 14px 14px 80px; }
+  .main-content { padding: 14px 14px 90px; overflow-x: hidden; }
   .mobile-nav { display: block; }
   .metrics-row { grid-template-columns: 1fr 1fr; }
   .card-grid2, .card-grid3 { grid-template-columns: 1fr; }
   .form-row2, .form-row3 { grid-template-columns: 1fr; }
   .goal-wrap { flex-direction: column; align-items: flex-start; }
+  .app { overflow-x: hidden; }
+  .worm-card { flex-wrap: wrap; }
 }
 </style>
 </head>
@@ -369,6 +375,9 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="nav-divider"></div>
         <div class="nav-item" data-page="discover" onclick="nav('discover',this)"><span class="nav-icon">✦</span><span class="nav-label">discover</span></div>
         <div class="nav-item" data-page="worms" onclick="nav('worms',this)"><span class="nav-icon">🐛</span><span class="nav-label">my worms</span></div>
+        <div class="nav-item" data-page="graveyard" onclick="nav('graveyard',this)"><span class="nav-icon">🪦</span><span class="nav-label">graveyard</span></div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" data-page="reader" onclick="nav('reader',this)"><span class="nav-icon">📖</span><span class="nav-label">pdf reader</span></div>
         <div class="nav-divider"></div>
         <div class="nav-item" data-page="friends" onclick="nav('friends',this)"><span class="nav-icon">◑</span><span class="nav-label">friends</span></div>
         <div class="nav-item" data-page="share" onclick="nav('share',this)"><span class="nav-icon">◐</span><span class="nav-label">share</span></div>
@@ -554,6 +563,55 @@ textarea { resize: vertical; line-height: 1.5; }
           </div>
         </div>
         <div class="card"><div class="card-title">pace analysis</div><div id="pace-info" style="font-size:13px;color:var(--text2);line-height:1.8"></div></div>
+
+        <!-- Custom theme designer: unlocks when annual goal is met -->
+        <div class="card" id="custom-theme-card" style="display:none;border-color:rgba(var(--accent-rgb),0.3)">
+          <div class="card-title" style="color:var(--accent)">🎨 goal reward: design your theme <span style="color:var(--green);font-size:10px">· unlocked!</span></div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7">you smashed your reading goal! as a reward, you can design a completely custom colour scheme. it'll apply across the whole app.</p>
+          <div class="form-row3" style="margin-bottom:14px">
+            <div class="form-group">
+              <label>background colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-bg" value="#0d0b09" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-bg-hex" style="font-size:11px;color:var(--text3)">#0d0b09</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>text colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-text" value="#ede8e1" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-text-hex" style="font-size:11px;color:var(--text3)">#ede8e1</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>accent colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-accent" value="#c9a96e" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-accent-hex" style="font-size:11px;color:var(--text3)">#c9a96e</span>
+              </div>
+            </div>
+          </div>
+          <!-- live mini preview -->
+          <div id="custom-theme-preview" style="border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid rgba(128,128,128,0.2);font-size:12px;transition:all .2s">
+            <div style="font-size:15px;font-weight:500;margin-bottom:6px" id="prev-title">readtracker</div>
+            <div style="height:3px;border-radius:2px;width:60%;margin-bottom:8px" id="prev-bar"></div>
+            <div style="font-size:11px;opacity:0.6" id="prev-sub">reading progress · 2025</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="applyCustomTheme()">✓ apply my theme</button>
+            <button class="btn btn-ghost" onclick="resetCustomTheme()">↺ reset to default</button>
+          </div>
+        </div>
+        <!-- locked hint shown before goal is met -->
+        <div class="card" id="custom-theme-locked" style="border-style:dashed;border-color:var(--border2)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:24px">🔒</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--text2)">custom theme designer</div>
+              <div style="font-size:12px;color:var(--text3)" id="theme-lock-hint">meet your annual reading goal to unlock</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- FRIENDS -->
@@ -682,6 +740,15 @@ textarea { resize: vertical; line-height: 1.5; }
         <div class="page-header"><h1 class="page-title">discover</h1><p class="page-sub ui-text">find books &amp; music for your reading sessions</p></div>
 
         <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>✨ recommended for you</span>
+            <button class="btn btn-ghost btn-sm" onclick="refreshRecommendations()" style="font-size:11px">↻ refresh</button>
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:8px" id="rec-why">based on your library</p>
+          <div id="rec-list"><div class="empty"><p>add some books first and we'll suggest more!</p></div></div>
+        </div>
+
+        <div class="card">
           <div class="card-title">🔍 find books</div>
           <p style="font-size:12px;color:var(--text2);margin-bottom:12px">search OpenLibrary for any book and add it straight to your library</p>
           <div class="inline-flex" style="margin-bottom:4px">
@@ -716,9 +783,12 @@ textarea { resize: vertical; line-height: 1.5; }
 
       <!-- WORMS -->
       <div id="page-worms" class="page">
-        <div class="page-header">
-          <h1 class="page-title">my bookworms 🐛</h1>
-          <p class="page-sub ui-text">earn food every 10 pages + read 100 pages in a day to unlock custom pixel worms</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div>
+            <h1 class="page-title">my bookworms 🐛</h1>
+            <p class="page-sub ui-text">earn food every 10 pages + read 100 pages in a day to unlock custom pixel worms</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="worm-crawl-toggle" onclick="toggleCrawlBar()" style="flex-shrink:0;margin-top:6px">🐛 hide worms</button>
         </div>
 
         <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
@@ -804,6 +874,42 @@ textarea { resize: vertical; line-height: 1.5; }
         <div id="worm-list"></div>
       </div>
 
+      <!-- GRAVEYARD -->
+      <div id="page-graveyard" class="page">
+        <div class="page-header"><h1 class="page-title">🪦 worm graveyard</h1><p class="page-sub ui-text">rest in peace, little ones</p></div>
+        <div id="graveyard-list"></div>
+      </div>
+
+      <!-- PDF READER -->
+      <div id="page-reader" class="page">
+        <div class="page-header"><h1 class="page-title">📖 pdf reader</h1><p class="page-sub ui-text">upload and read PDFs right here</p></div>
+        <div class="card" id="reader-upload-card">
+          <div class="card-title">upload a PDF</div>
+          <label class="drop-zone" for="pdf-file-input" id="pdf-drop-zone">
+            <div class="dz-icon">📄</div>
+            <div class="dz-label">drop a PDF here</div>
+            <div class="dz-sub">or click to browse</div>
+          </label>
+          <input type="file" id="pdf-file-input" accept=".pdf" style="display:none" onchange="loadPDF(this)" />
+        </div>
+        <div id="reader-controls" style="display:none;margin-bottom:10px">
+          <div class="card" style="padding:12px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="pdfPrevPage()">← prev</button>
+              <span style="font-size:13px;color:var(--text2)">page <span id="pdf-page-num">1</span> of <span id="pdf-page-total">?</span></span>
+              <button class="btn btn-ghost btn-sm" onclick="pdfNextPage()">next →</button>
+              <button class="btn btn-ghost btn-sm" onclick="pdfZoomOut()">−</button>
+              <span style="font-size:12px;color:var(--text3)" id="pdf-zoom-label">100%</span>
+              <button class="btn btn-ghost btn-sm" onclick="pdfZoomIn()">+</button>
+              <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="closePDF()">close PDF</button>
+            </div>
+          </div>
+        </div>
+        <div id="pdf-canvas-wrap" style="overflow:auto;background:var(--bg3);border-radius:10px;display:none">
+          <canvas id="pdf-canvas" style="display:block;margin:0 auto"></canvas>
+        </div>
+      </div>
+
     </main>
   </div>
   <div class="mobile-nav">
@@ -813,6 +919,11 @@ textarea { resize: vertical; line-height: 1.5; }
       <button class="mob-btn" onclick="nav('log',this)" data-p="log"><span class="mob-icon">◎</span>log</button>
       <button class="mob-btn" onclick="nav('stats',this)" data-p="stats"><span class="mob-icon">◉</span>stats</button>
       <button class="mob-btn" onclick="nav('goals',this)" data-p="goals"><span class="mob-icon">◌</span>goals</button>
+      <button class="mob-btn" onclick="nav('discover',this)" data-p="discover"><span class="mob-icon">✦</span>discover</button>
+      <button class="mob-btn" onclick="nav('worms',this)" data-p="worms"><span class="mob-icon">🐛</span>worms</button>
+      <button class="mob-btn" onclick="nav('series',this)" data-p="series"><span class="mob-icon">◧</span>series</button>
+      <button class="mob-btn" onclick="nav('reader',this)" data-p="reader"><span class="mob-icon">📖</span>reader</button>
+      <button class="mob-btn" onclick="nav('settings',this)" data-p="settings"><span class="mob-icon">◓</span>settings</button>
     </div>
   </div>
 </div>
@@ -831,6 +942,159 @@ textarea { resize: vertical; line-height: 1.5; }
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-primary" onclick="applySpineColor()">apply</button>
       <button class="btn btn-ghost" onclick="closeColorModal()">cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- full book edit modal -->
+<div id="edit-book-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:501;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:500;margin-bottom:16px">✎ edit book</div>
+    <input type="hidden" id="edit-book-id" />
+    <div class="form-row2">
+      <div class="form-group"><label>title</label><input id="edit-b-title" /></div>
+      <div class="form-group"><label>author</label><input id="edit-b-author" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>pages</label><input id="edit-b-pages" type="number" min="1" /></div>
+      <div class="form-group"><label>pages read</label><input id="edit-b-pagesread" type="number" min="0" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>primary genre</label>
+        <select id="edit-b-genre">
+          <option value=""> none </option>
+          <option value="Classic Literature">Classic Literature</option>
+          <option value="Contemporary Fiction">Contemporary Fiction</option>
+          <option value="Historical Fiction">Historical Fiction</option>
+          <option value="Literary Fiction">Literary Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Epic Fantasy">Epic Fantasy</option>
+          <option value="Dark Fantasy">Dark Fantasy</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Horror">Horror</option>
+          <option value="Gothic Horror">Gothic Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Crime">Crime</option>
+          <option value="Romance">Romance</option>
+          <option value="Young Adult">Young Adult</option>
+          <option value="Middle Grade">Middle Grade</option>
+          <option value="Children's">Children's</option>
+          <option value="Dystopian">Dystopian</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Mythology">Mythology</option>
+          <option value="Graphic Novel">Graphic Novel</option>
+          <option value="Short Stories">Short Stories</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Memoir">Memoir</option>
+          <option value="Biography">Biography</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+          <option value="Self-Help">Self-Help</option>
+          <option value="Philosophy">Philosophy</option>
+          <option value="History">History</option>
+          <option value="Science">Science</option>
+          <option value="True Crime">True Crime</option>
+        </select>
+      </div>
+      <div class="form-group"><label>secondary genre</label>
+        <select id="edit-b-genre2">
+          <option value=""> none </option>
+          <option value="Classic Literature">Classic Literature</option>
+          <option value="Contemporary Fiction">Contemporary Fiction</option>
+          <option value="Historical Fiction">Historical Fiction</option>
+          <option value="Literary Fiction">Literary Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Epic Fantasy">Epic Fantasy</option>
+          <option value="Dark Fantasy">Dark Fantasy</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Horror">Horror</option>
+          <option value="Gothic Horror">Gothic Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Crime">Crime</option>
+          <option value="Romance">Romance</option>
+          <option value="Young Adult">Young Adult</option>
+          <option value="Middle Grade">Middle Grade</option>
+          <option value="Children's">Children's</option>
+          <option value="Dystopian">Dystopian</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Mythology">Mythology</option>
+          <option value="Graphic Novel">Graphic Novel</option>
+          <option value="Short Stories">Short Stories</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Memoir">Memoir</option>
+          <option value="Biography">Biography</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+          <option value="Self-Help">Self-Help</option>
+          <option value="Philosophy">Philosophy</option>
+          <option value="History">History</option>
+          <option value="Science">Science</option>
+          <option value="True Crime">True Crime</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>series</label><input id="edit-b-series" /></div>
+      <div class="form-group"><label>series #</label><input id="edit-b-seriesnum" type="number" min="1" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>status</label>
+        <select id="edit-b-status">
+          <option value="reading">currently reading</option>
+          <option value="want">want to read</option>
+          <option value="done">finished</option>
+        </select>
+      </div>
+      <div class="form-group"><label>rating</label>
+        <select id="edit-b-rating">
+          <option value="0">no rating</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★☆</option>
+          <option value="3">★★★☆☆</option>
+          <option value="2">★★☆☆☆</option>
+          <option value="1">★☆☆☆☆</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>start date</label><input id="edit-b-start" type="date" /></div>
+      <div class="form-group"><label>finished date</label><input id="edit-b-finished" type="date" /></div>
+    </div>
+    <div class="form-group"><label>spine colour</label>
+      <div class="inline-flex" style="margin-top:4px">
+        <input type="color" id="edit-b-color" value="#c9a96e" class="color-picker-inline" />
+        <div class="color-swatches" id="edit-quick-swatches"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveEditBook()">save changes</button>
+      <button class="btn btn-ghost" onclick="closeEditBook()">cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- worm edit modal -->
+<div id="edit-worm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:501;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:500;margin-bottom:16px">✎ edit worm</div>
+    <input type="hidden" id="edit-worm-id" />
+    <div class="form-group"><label>name</label><input id="edit-worm-name" /></div>
+    <div class="form-group"><label>body colour</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="edit-worm-body-swatches"></div>
+    </div>
+    <div class="form-group"><label>hat</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="edit-worm-hat-swatches"></div>
+    </div>
+    <div class="form-group"><label>eyes</label>
+      <select id="edit-worm-eyes"></select>
+    </div>
+    <div class="form-group"><label>length</label>
+      <div style="display:flex;gap:6px;margin-top:4px" id="edit-worm-length-swatches"></div>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center" id="edit-worm-preview"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveEditWorm()">save worm</button>
+      <button class="btn btn-ghost" onclick="closeEditWorm()">cancel</button>
     </div>
   </div>
 </div>
@@ -875,6 +1139,23 @@ async function boot() {
   sb = initSupabase();
   loadPrefs();
   if (!sb) { document.getElementById('supabase-setup-note').style.display='block'; showAuth(); return; }
+  // Handle email confirmation links (Supabase sends tokens in URL hash)
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    try {
+      const params = new URLSearchParams(hash.replace('#','?'));
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (access_token) {
+        const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
+        if (data?.session) {
+          currentUser = data.session.user;
+          window.location.hash = '';
+          await loadFromCloud(); showApp(); return;
+        }
+      }
+    } catch(e) { console.error('session restore error', e); }
+  }
   const { data: { session } } = await sb.auth.getSession();
   if (session) { currentUser = session.user; await loadFromCloud(); showApp(); }
   else showAuth();
@@ -902,7 +1183,7 @@ function showApp() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   renderAll();
   loadFriends();
-  setTimeout(function(){ initWorms(); renderCrawlBar(); }, 200);
+  setTimeout(function(){ initWorms(); checkWormDepletion(); renderCrawlBar(); }, 200);
 }
 function toggleAuthMode() {
   authMode = authMode==='signin'?'signup':'signin';
@@ -960,6 +1241,13 @@ function applyPrefs() {
   h.setAttribute('data-accent',  prefs.accent);
   h.setAttribute('data-density', prefs.density);
   h.setAttribute('data-case',    prefs.textCase);
+  // Apply custom theme CSS variables if active
+  if(prefs.theme==='custom'&&prefs.customTheme) {
+    applyCustomThemeCSSVars(prefs.customTheme);
+  } else {
+    var existing=document.getElementById('custom-theme-style');
+    if(existing) existing.textContent='';
+  }
   const accentRGBs = { gold:'201,169,110', rose:'232,160,176', sage:'136,196,160', sky:'122,184,232', lavender:'176,160,224', coral:'232,144,112' };
   const rgb = accentRGBs[prefs.accent]||'201,169,110';
   const textures = {
@@ -978,6 +1266,78 @@ function setAccent(a,el) { prefs.accent=a; savePrefs(); applyPrefs(); document.q
 function setTexture(t,el) { prefs.texture=t; savePrefs(); applyPrefs(); document.querySelectorAll('#texture-btns .btn').forEach(b=>b.classList.remove('active-texture')); if(el)el.classList.add('active-texture'); }
 function setDensity(d,el) { prefs.density=d; savePrefs(); applyPrefs(); document.querySelectorAll('#density-btns .btn').forEach(b=>b.classList.remove('active-density')); if(el)el.classList.add('active-density'); }
 function setCase(c,el) { prefs.textCase=c; savePrefs(); applyPrefs(); document.querySelectorAll('#case-btns .btn').forEach(b=>b.classList.remove('active-case')); if(el)el.classList.add('active-case'); }
+
+//  CUSTOM THEME (goal reward)
+function hexToRgb(hex) {
+  var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return r+','+g+','+b;
+}
+function lighten(hex,amt) {
+  var r=Math.min(255,parseInt(hex.slice(1,3),16)+amt);
+  var g=Math.min(255,parseInt(hex.slice(3,5),16)+amt);
+  var b=Math.min(255,parseInt(hex.slice(5,7),16)+amt);
+  return '#'+[r,g,b].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
+}
+function darken(hex,amt){ return lighten(hex,-amt); }
+function syncCustomThemePickers() {
+  var ct=prefs.customTheme||{bg:'#0d0b09',text:'#ede8e1',accent:'#c9a96e'};
+  var bgEl=document.getElementById('custom-bg'),txEl=document.getElementById('custom-text'),acEl=document.getElementById('custom-accent');
+  if(bgEl){bgEl.value=ct.bg;document.getElementById('custom-bg-hex').textContent=ct.bg;}
+  if(txEl){txEl.value=ct.text;document.getElementById('custom-text-hex').textContent=ct.text;}
+  if(acEl){acEl.value=ct.accent;document.getElementById('custom-accent-hex').textContent=ct.accent;}
+  previewCustomTheme();
+}
+function previewCustomTheme() {
+  var bg=document.getElementById('custom-bg').value;
+  var text=document.getElementById('custom-text').value;
+  var accent=document.getElementById('custom-accent').value;
+  document.getElementById('custom-bg-hex').textContent=bg;
+  document.getElementById('custom-text-hex').textContent=text;
+  document.getElementById('custom-accent-hex').textContent=accent;
+  var prev=document.getElementById('custom-theme-preview');
+  if(prev){
+    prev.style.background=bg;
+    prev.style.borderColor=accent+'44';
+    document.getElementById('prev-title').style.color=accent;
+    document.getElementById('prev-bar').style.background=accent;
+    document.getElementById('prev-sub').style.color=text;
+  }
+}
+function applyCustomTheme() {
+  var bg=document.getElementById('custom-bg').value;
+  var text=document.getElementById('custom-text').value;
+  var accent=document.getElementById('custom-accent').value;
+  prefs.customTheme={bg,text,accent};
+  prefs.theme='custom';
+  savePrefs(); applyPrefs();
+  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
+  toast('🎨 your custom theme is live!');
+}
+function resetCustomTheme() {
+  prefs.theme='dark'; delete prefs.customTheme;
+  savePrefs(); applyPrefs();
+  syncCustomThemePickers();
+  document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme==='dark'));
+  toast('theme reset');
+}
+function applyCustomThemeCSSVars(ct) {
+  var h=document.documentElement;
+  var bg=ct.bg, text=ct.text, accent=ct.accent;
+  var bg2=lighten(bg,8),bg3=lighten(bg,16),bg4=lighten(bg,24);
+  var text2=darken(text,40),text3=darken(text,80);
+  var rgb=hexToRgb(accent);
+  // Override CSS vars inline on :root
+  var style=document.getElementById('custom-theme-style');
+  if(!style){style=document.createElement('style');style.id='custom-theme-style';document.head.appendChild(style);}
+  style.textContent=':root, [data-theme="custom"] {'
+    +'--bg:'+bg+';--bg2:'+bg2+';--bg3:'+bg3+';--bg4:'+bg4+';'
+    +'--text:'+text+';--text2:'+text2+';--text3:'+text3+';'
+    +'--border:rgba('+hexToRgb(text)+',0.07);--border2:rgba('+hexToRgb(text)+',0.13);'
+    +'--accent:'+accent+';--accent2:'+lighten(accent,24)+';--accent-bg:rgba('+rgb+',0.12);--accent-rgb:'+rgb+';'
+    +'--green:#5dbf8a;--green-bg:rgba(93,191,138,0.1);--red:#e07070;--red-bg:rgba(224,112,112,0.08);'
+    +'--blue:#7ab3e0;--blue-bg:rgba(122,179,224,0.1);--shadow:rgba(0,0,0,0.4);'
+    +'}';
+}
 
 //  HELPERS 
 function todayStr() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -1007,6 +1367,8 @@ function nav(id, el) {
     if(id==='share')    renderShare();
     if(id==='series')   renderSeriesPage();
     if(id==='settings') syncSettingsUI();
+    if(id==='graveyard') renderGraveyard();
+    if(id==='discover') renderRecommendations();
   }, 30);
 }
 function syncSettingsUI() {
@@ -1116,7 +1478,7 @@ function renderAll() { renderDashboard(); renderLibrary(); renderLogPage(); rend
 //  DASHBOARD 
 function renderDashboard() {
   const streak=calcStreak(),pw=pagesInDays(7),pl=pagesInRange(14,7),diff=pw-pl,done=db.books.filter(b=>b.status==='done').length,spd=calcSpeed();
-  document.getElementById('dash-metrics').innerHTML='<div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">'+streak+'</div><div class="metric-sub">days 🔥</div></div><div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">'+pw.toLocaleString()+'</div><div class="metric-sub">'+(diff===0?'same':(diff>0?'+':'')+diff)+' vs last wk</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div><div class="metric-sub">of '+db.goal+' goal</div></div><div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">'+(spd||'—')+'</div><div class="metric-sub">pages/hr</div></div>';
+  document.getElementById('dash-metrics').innerHTML='<div class="metric hi"><div class="metric-label">streak</div><div class="metric-val">'+streak+'</div><div class="metric-sub">days 🔥</div></div><div class="metric"><div class="metric-label">pages / week</div><div class="metric-val">'+pw.toLocaleString()+'</div><div class="metric-sub">'+(diff===0?'same':(diff>0?'+':'')+diff)+' vs last wk</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div><div class="metric-sub">of '+db.goal+' goal</div></div><div class="metric"><div class="metric-label">avg speed</div><div class="metric-val">'+(spd||'')+'</div><div class="metric-sub">pages/hr</div></div>';
   const reading=db.books.filter(b=>b.status==='reading');
   document.getElementById('dash-reading').innerHTML=reading.length?reading.map(b=>{const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;return'<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div>'+(b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">'+(b.pagesRead||0)+'/'+b.pages+' · '+pct+'%</div>':'')+'</div></div>';}).join(''):'<div class="empty"><p>no books in progress</p></div>';
   renderWeekChart(); renderStreakCal();
@@ -1156,7 +1518,7 @@ function renderLibrary() {
     grp.forEach(b=>{
       const pct=b.pages?Math.round((b.pagesRead||0)/b.pages*100):0;
       const starHtml=[1,2,3,4,5].map(i=>'<span class="star '+(i<=(b.rating||0)?'on':'')+'" onclick="setRating(event,'+b.id+','+i+')">★</span>').join('');
-      html+='<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')" title="click to change colour"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div><div class="book-tags"><span class="pill pill-'+b.status+'">'+(b.status==='reading'?'reading':b.status==='want'?'want to read':'finished')+'</span>'+(b.genre?'<span class="pill pill-genre">'+esc(b.genre)+'</span>':'')+(b.series?'<span class="series-badge">◧ '+esc(b.series)+(b.seriesNum?' #'+b.seriesNum:'')+'</span>':'')+(b.pages?'<span style="font-size:10px;color:var(--text3)">'+b.pages+'p</span>':'')+(b.finishedDate?'<span style="font-size:10px;color:var(--text3)">done '+fmtDate(b.finishedDate)+'</span>':'')+'</div>'+(b.status==='reading'&&b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div>':'')+'<div style="margin-top:4px">'+starHtml+'</div></div><div class="book-actions"><button class="btn-icon" title="edit page count" onclick="editBookPages('+b.id+')">✎</button><button class="btn-icon" onclick="deleteBook('+b.id+')">×</button></div></div>';
+      html+='<div class="book-item"><div class="book-spine" style="background:'+b.color+'" onclick="openColorModal('+b.id+')" title="click to change colour"></div><div class="book-meta"><div class="book-title-t">'+esc(b.title)+'</div><div class="book-author-t">'+esc(b.author)+'</div><div class="book-tags"><span class="pill pill-'+b.status+'">'+(b.status==='reading'?'reading':b.status==='want'?'want to read':'finished')+'</span>'+(b.genre?'<span class="pill pill-genre">'+esc(b.genre)+'</span>':'')+(b.series?'<span class="series-badge">◧ '+esc(b.series)+(b.seriesNum?' #'+b.seriesNum:'')+'</span>':'')+(b.pages?'<span style="font-size:10px;color:var(--text3)">'+b.pages+'p</span>':'')+(b.finishedDate?'<span style="font-size:10px;color:var(--text3)">done '+fmtDate(b.finishedDate)+'</span>':'')+'</div>'+(b.status==='reading'&&b.pages?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+b.color+'"></div></div>':'')+'<div style="margin-top:4px">'+starHtml+'</div></div><div class="book-actions"><button class="btn-icon" title="edit book" onclick="openEditBook('+b.id+')" style="font-size:13px">✎</button><button class="btn-icon" onclick="deleteBook('+b.id+')">×</button></div></div>';
     });
   });
   html+='</div></div>'; el.innerHTML=html;
@@ -1186,7 +1548,7 @@ function renderStats() {
   const tp=db.logs.reduce((s,l)=>s+l.pages,0),tm=db.logs.reduce((s,l)=>s+l.minutes,0),done=db.books.filter(b=>b.status==='done').length;
   const byDay={};db.logs.forEach(l=>{byDay[l.date]=(byDay[l.date]||0)+l.pages;});
   const best=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('stats-metrics').innerHTML='<div class="metric"><div class="metric-label">total pages</div><div class="metric-val">'+tp.toLocaleString()+'</div></div><div class="metric"><div class="metric-label">total hours</div><div class="metric-val">'+Math.round(tm/60)+'</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div></div><div class="metric"><div class="metric-label">best day</div><div class="metric-val">'+(best?best[1]:'—')+'</div><div class="metric-sub">'+(best?fmtDate(best[0]):'')+'</div></div>';
+  document.getElementById('stats-metrics').innerHTML='<div class="metric"><div class="metric-label">total pages</div><div class="metric-val">'+tp.toLocaleString()+'</div></div><div class="metric"><div class="metric-label">total hours</div><div class="metric-val">'+Math.round(tm/60)+'</div></div><div class="metric"><div class="metric-label">books done</div><div class="metric-val">'+done+'</div></div><div class="metric"><div class="metric-label">best day</div><div class="metric-val">'+(best?best[1]:'')+'</div><div class="metric-sub">'+(best?fmtDate(best[0]):'')+'</div></div>';
   const mc={};db.books.filter(b=>b.status==='done'&&b.finishedDate).forEach(b=>{const m=b.finishedDate.slice(0,7);mc[m]=(mc[m]||0)+1;});
   const months=Object.keys(mc).sort().slice(-10);
   destroyChart('monthly-chart');
@@ -1209,6 +1571,7 @@ function renderStats() {
 //  GOALS 
 function renderGoals() {
   const done=db.books.filter(b=>b.status==='done').length,pct=db.goal?Math.min(100,Math.round(done/db.goal*100)):0;
+  const goalMet = db.goal > 0 && done >= db.goal;
   document.getElementById('g-pct').textContent=pct+'%';
   document.getElementById('g-desc').textContent=done+' of '+db.goal+' books';
   document.getElementById('goal-in').placeholder=db.goal;
@@ -1223,6 +1586,14 @@ function renderGoals() {
   charts['goal-donut']=new Chart(document.getElementById('goal-donut'),{type:'doughnut',data:{datasets:[{data:[pct,100-pct],backgroundColor:[acc,'rgba(128,128,128,0.08)'],borderWidth:0}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
   const dLeft=Math.max(0,Math.ceil((new Date(new Date().getFullYear(),11,31)-new Date())/86400000)),bLeft=Math.max(0,db.goal-done),avgD=calcAvgDays(),dpb=bLeft>0?Math.ceil(dLeft/bLeft):0,ontrack=avgD&&avgD<=dpb;
   document.getElementById('pace-info').innerHTML=bLeft===0?'<strong style="color:var(--green)">🎉 annual goal complete!</strong>':bLeft+' book'+(bLeft!==1?'s':'')+' left · '+dLeft+' days remaining<br>finish a book every <strong>'+dpb+'</strong> days to hit your goal<br>'+(avgD?'your average: <strong>'+avgD+' days/book</strong> · <span style="color:'+(ontrack?'var(--green)':'var(--red)')+'">'+(ontrack?'on track ✓':'behind: pick up the pace!')+'</span>':' log more books for pace analysis');
+  // custom theme unlock
+  const unlockedCard=document.getElementById('custom-theme-card');
+  const lockedCard=document.getElementById('custom-theme-locked');
+  const lockHint=document.getElementById('theme-lock-hint');
+  if(unlockedCard) unlockedCard.style.display=goalMet?'block':'none';
+  if(lockedCard)   lockedCard.style.display=goalMet?'none':'block';
+  if(lockHint&&!goalMet) lockHint.textContent=db.goal>0?(done+' of '+db.goal+' books done  '+Math.max(0,db.goal-done)+' to go!'):'set a goal above to unlock';
+  if(goalMet) syncCustomThemePickers();
 }
 
 //  FRIENDS RENDER 
@@ -1370,6 +1741,459 @@ function deleteWorm(id) {
   save(); renderWorms();
 }
 
+function killWorm(id, reason) {
+  initWorms();
+  const w=db.worms.list.find(function(x){return x.id===id;});
+  if(!w)return;
+  if(!db.worms.graveyard) db.worms.graveyard=[];
+  db.worms.graveyard.push({...w, diedDate:todayStr(), diedReason:reason||'starvation :('});
+  db.worms.list=db.worms.list.filter(function(x){return x.id!==id;});
+  const crawlEl=document.querySelector('.crawl-worm[data-worm-id="'+id+'"]');
+  if(crawlEl) crawlEl.remove();
+  toast('💀 '+w.name+' has perished... rest in peace 🪦');
+  save(); renderWorms();
+  if(document.getElementById('page-graveyard').classList.contains('active')) renderGraveyard();
+}
+
+function checkWormDepletion() {
+  initWorms();
+  if(!db.worms.list.length) return;
+  if(!db.worms.lastDepleteDate) db.worms.lastDepleteDate = todayStr();
+  const today = todayStr();
+  if(db.worms.lastDepleteDate === today) return;
+  // count days missed
+  const last = new Date(db.worms.lastDepleteDate+'T12:00:00');
+  const now  = new Date(today+'T12:00:00');
+  const daysMissed = Math.round((now-last)/86400000);
+  db.worms.lastDepleteDate = today;
+  const toKill=[];
+  db.worms.list.forEach(function(w){
+    w.happiness = Math.max(0,(w.happiness||5) - daysMissed*2);
+    if(w.happiness<=0) toKill.push(w.id);
+  });
+  save();
+  toKill.forEach(function(id){ killWorm(id,'starvation 💀'); });
+}
+
+function renderGraveyard() {
+  initWorms();
+  const el=document.getElementById('graveyard-list');
+  if(!el) return;
+  const dead = (db.worms.graveyard||[]);
+  if(!dead.length){
+    el.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🌿</div><p>no worms have died yet, keep feeding them!</p></div></div>';
+    return;
+  }
+  el.innerHTML=dead.slice().reverse().map(function(w){
+    const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
+    const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
+    return '<div class="card" style="opacity:0.7;filter:grayscale(0.6)"><div style="display:flex;gap:14px;align-items:center"><div style="width:80px;flex-shrink:0">'+wormSvg+'</div><div><div style="font-size:14px;font-weight:500;color:var(--text)">'+esc(w.name)+'</div><div style="font-size:12px;color:var(--text3)">born '+fmtDate(w.createdDate)+' · died '+fmtDate(w.diedDate)+'</div><div style="font-size:11px;color:var(--red);margin-top:2px">cause: '+esc(w.diedReason)+'</div><div style="font-size:11px;color:var(--text3)">fed '+( w.timesFed||0)+'× in their lifetime</div></div></div></div>';
+  }).join('');
+}
+
+//  BOOK EDIT MODAL
+function setSelectOrAdd(selId, val) {
+  var sel=document.getElementById(selId); if(!sel) return;
+  // Try to find the option (case-insensitive)
+  var found=false;
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].value.toLowerCase()===val.toLowerCase()){sel.value=sel.options[i].value;found=true;break;}
+  }
+  // If not found and there's a value, add a custom option and select it
+  if(!found && val) {
+    var opt=document.createElement('option');opt.value=val;opt.textContent=val;
+    sel.appendChild(opt);sel.value=val;
+  } else if(!found) {
+    sel.value='';
+  }
+}
+function openEditBook(id) {
+  const b=db.books.find(function(x){return x.id===id;});
+  if(!b) return;
+  document.getElementById('edit-book-id').value=id;
+  document.getElementById('edit-b-title').value=b.title||'';
+  document.getElementById('edit-b-author').value=b.author||'';
+  document.getElementById('edit-b-pages').value=b.pages||'';
+  document.getElementById('edit-b-pagesread').value=b.pagesRead||'';
+  // Support genre2 stored as "Genre1 / Genre2" or just single
+  var genreParts=(b.genre||'').split('/').map(function(s){return s.trim();});
+  setSelectOrAdd('edit-b-genre', genreParts[0]||'');
+  setSelectOrAdd('edit-b-genre2', genreParts[1]||'');
+  document.getElementById('edit-b-series').value=b.series||'';
+  document.getElementById('edit-b-seriesnum').value=b.seriesNum||'';
+  document.getElementById('edit-b-status').value=b.status||'want';
+  document.getElementById('edit-b-rating').value=b.rating||0;
+  document.getElementById('edit-b-start').value=b.startDate||'';
+  document.getElementById('edit-b-finished').value=b.finishedDate||'';
+  document.getElementById('edit-b-color').value=b.color||'#c9a96e';
+  buildSwatches('edit-quick-swatches', (c)=>`document.getElementById('edit-b-color').value='${c}'`);
+  document.getElementById('edit-book-modal').style.display='flex';
+}
+function closeEditBook() { document.getElementById('edit-book-modal').style.display='none'; }
+function saveEditBook() {
+  const id=parseInt(document.getElementById('edit-book-id').value);
+  const b=db.books.find(function(x){return x.id===id;});
+  if(!b) return;
+  b.title=document.getElementById('edit-b-title').value.trim()||b.title;
+  b.author=document.getElementById('edit-b-author').value.trim();
+  b.pages=parseInt(document.getElementById('edit-b-pages').value)||b.pages;
+  b.pagesRead=Math.min(parseInt(document.getElementById('edit-b-pagesread').value)||b.pagesRead, b.pages||99999);
+  var g1=document.getElementById('edit-b-genre').value.trim();
+  var g2=document.getElementById('edit-b-genre2').value.trim();
+  b.genre=g2?g1+' / '+g2:g1;
+  b.series=document.getElementById('edit-b-series').value.trim();
+  b.seriesNum=parseInt(document.getElementById('edit-b-seriesnum').value)||0;
+  b.status=document.getElementById('edit-b-status').value;
+  b.rating=parseInt(document.getElementById('edit-b-rating').value)||0;
+  b.startDate=document.getElementById('edit-b-start').value;
+  b.finishedDate=document.getElementById('edit-b-finished').value;
+  b.color=document.getElementById('edit-b-color').value;
+  closeEditBook();
+  save(); renderAll(); toast('book updated!');
+}
+
+//  WORM EDIT MODAL
+let editWormCustom = {};
+function openEditWorm(id) {
+  const w=db.worms.list.find(function(x){return x.id===id;});
+  if(!w) return;
+  editWormCustom = w.pixelData ? {} : {...(w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4})};
+  document.getElementById('edit-worm-id').value=id;
+  document.getElementById('edit-worm-name').value=w.name||'';
+  buildEditWormCustomizer();
+  document.getElementById('edit-worm-modal').style.display='flex';
+}
+function closeEditWorm() { document.getElementById('edit-worm-modal').style.display='none'; }
+function buildEditWormCustomizer() {
+  const bodyEl=document.getElementById('edit-worm-body-swatches');
+  const hatEl=document.getElementById('edit-worm-hat-swatches');
+  const eyeEl=document.getElementById('edit-worm-eyes');
+  const lenEl=document.getElementById('edit-worm-length-swatches');
+  if(!bodyEl) return;
+  bodyEl.innerHTML=WORM_PARTS.body.map(function(c){return '<div onclick="setEditWormPart(\'color\',\''+c+'\',this)" style="width:24px;height:24px;border-radius:50%;background:'+c+';cursor:pointer;border:2px solid '+(c===editWormCustom.color?'var(--text)':'transparent')+';transition:transform .1s"></div>';}).join('');
+  hatEl.innerHTML=WORM_PARTS.hat.map(function(h){return '<div onclick="setEditWormPart(\'hat\',\''+h+'\',this)" style="padding:4px 8px;border-radius:6px;cursor:pointer;font-size:16px;border:1px solid '+(h===editWormCustom.hat?'var(--accent)':'var(--border2)')+';background:'+(h===editWormCustom.hat?'var(--accent-bg)':'var(--bg3)')+';">'+(h==='none'?'✕ none':h)+'</div>';}).join('');
+  eyeEl.innerHTML=WORM_PARTS.eyes.map(function(e){return '<option value="'+e+'" '+(e===editWormCustom.eyes?'selected':'')+'>'+e+'</option>';}).join('');
+  eyeEl.onchange=function(){editWormCustom.eyes=this.value;updateEditWormPreview();};
+  lenEl.innerHTML=WORM_PARTS.length.map(function(n){return '<div onclick="setEditWormPart(\'length\','+n+',this)" style="padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;border:1px solid '+(n===editWormCustom.length?'var(--accent)':'var(--border2)')+';background:'+(n===editWormCustom.length?'var(--accent-bg)':'var(--bg3)')+';">'+n+'</div>';}).join('');
+  updateEditWormPreview();
+}
+function setEditWormPart(part, val) { editWormCustom[part]=val; buildEditWormCustomizer(); }
+function updateEditWormPreview() {
+  const eyeEl=document.getElementById('edit-worm-eyes');
+  if(eyeEl) editWormCustom.eyes=eyeEl.value;
+  const el=document.getElementById('edit-worm-preview');
+  if(el && editWormCustom.color) el.innerHTML=buildWormSVG(editWormCustom);
+}
+function saveEditWorm() {
+  const id=parseInt(document.getElementById('edit-worm-id').value);
+  const w=db.worms.list.find(function(x){return x.id===id;});
+  if(!w) return;
+  w.name=document.getElementById('edit-worm-name').value.trim()||w.name;
+  if(editWormCustom.color) { w.wormCustom={...editWormCustom}; w.pixelData=null; }
+  closeEditWorm();
+  save(); renderWorms(); toast(w.name+' updated! 🐛');
+}
+
+//  DRAG WORMS ON CRAWL BAR
+function makeCrawlWormDraggable(el) {
+  let dragging=false, startX=0, startLeft=0;
+  el.style.pointerEvents='auto';
+  el.style.cursor='grab';
+  function getX(e){ return e.touches?e.touches[0].clientX:e.clientX; }
+  el.addEventListener('mousedown',function(e){
+    dragging=true; startX=getX(e);
+    startLeft=parseFloat(el.style.left)||0;
+    el.style.animation='none'; el.style.cursor='grabbing';
+    e.preventDefault();
+  });
+  el.addEventListener('touchstart',function(e){
+    dragging=true; startX=getX(e);
+    startLeft=parseFloat(el.style.left)||0;
+    el.style.animation='none'; el.style.cursor='grabbing';
+  },{passive:true});
+  window.addEventListener('mousemove',function(e){ if(!dragging)return; const dx=getX(e)-startX; el.style.left=(startLeft+dx)+'px'; });
+  window.addEventListener('touchmove',function(e){ if(!dragging)return; const dx=getX(e)-startX; el.style.left=(startLeft+dx)+'px'; },{passive:true});
+  function stopDrag(){
+    if(!dragging)return; dragging=false; el.style.cursor='grab';
+    // Resume crawl animation from current position
+    var bar=document.getElementById('worm-crawl-bar');
+    var barW=bar?bar.offsetWidth:window.innerWidth;
+    var curLeft=parseFloat(el.style.left)||0;
+    // Calculate remaining distance and time proportionally
+    var speed=parseFloat(el.style.animationDuration)||25;
+    var remaining=Math.max(0,barW-curLeft);
+    var total=barW+80;
+    var fraction=remaining/total;
+    var timeLeft=Math.max(2,speed*fraction);
+    // Use a one-shot animation to reach the end, then restore looping
+    el.style.transition='none';
+    el.style.animation='none';
+    // Force reflow
+    void el.offsetWidth;
+    el.style.animation='wormCrawl '+timeLeft+'s 0s linear 1';
+    el.addEventListener('animationend',function onEnd(){
+      el.removeEventListener('animationend',onEnd);
+      el.style.left='-80px';
+      var newSpeed=20+Math.random()*25;
+      el.style.animation='wormCrawl '+newSpeed+'s 0s linear infinite';
+    });
+  }
+  window.addEventListener('mouseup',stopDrag);
+  window.addEventListener('touchend',stopDrag);
+}
+
+//  BOOK RECOMMENDATIONS, OpenLibrary subject search
+// Maps genre strings the user might enter to clean OpenLibrary subject slugs
+const GENRE_SUBJECT_MAP = {
+  'fantasy':            'fantasy',
+  'epic fantasy':       'fantasy',
+  'dark fantasy':       'fantasy',
+  'sci-fi':             'science_fiction',
+  'science fiction':    'science_fiction',
+  'sci fi':             'science_fiction',
+  'horror':             'horror',
+  'gothic horror':      'horror',
+  'gothic fiction':     'gothic_fiction',
+  'thriller':           'thriller',
+  'mystery':            'mystery_and_detective_stories',
+  'detective':          'mystery_and_detective_stories',
+  'crime':              'crime_fiction',
+  'true crime':         'true_crime',
+  'romance':            'romance',
+  'fantasy romance':    'romance',
+  'historical fiction': 'historical_fiction',
+  'historical romance': 'historical_fiction',
+  'literary fiction':   'fiction',
+  'contemporary fiction':'fiction',
+  'fiction':            'fiction',
+  'women\'s fiction':   'fiction',
+  "women's fiction":    'fiction',
+  'domestic fiction':   'fiction',
+  'coming of age':      'bildungsroman',
+  'family saga':        'family_stories',
+  'adventure':          'adventure_stories',
+  'memoir':             'biography_and_autobiography',
+  'biography':          'biography_and_autobiography',
+  'autobiography':      'biography_and_autobiography',
+  'non-fiction':        'nonfiction',
+  'nonfiction':         'nonfiction',
+  'mythology':          'mythology',
+  'young adult':        'young_adult_fiction',
+  'ya':                 'young_adult_fiction',
+  'middle grade':       'juvenile_fiction',
+  "children's":         'juvenile_fiction',
+  'dystopian':          'dystopian_fiction',
+  'dystopian fiction':  'dystopian_fiction',
+  'graphic novel':      'comics_and_graphic_novels',
+  'comics':             'comics_and_graphic_novels',
+  'poetry':             'poetry',
+  'short stories':      'short_stories',
+  'self-help':          'self-help',
+  'philosophy':         'philosophy',
+  'classic literature': 'classic_literature',
+  'classics':           'classic_literature',
+  'classic':            'classic_literature',
+  'victorian':          'english_fiction',
+  'history':            'history',
+  'science':            'science',
+  'psychology':         'psychology',
+  'spirituality':       'spirituality',
+  'travel':             'travel',
+};
+
+function getSubjectSlug(genre) {
+  if(!genre) return null;
+  // Handle compound genres like "Classic Literature / Romance"  use most specific first part
+  var primary = genre.split('/')[0].trim();
+  var g = primary.toLowerCase().replace(/['']/g,"'");
+  // Direct match
+  if(GENRE_SUBJECT_MAP[g]) return GENRE_SUBJECT_MAP[g];
+  // Partial / substring match (longer keys first for specificity)
+  var keys = Object.keys(GENRE_SUBJECT_MAP).sort(function(a,b){return b.length-a.length;});
+  for(var i=0;i<keys.length;i++){
+    var key=keys[i];
+    if(g.includes(key) || key.includes(g)) return GENRE_SUBJECT_MAP[key];
+  }
+  // Fallback: slugify
+  return g.replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+}
+
+async function renderRecommendations() {
+  const el=document.getElementById('rec-list');
+  if(!el) return;
+  const library=db.books;
+  if(!library.length){
+    el.innerHTML='<div class="empty"><p>add some books to your library first and we\'ll suggest more!</p></div>';
+    return;
+  }
+
+  // Build taste profile
+  const genreCount={}, authorCount={};
+  library.forEach(function(b){
+    if(b.genre) genreCount[b.genre.toLowerCase()]=(genreCount[b.genre.toLowerCase()]||0)+(b.status==='done'?2:1);
+    if(b.author) authorCount[b.author.toLowerCase()]=(authorCount[b.author.toLowerCase()]||0)+(b.status==='done'?2:1);
+  });
+  const topGenres=Object.entries(genreCount).sort(function(a,b){return b[1]-a[1];}).slice(0,3).map(function(e){return e[0];});
+  const topAuthors=Object.entries(authorCount).sort(function(a,b){return b[1]-a[1];}).slice(0,2).map(function(e){return e[0];});
+
+  // Update label
+  const whyEl=document.getElementById('rec-why');
+  const subjectSlugs=[...new Set(topGenres.map(getSubjectSlug).filter(Boolean))].slice(0,2);
+
+  if(!subjectSlugs.length){
+    // No genres entered, fall back to searching by top author
+    if(!topAuthors.length){ el.innerHTML='<div class="empty"><p>add genre info to your books so we can find recommendations!</p></div>'; return; }
+    if(whyEl) whyEl.textContent='books by authors you like';
+    await fetchRecsByAuthor(topAuthors[0], library);
+    return;
+  }
+
+  if(whyEl) whyEl.textContent='fetching picks for: '+topGenres.slice(0,2).join(', ')+'…';
+  el.innerHTML='<div class="empty" style="padding:20px"><div style="font-size:22px;margin-bottom:8px">⏳</div><p>finding books for you…</p></div>';
+
+  try {
+    const libraryTitles=new Set(library.map(function(b){return b.title.toLowerCase();}));
+    // Fetch from up to 2 subject slugs in parallel, then merge + dedupe
+    const fetches = subjectSlugs.map(function(slug){
+      return fetch('https://openlibrary.org/subjects/'+slug+'.json?limit=20&offset='+Math.floor(Math.random()*40))
+        .then(function(r){return r.json();})
+        .catch(function(){return null;});
+    });
+    const results = await Promise.all(fetches);
+    const seen = new Set();
+    let pool = [];
+    results.forEach(function(data, si){
+      if(!data||!data.works) return;
+      data.works.forEach(function(w){
+        const title=(w.title||'').trim();
+        const author=((w.authors||[])[0]||{}).name||'';
+        const pages=w.number_of_pages||0;
+        const coverId=w.cover_id||w.cover_edition_key;
+        const key=title.toLowerCase();
+        if(!title||seen.has(key)||libraryTitles.has(key)) return;
+        seen.add(key);
+        // score: prefer books with covers, more pages (not too short), matching authors
+        let score = coverId ? 2 : 0;
+        if(pages>100&&pages<900) score+=1;
+        topAuthors.forEach(function(a){ if(author.toLowerCase().includes(a)||a.includes(author.toLowerCase())) score+=4; });
+        pool.push({title, author, pages, coverId, subject: topGenres[si]||topGenres[0], score});
+      });
+    });
+    pool.sort(function(a,b){ return b.score-a.score || Math.random()-0.5; });
+    pool = pool.slice(0,8);
+
+    if(!pool.length){
+      el.innerHTML='<div class="empty"><p>couldn\'t find recommendations right now, try adding genres to your books!</p></div>';
+      if(whyEl) whyEl.textContent='based on your library';
+      return;
+    }
+
+    if(whyEl) whyEl.textContent='based on your interest in: '+topGenres.slice(0,2).join(', ');
+    el.innerHTML=pool.map(function(r){
+      const coverUrl=r.coverId?'https://covers.openlibrary.org/b/id/'+r.coverId+'-M.jpg':'';
+      const tEsc=(r.title||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const aEsc=(r.author||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<div class="suggest-item">'
+        +'<div style="display:flex;gap:12px;align-items:flex-start">'
+        +(coverUrl?'<img src="'+coverUrl+'" alt="" style="width:42px;height:60px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display=\'none\'" />'
+                  :'<div style="width:42px;height:60px;background:var(--bg4);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">📖</div>')
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(r.title)+'</div>'
+        +'<div style="font-size:11px;color:var(--accent);margin-bottom:3px">'+esc(r.author)+'</div>'
+        +'<div style="font-size:10px;color:var(--text3)">'+(r.pages?r.pages+' pages · ':'')+esc(r.subject)+'</div>'
+        +'</div>'
+        +'<button class="btn btn-ghost btn-sm" style="flex-shrink:0;margin-top:4px" onclick="addSearchedBook(\''+tEsc+'\',\''+aEsc+'\','+r.pages+')">+ add</button>'
+        +'</div></div>';
+    }).join('');
+
+  } catch(e) {
+    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary, check your connection</p></div>';
+    if(whyEl) whyEl.textContent='based on your library';
+  }
+}
+
+async function fetchRecsByAuthor(authorName, library) {
+  const el=document.getElementById('rec-list');
+  el.innerHTML='<div class="empty" style="padding:20px"><div style="font-size:22px;margin-bottom:8px">⏳</div><p>finding books for you…</p></div>';
+  try {
+    const libraryTitles=new Set(library.map(function(b){return b.title.toLowerCase();}));
+    const res=await fetch('https://openlibrary.org/search.json?author='+encodeURIComponent(authorName)+'&limit=20&fields=title,author_name,number_of_pages_median,cover_i,first_publish_year');
+    const data=await res.json();
+    const works=(data.docs||[]).filter(function(d){
+      return d.title && !libraryTitles.has(d.title.toLowerCase());
+    }).slice(0,8);
+    if(!works.length){ el.innerHTML='<div class="empty"><p>no new books found for this author</p></div>'; return; }
+    el.innerHTML=works.map(function(d){
+      const title=(d.title||'').trim();
+      const author=((d.author_name||[])[0]||'');
+      const pages=d.number_of_pages_median||0;
+      const coverUrl=d.cover_i?'https://covers.openlibrary.org/b/id/'+d.cover_i+'-M.jpg':'';
+      const tEsc=title.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const aEsc=author.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<div class="suggest-item">'
+        +'<div style="display:flex;gap:12px;align-items:flex-start">'
+        +(coverUrl?'<img src="'+coverUrl+'" alt="" style="width:42px;height:60px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display=\'none\'" />'
+                  :'<div style="width:42px;height:60px;background:var(--bg4);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">📖</div>')
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(title)+'</div>'
+        +'<div style="font-size:11px;color:var(--accent);margin-bottom:3px">'+esc(author)+'</div>'
+        +'<div style="font-size:10px;color:var(--text3)">'+(pages?pages+' pages':'')+(d.first_publish_year?' · '+d.first_publish_year:'')+'</div>'
+        +'</div>'
+        +'<button class="btn btn-ghost btn-sm" style="flex-shrink:0;margin-top:4px" onclick="addSearchedBook(\''+tEsc+'\',\''+aEsc+'\','+pages+')">+ add</button>'
+        +'</div></div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML='<div class="empty"><p>couldn\'t reach OpenLibrary, check your connection</p></div>';
+  }
+}
+
+// Refresh button for recommendations
+function refreshRecommendations() { renderRecommendations(); }
+
+//  PDF READER
+let pdfDoc=null, pdfPage=1, pdfZoom=1.0;
+function loadPDF(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const data=new Uint8Array(e.target.result);
+    if(!window.pdfjsLib){ toast('PDF library not loaded, check connection'); return; }
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    window.pdfjsLib.getDocument({data}).promise.then(function(doc){
+      pdfDoc=doc; pdfPage=1;
+      document.getElementById('pdf-page-total').textContent=doc.numPages;
+      document.getElementById('reader-controls').style.display='block';
+      document.getElementById('pdf-canvas-wrap').style.display='block';
+      document.getElementById('reader-upload-card').style.display='none';
+      renderPDFPage();
+    }).catch(function(){ toast('could not read PDF'); });
+  };
+  reader.readAsArrayBuffer(file);
+}
+function renderPDFPage() {
+  if(!pdfDoc) return;
+  pdfDoc.getPage(pdfPage).then(function(page){
+    const vp=page.getViewport({scale:pdfZoom});
+    const canvas=document.getElementById('pdf-canvas');
+    canvas.width=vp.width; canvas.height=vp.height;
+    canvas.style.maxWidth='100%';
+    page.render({canvasContext:canvas.getContext('2d'),viewport:vp});
+    document.getElementById('pdf-page-num').textContent=pdfPage;
+    document.getElementById('pdf-zoom-label').textContent=Math.round(pdfZoom*100)+'%';
+  });
+}
+function pdfNextPage() { if(pdfDoc&&pdfPage<pdfDoc.numPages){pdfPage++;renderPDFPage();} }
+function pdfPrevPage() { if(pdfDoc&&pdfPage>1){pdfPage--;renderPDFPage();} }
+function pdfZoomIn()  { pdfZoom=Math.min(3,pdfZoom+0.2); renderPDFPage(); }
+function pdfZoomOut() { pdfZoom=Math.max(0.4,pdfZoom-0.2); renderPDFPage(); }
+function closePDF() {
+  pdfDoc=null; pdfPage=1; pdfZoom=1.0;
+  document.getElementById('reader-controls').style.display='none';
+  document.getElementById('pdf-canvas-wrap').style.display='none';
+  document.getElementById('reader-upload-card').style.display='block';
+  document.getElementById('pdf-file-input').value='';
+}
+
 function renderWorms() {
   initWorms();
   const totalPages=db.logs.reduce(function(s,l){return s+l.pages;},0);
@@ -1379,16 +2203,14 @@ function renderWorms() {
   if(countEl) countEl.textContent=db.worms.list.length;
   if(todayEl) todayEl.textContent=todayPages;
 
-  const qualifyingSessions=db.logs.filter(function(l){return l.date===todayStr()&&l.pages>=100;});
-  const usedSessions=db.worms.usedPixelSessions||[];
-  const freshSession=qualifyingSessions.find(function(l){return !usedSessions.includes(l.id);});
-  const pixelUnlocked=!!freshSession;
+  const qualifyingSessions=db.logs.filter(function(l){return l.date===todayStr();});
+  const pixelUnlocked = todayPages >= 100;
 
   if(subEl) subEl.textContent=pixelUnlocked?'🎨 pixel art unlocked!':(100-todayPages)+' more to unlock';
   const pixelCard=document.getElementById('pixel-editor-card');
   if(pixelCard){
     pixelCard.style.display=pixelUnlocked?'block':'none';
-    pixelCard.dataset.sessionId=freshSession?freshSession.id:'';
+    pixelCard.dataset.sessionId=qualifyingSessions.length?qualifyingSessions[qualifyingSessions.length-1].id:'';
     if(pixelUnlocked) initPixelEditor();
   }
 
@@ -1403,7 +2225,7 @@ function renderWorms() {
     const mood=hp>=8?'happy 😊':hp>=5?'content 😐':'hungry 😢';
     const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
     const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
-    return '<div class="worm-card"><div class="worm-svg-display">'+wormSvg+'</div><div class="worm-info"><div class="worm-name-display">'+esc(w.name)+'</div><div style="font-size:11px;color:var(--text3)">'+mood+' · fed '+(w.timesFed||0)+'× · since '+fmtDate(w.createdDate)+'</div><div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">happiness '+hp+'/10</div><div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+hpFill+'%;background:'+(hp>=7?'var(--green)':hp>=4?'var(--accent)':'var(--red)')+';border-radius:3px;transition:width .4s"></div></div></div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="feedWorm('+w.id+')">🍎 feed</button><button class="btn btn-ghost btn-sm" onclick="deleteWorm('+w.id+')">release</button></div></div></div>';
+    return '<div class="worm-card" id="worm-el-'+w.id+'" draggable="false"><div class="worm-svg-display" style="cursor:grab">'+wormSvg+'</div><div class="worm-info"><div class="worm-name-display">'+esc(w.name)+'</div><div style="font-size:11px;color:var(--text3)">'+mood+' · fed '+(w.timesFed||0)+'× · since '+fmtDate(w.createdDate)+'</div><div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">happiness '+hp+'/10</div><div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+hpFill+'%;background:'+(hp>=7?'var(--green)':hp>=4?'var(--accent)':'var(--red)')+';border-radius:3px;transition:width .4s"></div></div></div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="feedWorm('+w.id+')">🍎 feed</button><button class="btn btn-ghost btn-sm" onclick="openEditWorm('+w.id+')">✎ edit</button><button class="btn btn-ghost btn-sm" onclick="deleteWorm('+w.id+')">release</button></div></div></div>';
   }).join('');
 }
 
@@ -1471,9 +2293,33 @@ function savePixelWorm(){
 }
 
 //  CRAWL BAR 
+function toggleCrawlBar(){
+  var bar=document.getElementById('worm-crawl-bar');
+  var btn=document.getElementById('worm-crawl-toggle');
+  if(!bar) return;
+  var hidden = bar.dataset.hidden==='1';
+  if(hidden){
+    bar.dataset.hidden='0';
+    bar.style.display='';
+    if(btn) btn.textContent='🐛 hide worms';
+    prefs.wormsHidden=false;
+  } else {
+    bar.dataset.hidden='1';
+    bar.style.display='none';
+    if(btn) btn.textContent='🐛 show worms';
+    prefs.wormsHidden=true;
+  }
+  savePrefs();
+}
 function renderCrawlBar(){
   initWorms();
-  const bar=document.getElementById('worm-crawl-bar');if(!bar)return;
+  var bar=document.getElementById('worm-crawl-bar');if(!bar)return;
+  // Restore hidden state
+  if(prefs.wormsHidden){
+    bar.dataset.hidden='1';bar.style.display='none';
+    var btn=document.getElementById('worm-crawl-toggle');if(btn)btn.textContent='🐛 show worms';
+  }
+  if(bar.dataset.hidden==='1') return;
   if(!db.worms.list.length){bar.innerHTML='';return;}
   const existingIds=new Set(Array.from(bar.querySelectorAll('.crawl-worm')).map(function(el){return+el.dataset.wormId;}));
   db.worms.list.forEach(function(w){if(!existingIds.has(w.id))spawnWormEl(bar,w);});
@@ -1483,10 +2329,11 @@ function spawnWormEl(bar,w){
   const wc=w.wormCustom||{color:'#7ecb6e',hat:'none',eyes:'◉◉',length:4};
   const wormSvg=w.pixelData?pixelDataToImg(w.pixelData):buildWormSVG(wc);
   const el=document.createElement('div');
-  el.className='crawl-worm';el.dataset.wormId=w.id;el.innerHTML=wormSvg;el.title=w.name;
+  el.className='crawl-worm';el.dataset.wormId=w.id;el.innerHTML=wormSvg;el.title=w.name+' (drag me!)';
   const speed=20+Math.random()*25,delay=-(Math.random()*speed),flip=Math.random()>0.5;
-  el.style.cssText='position:absolute;bottom:2px;width:72px;height:36px;transform:scaleX('+(flip?-1:1)+');animation:wormCrawl '+speed+'s '+delay+'s linear infinite;pointer-events:none;';
+  el.style.cssText='position:absolute;bottom:2px;width:72px;height:36px;transform:scaleX('+(flip?-1:1)+');animation:wormCrawl '+speed+'s '+delay+'s linear infinite;pointer-events:auto;cursor:grab;';
   bar.appendChild(el);
+  makeCrawlWormDraggable(el);
 }
 
 //  SPOTIFY 
