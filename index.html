@@ -537,7 +537,7 @@ textarea { resize: vertical; line-height: 1.5; }
       </div>
 
       <!-- GOALS -->
-     <div id="page-goals" class="page">
+      <div id="page-goals" class="page">
         <div class="page-header"><h1 class="page-title">goals</h1><p class="page-sub ui-text">track ur reading!</p></div>
         <div class="card">
           <div class="card-title">annual reading goal</div>
@@ -563,20 +563,10 @@ textarea { resize: vertical; line-height: 1.5; }
           </div>
         </div>
         <div class="card"><div class="card-title">pace analysis</div><div id="pace-info" style="font-size:13px;color:var(--text2);line-height:1.8"></div></div>
-        <div class="card">
-          <div class="card-title">streak freezes 🧊</div>
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-            <div>
-              <div style="font-family:'Instrument Serif',serif;font-size:36px;color:var(--blue);line-height:1" id="freeze-count">0</div>
-              <div style="font-size:12px;color:var(--text3);margin-top:2px">freezes available</div>
-            </div>
-            <div style="flex:1;min-width:180px">
-              <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">missed a day? use a freeze to protect your streak. earn one every time you finish a book.</div>
-              <button class="btn btn-ghost" onclick="useStreakFreeze()" style="border-color:var(--blue);color:var(--blue)">🧊 use a freeze</button>
-            </div>
+        <div style="flex:1;min-width:180px">
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">missed a day? use a freeze to protect your streak. earn one every time you finish a book.</div>
+            <button class="btn btn-ghost" onclick="useStreakFreeze()" style="border-color:var(--blue);color:var(--blue)">🧊 use a freeze</button>
           </div>
-        </div>
-      </div>
 
         <!-- Custom theme designer: unlocks when annual goal is met -->
         <div class="card" id="custom-theme-card" style="display:none;border-color:rgba(var(--accent-rgb),0.3)">
