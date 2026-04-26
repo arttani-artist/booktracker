@@ -1337,7 +1337,8 @@ function earnStreakFreeze(){
   save();
   toast('🧊 streak freeze earned! ('+db.streakFreezes+' available)');
   renderGoals();
-}const books=db.books.filter(b=>b.status==='done'&&b.startDate&&b.finishedDate);if(!books.length)return 0;const avg=books.reduce((s,b)=>s+Math.max(1,(new Date(b.finishedDate)-new Date(b.startDate))/86400000),0)/books.length;return Math.round(avg);}
+}
+function calcAvgDays(){const books=db.books.filter(b=>b.status==='done'&&b.startDate&&b.finishedDate);if(!books.length)return 0;const avg=books.reduce((s,b)=>s+Math.max(1,(new Date(b.finishedDate)-new Date(b.startDate))/86400000),0)/books.length;return Math.round(avg);}
 function editBookPages(id){const b=db.books.find(x=>x.id===id);if(!b)return;const np=prompt('edit page count for "'+b.title+'"\ncurrent: '+(b.pages||'unknown'),b.pages||'');if(np===null)return;const parsed=parseInt(np);if(isNaN(parsed)||parsed<1){toast('enter a valid page number');return;}b.pages=parsed;if(b.pagesRead>b.pages)b.pagesRead=b.pages;save();renderAll();toast('page count updated!');}
 
 //  WORMS 
