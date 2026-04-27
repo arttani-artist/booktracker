@@ -917,6 +917,64 @@ textarea { resize: vertical; line-height: 1.5; }
         <div id="worm-list"></div>
       </div>
 
+    <!-- FORUM -->
+      <div id="page-forum" class="page">
+        <div class="page-header"><h1 class="page-title">forum</h1><p class="page-sub ui-text">share thoughts, reviews & recommendations</p></div>
+        <div class="card">
+          <div class="card-title">new post</div>
+          <div class="form-group"><label>title</label><input id="forum-new-title" placeholder="e.g. just finished ACOTAR and i'm not ok" /></div>
+          <div class="form-group"><label>tag</label>
+            <select id="forum-new-tag" style="width:auto">
+              <option value="discussion">💬 discussion</option>
+              <option value="review">⭐ review</option>
+              <option value="recommendation">📚 recommendation</option>
+              <option value="question">❓ question</option>
+              <option value="rant">🔥 rant</option>
+            </select>
+          </div>
+          <div class="form-group"><label>body</label><textarea id="forum-new-body" rows="4" placeholder="what's on your mind..."></textarea></div>
+          <button class="btn btn-primary" onclick="submitForumPost()">post</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="forum-tag-filters">
+          <button class="forum-tag-btn active" data-tag="all" onclick="filterForum('all',this)">all</button>
+          <button class="forum-tag-btn" data-tag="discussion" onclick="filterForum('discussion',this)">💬 discussion</button>
+          <button class="forum-tag-btn" data-tag="review" onclick="filterForum('review',this)">⭐ review</button>
+          <button class="forum-tag-btn" data-tag="recommendation" onclick="filterForum('recommendation',this)">📚 recs</button>
+          <button class="forum-tag-btn" data-tag="question" onclick="filterForum('question',this)">❓ questions</button>
+          <button class="forum-tag-btn" data-tag="rant" onclick="filterForum('rant',this)">🔥 rants</button>
+        </div>
+        <div id="forum-posts-list"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="page-profile" class="page">
+        <div class="page-header"><h1 class="page-title">my profile</h1><p class="page-sub ui-text">your public reading identity</p></div>
+        <div class="card" style="padding:20px">
+          <div class="profile-cover"><div class="profile-cover-inner"></div></div>
+          <div class="profile-av-large" id="profile-av-display">?</div>
+          <div class="profile-username" id="profile-username-display">bookworm</div>
+          <div class="profile-bio" id="profile-bio-display">no bio yet</div>
+          <div class="profile-stats-row">
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-books-read">0</div><div class="profile-stat-label">books read</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-pages-read">0</div><div class="profile-stat-label">pages read</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-post-count">0</div><div class="profile-stat-label">posts</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-worm-count">0</div><div class="profile-stat-label">worms</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">edit profile</div>
+          <div class="form-group"><label>display name</label><input id="profile-name-in" placeholder="bookworm2000" /></div>
+          <div class="form-group"><label>bio</label><textarea id="profile-bio-in" rows="3" placeholder="i read therefore i am..."></textarea></div>
+          <div class="form-group"><label>favourite genre</label><input id="profile-fav-genre-in" placeholder="dark academia, fantasy..." /></div>
+          <button class="btn btn-primary" onclick="saveProfile()">save profile</button>
+        </div>
+        <div class="card">
+          <div class="card-title">my posts</div>
+          <div id="profile-posts-list"></div>
+        </div>
+      </div>
+
+      
       <!-- GRAVEYARD -->
       <div id="page-graveyard" class="page">
         <div class="page-header"><h1 class="page-title">🪦 worm graveyard</h1><p class="page-sub ui-text">rest in peace, little ones</p></div>
