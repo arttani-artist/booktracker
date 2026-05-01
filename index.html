@@ -1470,6 +1470,8 @@ function nav(id, el) {
   if(el) el.classList.add('active');
   setTimeout(function(){
     if(id==='worms')    { initWorms(); renderWorms(); }
+    if(page==='forum') renderForum();
+    if(page==='profile') renderProfilePage();
     if(id==='stats')    renderStats();
     if(id==='goals')    renderGoals();
     if(id==='share')    renderShare();
