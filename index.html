@@ -2475,139 +2475,239 @@ async function searchBooks(){
 function addSearchedBook(title,author,pages){db.books.push({id:Date.now(),title:title,author:author,pages:pages||0,genre:'',series:'',seriesNum:0,status:'want',color:SPINE_COLORS[db.books.length%SPINE_COLORS.length],rating:0,pagesRead:0,startDate:'',finishedDate:'',addedDate:todayStr()});save();renderAll();toast('"'+title+'" added to want to read!');}
 
 // FORUM & PROFILE
-if(!db.forum) db.forum = [];
-if(!db.profile) db.profile = { name:'', bio:'', favGenre:'' };
+// FORUM & PROFILE (supabase-backed)
 var forumTagFilter = 'all';
+var forumRealtime = null;
 
-function submitForumPost(){
-  var title = document.getElementById('forum-new-title').value.trim();
-  var body = document.getElementById('forum-new-body').value.trim();
-  var tag = document.getElementById('forum-new-tag').value;
-  if(!title || !body){ toast('fill in a title and body!'); return; }
-  var uname = db.profile.name || (document.getElementById('sidebar-uname')||{}).textContent || 'anonymous';
-  db.forum.unshift({ id: Date.now(), title, body, tag, author: uname, ts: Date.now(), likes: 0, likedByMe: false, comments: [] });
-  document.getElementById('forum-new-title').value = '';
-  document.getElementById('forum-new-body').value = '';
-  save(); renderForum(); renderProfilePage();
-  toast('posted! ✉️');
+// ── PROFILE ──────────────────────────────────────────────
+
+async function loadProfile() {
+  var user = sbUser();
+  if (!user) return;
+  var { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if (data) {
+    if (!db.profile) db.profile = {};
+    db.profile.name = data.username || '';
+    db.profile.bio = data.bio || '';
+    db.profile.favGenre = data.fav_genre || '';
+  }
+  renderProfilePage();
 }
 
-function filterForum(tag, btn){
-  forumTagFilter = tag;
-  document.querySelectorAll('#forum-tag-filters .forum-tag-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tag === tag); });
-  renderForum();
+async function saveProfile() {
+  var user = sbUser();
+  var name = document.getElementById('profile-name-in').value.trim();
+  var bio = document.getElementById('profile-bio-in').value.trim();
+  var genre = document.getElementById('profile-fav-genre-in').value.trim();
+  if (user) {
+    var { error } = await sb.from('profiles').upsert({
+      id: user.id, username: name, bio: bio, fav_genre: genre
+    });
+    if (error) { toast('save failed: ' + error.message); return; }
+  }
+  if (!db.profile) db.profile = {};
+  db.profile.name = name;
+  db.profile.bio = bio;
+  db.profile.favGenre = genre;
+  save();
+  renderProfilePage();
+  toast('profile saved!');
 }
 
-function renderForum(){
-  if(!db.forum) db.forum = [];
-  var list = document.getElementById('forum-posts-list'); if(!list) return;
-  var posts = forumTagFilter === 'all' ? db.forum : db.forum.filter(function(p){ return p.tag === forumTagFilter; });
-  if(!posts.length){ list.innerHTML = '<div class="empty"><div class="empty-icon">✉️</div><p>no posts yet — be the first!</p></div>'; return; }
-  var tagEmoji = { discussion:'💬', review:'⭐', recommendation:'📚', question:'❓', rant:'🔥' };
-  list.innerHTML = posts.map(function(p){
-    var ago = timeAgo(p.ts);
-    var commentsHtml = (p.comments||[]).map(function(c){ return '<div class="forum-comment"><span class="forum-comment-author">'+esc(c.author)+'</span><span class="forum-comment-time">'+timeAgo(c.ts)+'</span><br>'+esc(c.body)+'</div>'; }).join('');
-    return '<div class="forum-post" id="fp-'+p.id+'">'+
-      '<div class="forum-post-header">'+
-        '<div class="forum-av">'+esc(p.author).charAt(0).toUpperCase()+'</div>'+
-        '<div><div class="forum-author">'+esc(p.author)+'</div><div class="forum-time">'+ago+'</div></div>'+
-        '<div class="forum-tag">'+(tagEmoji[p.tag]||'')+'&nbsp;'+p.tag+'</div>'+
-      '</div>'+
-      '<div class="forum-title" onclick="toggleForumComments('+p.id+')">'+esc(p.title)+'</div>'+
-      '<div class="forum-body">'+esc(p.body)+'</div>'+
-      '<div class="forum-footer">'+
-        '<button class="forum-action-btn'+(p.likedByMe?' liked':'\"')+'" onclick="likePost('+p.id+')">♥ '+p.likes+'</button>'+
-        '<button class="forum-action-btn" onclick="toggleForumComments('+p.id+')">💬 '+(p.comments||[]).length+' comments</button>'+
-        '<button class="forum-action-btn" onclick="deleteForumPost('+p.id+')" style="margin-left:auto;color:var(--text3)">✕ delete</button>'+
-      '</div>'+
-      '<div class="forum-comments-wrap" id="fc-'+p.id+'">'+
-        commentsHtml+
-        '<div style="display:flex;gap:6px;margin-top:8px">'+
-          '<input placeholder="add a comment…" style="flex:1;font-size:12px;padding:6px 10px" id="comment-in-'+p.id+'" onkeydown="if(event.key===\'Enter\')addComment('+p.id+')" />'+
-          '<button class="btn btn-ghost btn-sm" onclick="addComment('+p.id+')">post</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-}
-
-function toggleForumComments(id){
-  var el = document.getElementById('fc-'+id); if(!el) return;
-  el.classList.toggle('open');
-}
-
-function likePost(id){
-  var p = db.forum.find(function(x){ return x.id===id; }); if(!p) return;
-  p.likedByMe = !p.likedByMe;
-  p.likes = Math.max(0, p.likes + (p.likedByMe ? 1 : -1));
-  save(); renderForum();
-}
-
-function addComment(postId){
-  var inp = document.getElementById('comment-in-'+postId); if(!inp) return;
-  var body = inp.value.trim(); if(!body) return;
-  var p = db.forum.find(function(x){ return x.id===postId; }); if(!p) return;
-  var uname = db.profile.name || (document.getElementById('sidebar-uname')||{}).textContent || 'anonymous';
-  if(!p.comments) p.comments = [];
-  p.comments.push({ id: Date.now(), author: uname, body, ts: Date.now() });
-  save(); renderForum();
-  // re-open comments after re-render
-  setTimeout(function(){ var fc = document.getElementById('fc-'+postId); if(fc) fc.classList.add('open'); }, 10);
-}
-
-function deleteForumPost(id){
-  db.forum = db.forum.filter(function(p){ return p.id !== id; });
-  save(); renderForum(); renderProfilePage();
-}
-
-function timeAgo(ts){
-  var diff = Date.now() - ts, m = Math.floor(diff/60000), h = Math.floor(m/60), d = Math.floor(h/24);
-  if(d > 0) return d+'d ago';
-  if(h > 0) return h+'h ago';
-  if(m > 0) return m+'m ago';
-  return 'just now';
-}
-
-function saveProfile(){
-  if(!db.profile) db.profile = {};
-  db.profile.name = document.getElementById('profile-name-in').value.trim();
-  db.profile.bio = document.getElementById('profile-bio-in').value.trim();
-  db.profile.favGenre = document.getElementById('profile-fav-genre-in').value.trim();
-  save(); renderProfilePage(); toast('profile saved!');
-}
-
-function renderProfilePage(){
-  if(!db.profile) db.profile = {};
-  var name = db.profile.name || 'bookworm';
+function renderProfilePage() {
+  if (!db.profile) db.profile = {};
+  var name = db.profile.name || sbUser()?.email?.split('@')[0] || 'bookworm';
   var bio = db.profile.bio || 'no bio yet';
   var av = document.getElementById('profile-av-display');
   var unEl = document.getElementById('profile-username-display');
   var bioEl = document.getElementById('profile-bio-display');
-  if(av) av.textContent = name.charAt(0).toUpperCase();
-  if(unEl) unEl.textContent = name;
-  if(bioEl) bioEl.textContent = bio + (db.profile.favGenre ? ' · ❤️ ' + db.profile.favGenre : '');
+  if (av) av.textContent = name.charAt(0).toUpperCase();
+  if (unEl) unEl.textContent = name;
+  if (bioEl) bioEl.textContent = bio + (db.profile.favGenre ? ' · ❤️ ' + db.profile.favGenre : '');
   var nameIn = document.getElementById('profile-name-in');
   var bioIn = document.getElementById('profile-bio-in');
   var genreIn = document.getElementById('profile-fav-genre-in');
-  if(nameIn) nameIn.value = db.profile.name || '';
-  if(bioIn) bioIn.value = db.profile.bio || '';
-  if(genreIn) genreIn.value = db.profile.favGenre || '';
-  // stats
-  var done = (db.books||[]).filter(function(b){ return b.status==='done'; });
-  var totalPages = (db.sessions||[]).reduce(function(a,s){ return a+(s.pages||0); },0);
-  var posts = (db.forum||[]).filter(function(p){ return p.author === name; });
-  var el = function(id){ return document.getElementById(id); };
-  if(el('profile-books-read')) el('profile-books-read').textContent = done.length;
-  if(el('profile-pages-read')) el('profile-pages-read').textContent = totalPages.toLocaleString();
-  if(el('profile-post-count')) el('profile-post-count').textContent = posts.length;
-  if(el('profile-worm-count')) el('profile-worm-count').textContent = ((db.worms&&db.worms.list)||[]).length;
-  // my posts
-  var pList = document.getElementById('profile-posts-list');
-  if(pList){
-    if(!posts.length){ pList.innerHTML='<div class="empty"><p>no posts yet</p></div>'; }
-    else { pList.innerHTML = posts.map(function(p){ return '<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:500;color:var(--text)">'+esc(p.title)+'</div><div style="font-size:11px;color:var(--text3)">'+p.tag+' · '+timeAgo(p.ts)+'</div></div>'; }).join(''); }
-  }
+  if (nameIn) nameIn.value = db.profile.name || '';
+  if (bioIn) bioIn.value = db.profile.bio || '';
+  if (genreIn) genreIn.value = db.profile.favGenre || '';
+  var done = (db.books || []).filter(function(b) { return b.status === 'done'; });
+  var totalPages = (db.sessions || []).reduce(function(a, s) { return a + (s.pages || 0); }, 0);
+  var el = function(id) { return document.getElementById(id); };
+  if (el('profile-books-read')) el('profile-books-read').textContent = done.length;
+  if (el('profile-pages-read')) el('profile-pages-read').textContent = totalPages.toLocaleString();
+  if (el('profile-worm-count')) el('profile-worm-count').textContent = ((db.worms && db.worms.list) || []).length;
+  loadMyPostsForProfile(name);
 }
+
+async function loadMyPostsForProfile(name) {
+  var pList = document.getElementById('profile-posts-list');
+  if (!pList) return;
+  if (!sbUser()) { pList.innerHTML = '<div class="empty"><p>sign in to see your posts</p></div>'; return; }
+  var { data } = await sb.from('forum_posts').select('*').eq('user_id', sbUser().id).order('created_at', { ascending: false });
+  var posts = data || [];
+  if (el('profile-post-count')) el('profile-post-count').textContent = posts.length;
+  if (!posts.length) { pList.innerHTML = '<div class="empty"><p>no posts yet</p></div>'; return; }
+  pList.innerHTML = posts.map(function(p) {
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--border)">' +
+      '<div style="font-size:13px;font-weight:500;color:var(--text)">' + esc(p.title) + '</div>' +
+      '<div style="font-size:11px;color:var(--text3)">' + p.tag + ' · ' + timeAgo(new Date(p.created_at).getTime()) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── FORUM ────────────────────────────────────────────────
+
+async function renderForum() {
+  var list = document.getElementById('forum-posts-list');
+  if (!list) return;
+  list.innerHTML = '<div class="empty"><p>loading…</p></div>';
+  var query = sb.from('forum_posts').select('*, forum_comments(*)').order('created_at', { ascending: false });
+  if (forumTagFilter !== 'all') query = query.eq('tag', forumTagFilter);
+  var { data, error } = await query;
+  if (error) { list.innerHTML = '<div class="empty"><p>failed to load posts</p></div>'; return; }
+  var posts = data || [];
+
+  // get this user's likes
+  var myLikes = new Set();
+  if (sbUser()) {
+    var { data: likesData } = await sb.from('forum_likes').select('post_id').eq('user_id', sbUser().id);
+    (likesData || []).forEach(function(l) { myLikes.add(l.post_id); });
+  }
+
+  if (!posts.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">✉️</div><p>no posts yet — be the first!</p></div>'; return; }
+  var tagEmoji = { discussion: '💬', review: '⭐', recommendation: '📚', question: '❓', rant: '🔥' };
+  var myUserId = sbUser()?.id;
+
+  list.innerHTML = posts.map(function(p) {
+    var liked = myLikes.has(p.id);
+    var comments = p.forum_comments || [];
+    var commentsHtml = comments.map(function(c) {
+      return '<div class="forum-comment">' +
+        '<span class="forum-comment-author">' + esc(c.author) + '</span>' +
+        '<span class="forum-comment-time">' + timeAgo(new Date(c.created_at).getTime()) + '</span><br>' +
+        esc(c.body) +
+      '</div>';
+    }).join('');
+    var canDelete = myUserId && p.user_id === myUserId;
+    return '<div class="forum-post" id="fp-' + p.id + '">' +
+      '<div class="forum-post-header">' +
+        '<div class="forum-av">' + esc(p.author).charAt(0).toUpperCase() + '</div>' +
+        '<div><div class="forum-author">' + esc(p.author) + '</div><div class="forum-time">' + timeAgo(new Date(p.created_at).getTime()) + '</div></div>' +
+        '<div class="forum-tag">' + (tagEmoji[p.tag] || '') + '&nbsp;' + p.tag + '</div>' +
+      '</div>' +
+      '<div class="forum-title" onclick="toggleForumComments(' + p.id + ')">' + esc(p.title) + '</div>' +
+      '<div class="forum-body">' + esc(p.body) + '</div>' +
+      '<div class="forum-footer">' +
+        '<button class="forum-action-btn' + (liked ? ' liked' : '') + '" onclick="likePost(' + p.id + ',' + liked + ')">♥ ' + p.likes + '</button>' +
+        '<button class="forum-action-btn" onclick="toggleForumComments(' + p.id + ')">💬 ' + comments.length + ' comments</button>' +
+        (canDelete ? '<button class="forum-action-btn" onclick="deleteForumPost(' + p.id + ')" style="margin-left:auto;color:var(--text3)">✕ delete</button>' : '') +
+      '</div>' +
+      '<div class="forum-comments-wrap" id="fc-' + p.id + '">' +
+        commentsHtml +
+        (sbUser() ?
+          '<div style="display:flex;gap:6px;margin-top:8px">' +
+            '<input placeholder="add a comment…" style="flex:1;font-size:12px;padding:6px 10px" id="comment-in-' + p.id + '" onkeydown="if(event.key===\'Enter\')addComment(' + p.id + ')" />' +
+            '<button class="btn btn-ghost btn-sm" onclick="addComment(' + p.id + ')">post</button>' +
+          '</div>'
+          : '<div style="font-size:12px;color:var(--text3);margin-top:8px">sign in to comment</div>'
+        ) +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  startForumRealtime();
+}
+
+function startForumRealtime() {
+  if (forumRealtime) return; // already subscribed
+  forumRealtime = sb.channel('forum-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_posts' }, function() { renderForum(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_comments' }, function() { renderForum(); })
+    .subscribe();
+}
+
+function filterForum(tag, btn) {
+  forumTagFilter = tag;
+  document.querySelectorAll('#forum-tag-filters .forum-tag-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tag === tag);
+  });
+  renderForum();
+}
+
+async function submitForumPost() {
+  if (!sbUser()) { toast('sign in to post!'); return; }
+  var title = document.getElementById('forum-new-title').value.trim();
+  var body = document.getElementById('forum-new-body').value.trim();
+  var tag = document.getElementById('forum-new-tag').value;
+  if (!title || !body) { toast('fill in a title and body!'); return; }
+  var author = db.profile?.name || sbUser().email.split('@')[0];
+  var { error } = await sb.from('forum_posts').insert({
+    user_id: sbUser().id, author: author, title: title, body: body, tag: tag, likes: 0
+  });
+  if (error) { toast('post failed: ' + error.message); return; }
+  document.getElementById('forum-new-title').value = '';
+  document.getElementById('forum-new-body').value = '';
+  toast('posted! ✉️');
+  // realtime will auto-refresh, but force it too
+  renderForum();
+}
+
+async function likePost(postId, currentlyLiked) {
+  if (!sbUser()) { toast('sign in to like!'); return; }
+  if (currentlyLiked) {
+    await sb.from('forum_likes').delete().eq('post_id', postId).eq('user_id', sbUser().id);
+    await sb.from('forum_posts').update({ likes: sb.rpc('decrement', { x: 1 }) }).eq('id', postId);
+    // simpler: just use raw sql via rpc or just re-fetch; easiest is:
+    var { data: p } = await sb.from('forum_posts').select('likes').eq('id', postId).single();
+    await sb.from('forum_posts').update({ likes: Math.max(0, (p?.likes || 1) - 1) }).eq('id', postId);
+  } else {
+    var { error } = await sb.from('forum_likes').insert({ post_id: postId, user_id: sbUser().id });
+    if (error) { toast('already liked!'); return; }
+    var { data: p } = await sb.from('forum_posts').select('likes').eq('id', postId).single();
+    await sb.from('forum_posts').update({ likes: (p?.likes || 0) + 1 }).eq('id', postId);
+  }
+  renderForum();
+}
+
+async function addComment(postId) {
+  if (!sbUser()) { toast('sign in to comment!'); return; }
+  var inp = document.getElementById('comment-in-' + postId);
+  if (!inp) return;
+  var body = inp.value.trim();
+  if (!body) return;
+  var author = db.profile?.name || sbUser().email.split('@')[0];
+  var { error } = await sb.from('forum_comments').insert({
+    post_id: postId, user_id: sbUser().id, author: author, body: body
+  });
+  if (error) { toast('comment failed: ' + error.message); return; }
+  inp.value = '';
+  renderForum();
+  setTimeout(function() {
+    var fc = document.getElementById('fc-' + postId);
+    if (fc) fc.classList.add('open');
+  }, 300);
+}
+
+async function deleteForumPost(id) {
+  if (!sbUser()) return;
+  await sb.from('forum_posts').delete().eq('id', id).eq('user_id', sbUser().id);
+  renderForum();
+}
+
+function toggleForumComments(id) {
+  var el = document.getElementById('fc-' + id);
+  if (el) el.classList.toggle('open');
+}
+
+function timeAgo(ts) {
+  var diff = Date.now() - ts, m = Math.floor(diff / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+  if (d > 0) return d + 'd ago';
+  if (h > 0) return h + 'h ago';
+  if (m > 0) return m + 'm ago';
+  return 'just now';
+}
+
+function el(id) { return document.getElementById(id); }
   
 boot();
 </script>
