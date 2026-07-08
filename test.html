@@ -1,1 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-case="lower" data-density="normal">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>readtracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
+<script src="core.js"></script>
+<script src="library.js"></script>
+<script src="stats.js"></script>
+<script src="worms.js"></script>
+<script src="discover.js"></script>
+<style>
+/*  THEME TOKENS  */
+:root {
+  --accent: #c9a96e;
+  --accent2: #e8c99a;
+  --accent-bg: rgba(201,169,110,0.1);
+  --accent-rgb: 201,169,110;
+}
+[data-theme="dark"] {
+  --bg: #0d0b09; --bg2: #141210; --bg3: #1c1915; --bg4: #252118;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --text: #ede8e1; --text2: #a09690; --text3: #5e5850;
+  --green: #5dbf8a; --green-bg: rgba(93,191,138,0.1);
+  --red: #e07070; --red-bg: rgba(224,112,112,0.08);
+  --blue: #7ab3e0; --blue-bg: rgba(122,179,224,0.1);
+  --shadow: rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg: #faf8f5; --bg2: #f0ece6; --bg3: #e8e2da; --bg4: #ddd6cc;
+  --border: rgba(0,0,0,0.07); --border2: rgba(0,0,0,0.13);
+  --text: #1a1612; --text2: #6b5f54; --text3: #a89f96;
+  --green: #2d7a56; --green-bg: rgba(45,122,86,0.1);
+  --red: #b84040; --red-bg: rgba(184,64,64,0.08);
+  --blue: #2c6fa8; --blue-bg: rgba(44,111,168,0.1);
+  --shadow: rgba(0,0,0,0.12);
+}
+[data-theme="warm"] {
+  --bg: #1a1008; --bg2: #231507; --bg3: #2e1c0c; --bg4: #3a240f;
+  --border: rgba(255,200,120,0.08); --border2: rgba(255,200,120,0.16);
+  --text: #f5e8d0; --text2: #b89870; --text3: #7a6040;
+  --green: #88cc66; --green-bg: rgba(136,204,102,0.1);
+  --red: #e08060; --red-bg: rgba(224,128,96,0.1);
+  --blue: #88b8e0; --blue-bg: rgba(136,184,224,0.1);
+  --shadow: rgba(0,0,0,0.5);
+}
+[data-theme="blue"] {
+  --bg: #0a0d12; --bg2: #111520; --bg3: #181c2a; --bg4: #202434;
+  --border: rgba(120,150,255,0.08); --border2: rgba(120,150,255,0.14);
+  --text: #d8dff0; --text2: #8090b0; --text3: #404860;
+  --green: #60d090; --green-bg: rgba(96,208,144,0.1);
+  --red: #e07080; --red-bg: rgba(224,112,128,0.1);
+  --blue: #80b0ff; --blue-bg: rgba(128,176,255,0.1);
+  --shadow: rgba(0,0,0,0.5);
+}
+
+/* accent overrides */
+[data-accent="rose"]   { --accent:#e8a0b0; --accent2:#f5c0cc; --accent-bg:rgba(232,160,176,0.1); --accent-rgb:232,160,176; }
+[data-accent="sage"]   { --accent:#88c4a0; --accent2:#aadabb; --accent-bg:rgba(136,196,160,0.1); --accent-rgb:136,196,160; }
+[data-accent="sky"]    { --accent:#7ab8e8; --accent2:#a0ccf4; --accent-bg:rgba(122,184,232,0.1); --accent-rgb:122,184,232; }
+[data-accent="lavender"]{ --accent:#b0a0e0; --accent2:#ccc0f0; --accent-bg:rgba(176,160,224,0.1); --accent-rgb:176,160,224; }
+[data-accent="coral"]  { --accent:#e89070; --accent2:#f4b090; --accent-bg:rgba(232,144,112,0.1); --accent-rgb:232,144,112; }
+[data-accent="gold"]   { --accent:#c9a96e; --accent2:#e8c99a; --accent-bg:rgba(201,169,110,0.1); --accent-rgb:201,169,110; }
+
+/* texture */
+[data-texture="paper"]  { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); }
+[data-texture="dots"]   { background-image: radial-gradient(circle, rgba(var(--accent-rgb),0.12) 1px, transparent 1px); background-size: 24px 24px; }
+[data-texture="lines"]  { background-image: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--accent-rgb),0.06) 39px, rgba(var(--accent-rgb),0.06) 40px); }
+[data-texture="grid"]   { background-image: linear-gradient(rgba(var(--accent-rgb),0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--accent-rgb),0.05) 1px, transparent 1px); background-size: 32px 32px; }
+
+/* density */
+[data-density="compact"] { --pad: 14px; --gap: 10px; --fs: 13px; }
+[data-density="normal"]  { --pad: 20px; --gap: 14px; --fs: 15px; }
+[data-density="spacious"]{ --pad: 28px; --gap: 20px; --fs: 16px; }
+
+/* case */
+[data-case="lower"] .ui-text,
+[data-case="lower"] .nav-label,
+[data-case="lower"] h1, [data-case="lower"] h2, [data-case="lower"] h3,
+[data-case="lower"] .card-title, [data-case="lower"] .metric-label,
+[data-case="lower"] .btn:not(.btn-icon), [data-case="lower"] .tab-btn,
+[data-case="lower"] .pill, [data-case="lower"] label { text-transform: lowercase; }
+[data-case="proper"] .ui-text,
+[data-case="proper"] .nav-label,
+[data-case="proper"] h1, [data-case="proper"] h2, [data-case="proper"] h3,
+[data-case="proper"] .card-title, [data-case="proper"] .metric-label,
+[data-case="proper"] .btn:not(.btn-icon), [data-case="proper"] .tab-btn,
+[data-case="proper"] .pill, [data-case="proper"] label { text-transform: capitalize; }
+
+/*  RESET & BASE  */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: var(--fs, 15px); line-height: 1.6; transition: background .3s, color .3s; padding-bottom: 80px; -webkit-text-size-adjust: 100%; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+/*  LAYOUT  */
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 210px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main-content { flex: 1; min-width: 0; padding: var(--pad, 20px) calc(var(--pad, 20px) * 1.6); max-width: 900px; }
+
+/*  SIDEBAR  */
+.logo-wrap { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+.logo-name { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--accent); letter-spacing: -0.3px; }
+.logo-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.nav-section { padding: 10px 0; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 18px; cursor: pointer; color: var(--text3); font-size: 13px; transition: all .12s; border-left: 2px solid transparent; user-select: none; }
+.nav-item:hover { background: var(--bg3); color: var(--text2); }
+.nav-item.active { background: var(--accent-bg); color: var(--accent); border-left-color: var(--accent); }
+.nav-icon { font-size: 15px; flex-shrink: 0; }
+.nav-label { font-size: 13px; }
+.nav-divider { height: 1px; background: var(--border); margin: 6px 18px; }
+.sidebar-bottom { margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg3); border-radius: 8px; cursor: pointer; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--accent); flex-shrink: 0; }
+.user-name { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-email { font-size: 10px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/*  PAGES  */
+.page { display: none; animation: fadeIn .2s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.page-header { margin-bottom: calc(var(--pad, 20px) * 1.2); }
+.page-title { font-family: 'Instrument Serif', serif; font-size: 30px; color: var(--text); font-weight: 400; line-height: 1.1; }
+.page-sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
+
+/*  CARDS  */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: var(--pad, 20px); margin-bottom: var(--gap, 14px); }
+.card-title { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+.card-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap, 14px); margin-bottom: var(--gap, 14px); }
+.card-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap, 14px); margin-bottom: var(--gap, 14px); }
+
+/*  METRICS  */
+.metrics-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: var(--gap, 14px); }
+.metric { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.metric.hi { border-color: rgba(var(--accent-rgb),0.25); background: var(--accent-bg); }
+.metric-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+.metric-val { font-family: 'Instrument Serif', serif; font-size: 30px; color: var(--text); line-height: 1; }
+.metric.hi .metric-val { color: var(--accent); }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+/*  FORMS  */
+.form-group { margin-bottom: 12px; }
+label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; letter-spacing: 0.3px; }
+input, select, textarea { width: 100%; padding: 8px 11px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-family: 'Geist', sans-serif; font-size: 13px; outline: none; transition: border-color .15s; -webkit-appearance: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+select option { background: var(--bg3); }
+textarea { resize: vertical; line-height: 1.5; }
+.form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+/*  BUTTONS  */
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 400; transition: all .12s; border: 1px solid transparent; }
+.btn-primary { background: var(--accent); color: #100c06; border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-ghost { background: transparent; color: var(--text2); border-color: var(--border2); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: var(--red-bg); color: var(--red); border-color: rgba(var(--red),0); }
+.btn-full { width: 100%; justify-content: center; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 5px 7px; background: transparent; border: none; color: var(--text3); cursor: pointer; border-radius: 6px; font-size: 14px; transition: all .12s; }
+.btn-icon:hover { color: var(--red); background: var(--red-bg); }
+
+/*  TABS  */
+.tab-bar { display: flex; gap: 2px; background: var(--bg3); border-radius: 9px; padding: 3px; margin-bottom: 14px; }
+.tab-btn { flex: 1; padding: 6px; text-align: center; cursor: pointer; font-size: 12px; border-radius: 7px; color: var(--text3); border: none; background: transparent; font-family: 'Geist', sans-serif; transition: all .12s; }
+.tab-btn.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px var(--shadow); }
+
+/*  BOOK ITEMS  */
+.book-list { display: flex; flex-direction: column; }
+.book-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.book-item:last-child { border-bottom: none; }
+.book-spine { width: 5px; border-radius: 3px; flex-shrink: 0; align-self: stretch; min-height: 46px; cursor: pointer; transition: width .15s; position: relative; }
+.book-spine:hover { width: 9px; }
+.book-spine::after { content: '✎'; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 8px; color: rgba(0,0,0,0.4); opacity: 0; transition: opacity .15s; }
+.book-spine:hover::after { opacity: 1; }
+.book-meta { flex: 1; min-width: 0; }
+.book-title-t { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.book-author-t { font-size: 12px; color: var(--text3); }
+.book-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; align-items: center; }
+.progress-bar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; }
+.book-actions { display: flex; gap: 2px; flex-shrink: 0; align-items: center; }
+.star { font-size: 12px; cursor: pointer; color: var(--text3); transition: color .1s; }
+.star.on { color: var(--accent); }
+
+/*  PILLS  */
+.pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+.pill-reading { background: var(--blue-bg); color: var(--blue); }
+.pill-want    { background: var(--bg4);    color: var(--text3); }
+.pill-done    { background: var(--green-bg); color: var(--green); }
+.pill-genre   { background: var(--accent-bg); color: var(--accent); }
+.pill-series  { background: rgba(176,160,224,0.1); color: #b0a0e0; }
+.series-badge { font-size: 10px; color: #b0a0e0; display: flex; align-items: center; gap: 3px; }
+
+/*  LOG ITEMS  */
+.log-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.log-item:last-child { border-bottom: none; }
+.log-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+.log-body { flex: 1; }
+.log-book { font-size: 13px; font-weight: 500; }
+.log-info { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.log-note { font-size: 11px; color: var(--text2); font-style: italic; margin-top: 2px; }
+.log-right { font-size: 11px; color: var(--text3); flex-shrink: 0; padding-top: 2px; }
+
+/*  STREAK  */
+.streak-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+.s-dot { width: 13px; height: 13px; border-radius: 3px; cursor: default; }
+
+/*  FRIENDS  */
+.friend-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.friend-item:last-child { border-bottom: none; }
+.friend-av { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: var(--accent); flex-shrink: 0; }
+.friend-info { flex: 1; }
+.friend-name { font-size: 13px; font-weight: 500; }
+.friend-stat { font-size: 11px; color: var(--text3); }
+.friend-reading { font-size: 11px; color: var(--text2); font-style: italic; }
+
+/*  COLOUR PICKER  */
+.color-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .12s, border-color .12s; }
+.swatch.active { border-color: var(--text); transform: scale(1.15); }
+.color-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.theme-swatch { width: 44px; height: 32px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; transition: all .12s; position: relative; overflow: hidden; }
+.theme-swatch.active { border-color: var(--accent); }
+
+/*  AUTH  */
+.auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.auth-card { width: 100%; max-width: 380px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
+.auth-logo { font-family: 'Instrument Serif', serif; font-size: 28px; color: var(--accent); margin-bottom: 4px; }
+.auth-sub  { font-size: 13px; color: var(--text3); margin-bottom: 24px; }
+.auth-toggle { font-size: 12px; color: var(--text3); margin-top: 14px; text-align: center; }
+.auth-toggle a { color: var(--accent); cursor: pointer; }
+.auth-error { font-size: 12px; color: var(--red); background: var(--red-bg); border-radius: 6px; padding: 8px 10px; margin-top: 10px; display: none; }
+.auth-error.show { display: block; }
+.setup-note { font-size: 12px; color: var(--text3); background: var(--bg3); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; line-height: 1.6; }
+.setup-note code { color: var(--accent); font-size: 11px; }
+.setup-note a { color: var(--accent); }
+
+/*  GOAL RING  */
+.goal-wrap { display: flex; align-items: center; gap: 20px; }
+.goal-text .g-big { font-family: 'Instrument Serif', serif; font-size: 42px; color: var(--accent); line-height: 1; }
+.goal-text .g-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+/*  IMPORT ZONE  */
+.drop-zone { border: 1px dashed var(--border2); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all .15s; }
+.drop-zone:hover { border-color: var(--accent); background: var(--accent-bg); }
+.dz-icon { font-size: 28px; margin-bottom: 8px; }
+.dz-label { font-size: 14px; color: var(--text); }
+.dz-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+/*  SHARE PREVIEW  */
+.share-pre { background: linear-gradient(135deg, #1a140a 0%, #261b08 100%); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+
+/*  MOBILE NAV  */
+.mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 1px solid var(--border); padding: 6px 0 env(safe-area-inset-bottom, 10px); z-index: 200; }
+.mob-inner { display: flex; justify-content: space-around; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.mob-inner::-webkit-scrollbar { display: none; }
+.mob-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: var(--text3); font-size: 10px; padding: 4px 8px; border-radius: 8px; border: none; background: transparent; font-family: 'Geist', sans-serif; transition: color .12s; flex-shrink: 0; min-width: 52px; }
+.mob-btn.active { color: var(--accent); }
+.mob-icon { font-size: 18px; }
+
+/*  MISC  */
+.empty { text-align: center; padding: 28px; color: var(--text3); }
+.empty-icon { font-size: 32px; margin-bottom: 8px; }
+.empty p { font-size: 13px; }
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--bg4); color: var(--text); padding: 9px 18px; border-radius: 20px; font-size: 12px; z-index: 9999; transition: transform .25s; border: 1px solid var(--border2); white-space: nowrap; pointer-events: none; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.chart-wrap { position: relative; }
+.section-gap { height: var(--gap, 14px); }
+.inline-flex { display: flex; align-items: center; gap: 8px; }
+.color-picker-inline { width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 2px solid var(--border2); cursor: pointer; background: none; }
+.series-group-header { font-size: 11px; color: var(--text3); font-style: italic; padding: 8px 0 4px; letter-spacing: 0.3px; border-top: 1px solid var(--border); margin-top: 6px; }
+.series-group-header:first-child { border-top: none; margin-top: 0; }
+.order-controls { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.order-controls label { margin-bottom: 0; }
+.pending-chip { font-size: 10px; background: var(--accent-bg); color: var(--accent); padding: 2px 7px; border-radius: 10px; }
+
+/*  WORM CARDS  */
+.worm-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; }
+.worm-svg-display { width: 90px; flex-shrink: 0; }
+.worm-svg-display svg { width: 100%; height: auto; }
+.worm-info { flex: 1; }
+.worm-name-display { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+
+/*  WORM TEMPLATES  */
+.worm-template-pick { border: 2px solid var(--border2); border-radius: 10px; padding: 8px; cursor: pointer; transition: border-color .12s, background .12s; background: var(--bg3); }
+.worm-template-pick:hover { border-color: var(--accent); background: var(--accent-bg); }
+.worm-template-pick.selected { border-color: var(--accent); background: var(--accent-bg); }
+.worm-template-pick svg { width: 100%; height: auto; display: block; }
+
+/*  PIXEL EDITOR  */
+.pixel-swatch { width: 22px; height: 22px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: transform .1s; }
+.pixel-swatch:hover { transform: scale(1.15); }
+.pixel-swatch.active { border-color: var(--text); transform: scale(1.15); }
+#pixel-canvas { display: block; width: 100%; max-width: 320px; touch-action: none; }
+#pixel-preview { display: block; touch-action: none; }
+
+/*  CRAWL BAR  */
+@keyframes wormCrawl {
+  from { left: -80px; }
+  to   { left: 100%; }
+}
+.crawl-worm svg { width: 100%; height: 100%; }
+@media (max-width: 680px) {
+  #worm-crawl-bar { bottom: calc(56px + env(safe-area-inset-bottom, 0px)); z-index: 201; }
+}
+  
+/*  BOOK SEARCH  */
+.book-search-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.book-search-item:last-child { border-bottom: none; }
+.book-search-cover { width: 36px; height: 48px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.book-search-cover-placeholder { width: 36px; height: 48px; background: var(--bg4); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+/*  PLAYLIST PRESETS  */
+.playlist-preset-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 10px; cursor: pointer; text-align: left; transition: all .12s; font-family: 'Geist', sans-serif; }
+.playlist-preset-btn:hover { border-color: var(--accent); background: var(--accent-bg); }
+.playlist-preset-icon { font-size: 20px; margin-bottom: 5px; }
+.playlist-preset-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.playlist-preset-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/*  SUGGEST ITEMS  */
+.suggest-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.suggest-item:last-child { border-bottom: none; }
+
+/* FORUM */
+.forum-post { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; transition: border-color .15s; }
+.forum-post:hover { border-color: var(--border2); }
+.forum-post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.forum-av { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: var(--accent); flex-shrink: 0; }
+.forum-author { font-size: 13px; font-weight: 500; color: var(--text); }
+.forum-time { font-size: 11px; color: var(--text3); }
+.forum-tag { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--accent-bg); color: var(--accent); margin-left: auto; }
+.forum-title { font-family: 'Instrument Serif', serif; font-size: 18px; color: var(--text); margin-bottom: 6px; line-height: 1.3; cursor: pointer; }
+.forum-title:hover { color: var(--accent); }
+.forum-body { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 12px; white-space: pre-wrap; }
+.forum-footer { display: flex; align-items: center; gap: 12px; }
+.forum-action-btn { background: none; border: none; color: var(--text3); font-size: 12px; cursor: pointer; font-family: 'Geist', sans-serif; padding: 4px 8px; border-radius: 6px; transition: all .12s; display: flex; align-items: center; gap: 4px; }
+.forum-action-btn:hover { background: var(--bg3); color: var(--text); }
+.forum-action-btn.liked { color: var(--accent); }
+.forum-comment { background: var(--bg3); border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 12px; color: var(--text2); line-height: 1.6; }
+.forum-comment-author { font-weight: 500; color: var(--text); margin-right: 6px; }
+.forum-comment-time { color: var(--text3); font-size: 11px; }
+.forum-comments-wrap { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; display: none; }
+.forum-comments-wrap.open { display: block; }
+.forum-tag-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text2); cursor: pointer; font-family: 'Geist', sans-serif; transition: all .12s; }
+.forum-tag-btn.active, .forum-tag-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: rgba(var(--accent-rgb),0.3); }
+
+/* PROFILE */
+.profile-cover { height: 100px; background: linear-gradient(135deg, var(--bg3), var(--bg4)); border-radius: 12px 12px 0 0; margin: -20px -20px 0; position: relative; overflow: hidden; }
+.profile-cover-inner { height: 100%; background: linear-gradient(135deg, rgba(var(--accent-rgb),0.15), rgba(var(--accent-rgb),0.05)); }
+.profile-av-large { width: 64px; height: 64px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 500; color: var(--accent); border: 3px solid var(--bg2); position: relative; margin-top: -32px; margin-left: 20px; }
+.profile-username { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--text); margin-top: 8px; }
+.profile-bio { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.6; }
+.profile-stats-row { display: flex; gap: 20px; margin-top: 14px; flex-wrap: wrap; }
+.profile-stat { text-align: center; }
+.profile-stat-val { font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--text); }
+.profile-stat-label { font-size: 11px; color: var(--text3); }
+  
+@media (max-width: 680px) {
+  .sidebar { display: none; }
+  .main-content { padding: 14px 14px 90px; overflow-x: hidden; }
+  .mobile-nav { display: block; }
+  .metrics-row { grid-template-columns: 1fr 1fr; }
+  .card-grid2, .card-grid3 { grid-template-columns: 1fr; }
+  .form-row2, .form-row3 { grid-template-columns: 1fr; }
+  .goal-wrap { flex-direction: column; align-items: flex-start; }
+  .app { overflow-x: hidden; }
+  .worm-card { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" style="display:none">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">readtracker</div>
+      <div class="auth-sub ui-text" id="auth-mode-sub">your reading journey, everywhere</div>
+
+      <div id="supabase-setup-note" class="setup-note" style="display:none">
+        ⚙️ <strong>Setup required:</strong> Replace <code>YOUR_SUPABASE_URL</code> and <code>YOUR_SUPABASE_ANON_KEY</code> at the top of the &lt;script&gt; in index.html with your project values from <a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a> → Settings → API.
+      </div>
+
+      <div class="form-group"><label>email</label><input id="auth-email" type="email" placeholder="you@example.com" /></div>
+      <div class="form-group"><label>password</label><input id="auth-pw" type="password" placeholder="••••••••" /></div>
+      <div class="form-group" id="auth-username-wrap" style="display:none"><label>username</label><input id="auth-username" placeholder="bookworm2000" /></div>
+      <button class="btn btn-primary btn-full" onclick="doAuth()" id="auth-btn">sign in</button>
+      <div class="auth-error" id="auth-err"></div>
+      <div class="auth-toggle" id="auth-toggle">no account? <a onclick="toggleAuthMode()">sign up</a></div>
+      <div style="margin-top:10px;text-align:center"><a style="font-size:11px;color:var(--text3);cursor:pointer" onclick="continueOffline()">continue without account →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen" style="display:none">
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-wrap">
+        <div class="logo-name">readtracker</div>
+      </div>
+      <nav class="nav-section">
+        <div class="nav-item active" data-page="dashboard" onclick="nav('dashboard',this)"><span class="nav-icon">◈</span><span class="nav-label">dashboard</span></div>
+        <div class="nav-item" data-page="library" onclick="nav('library',this)"><span class="nav-icon">◫</span><span class="nav-label">library</span></div>
+        <div class="nav-item" data-page="log" onclick="nav('log',this)"><span class="nav-icon">◎</span><span class="nav-label">log session</span></div>
+        <div class="nav-item" data-page="series" onclick="nav('series',this)"><span class="nav-icon">◧</span><span class="nav-label">series</span></div>
+        <div class="nav-item" data-page="stats" onclick="nav('stats',this)"><span class="nav-icon">◉</span><span class="nav-label">stats</span></div>
+        <div class="nav-item" data-page="goals" onclick="nav('goals',this)"><span class="nav-icon">◌</span><span class="nav-label">goals</span></div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" data-page="discover" onclick="nav('discover',this)"><span class="nav-icon">✦</span><span class="nav-label">discover</span></div>
+        <div class="nav-item" data-page="worms" onclick="nav('worms',this)"><span class="nav-icon">🐛</span><span class="nav-label">my worms</span></div>
+        <div class="nav-item" data-page="graveyard" onclick="nav('graveyard',this)"><span class="nav-icon">🪦</span><span class="nav-label">graveyard</span></div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" data-page="reader" onclick="nav('reader',this)"><span class="nav-icon">📖</span><span class="nav-label">pdf reader</span></div>
+        <div class="nav-divider"></div>
+        <div class="nav-item" data-page="friends" onclick="nav('friends',this)"><span class="nav-icon">◑</span><span class="nav-label">friends</span></div>
+        <div class="nav-item" data-page="forum" onclick="nav('forum',this)"><span class="nav-icon">✉</span><span class="nav-label">forum</span></div>
+        <div class="nav-item" data-page="profile" onclick="nav('profile',this)"><span class="nav-icon">◑</span><span class="nav-label">my profile</span></div>
+        <div class="nav-item" data-page="share" onclick="nav('share',this)"><span class="nav-icon">◐</span><span class="nav-label">share</span></div>
+        <div class="nav-item" data-page="import" onclick="nav('import',this)"><span class="nav-icon">◒</span><span class="nav-label">import</span></div>
+        <div class="nav-item" data-page="settings" onclick="nav('settings',this)"><span class="nav-icon">◓</span><span class="nav-label">settings</span></div>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="user-chip" onclick="nav('settings')">
+          <div class="user-avatar" id="sidebar-av">?</div>
+          <div style="min-width:0">
+            <div class="user-name" id="sidebar-uname">offline</div>
+            <div class="user-email" id="sidebar-email">local only</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header">
+          <h1 class="page-title">dashboard</h1>
+          <p class="page-sub ui-text" id="dash-date"></p>
+        </div>
+        <div class="metrics-row" id="dash-metrics"></div>
+        <div class="card">
+          <div class="card-title">pages this week</div>
+          <div class="chart-wrap" style="height:120px"><canvas id="week-chart" role="img" aria-label="Pages per day this week">weekly pages</canvas></div>
+        </div>
+        <div class="card-grid2">
+          <div class="card"><div class="card-title">currently reading</div><div id="dash-reading"></div></div>
+          <div class="card"><div class="card-title">streak (past 35 days)</div><div class="streak-grid" id="streak-cal"></div></div>
+        </div>
+      </div>
+
+      <!-- LIBRARY -->
+      <div id="page-library" class="page">
+        <div class="page-header"><h1 class="page-title">library</h1><p class="page-sub ui-text">all your books</p></div>
+        <div class="card">
+          <div class="card-title">add a book</div>
+          <div class="form-row2">
+            <div class="form-group"><label>title *</label><input id="b-title" placeholder="Catching Fire" /></div>
+            <div class="form-group"><label>author</label><input id="b-author" placeholder="Suzzane Collins" /></div>
+          </div>
+          <div class="form-row3">
+            <div class="form-group"><label>pages</label><input id="b-pages" type="number" placeholder="662" min="1" /></div>
+            <div class="form-group"><label>genre</label><input id="b-genre" placeholder="Dystopian Fantasy" /></div>
+            <div class="form-group"><label>series</label><input id="b-series" placeholder="The Hunger Games" /></div>
+          </div>
+          <div class="form-row3">
+            <div class="form-group"><label>series #</label><input id="b-series-num" type="number" placeholder="1" min="1" /></div>
+            <div class="form-group"><label>status</label>
+              <select id="b-status">
+                <option value="reading">currently reading</option>
+                <option value="want">want to read</option>
+                <option value="done">finished</option>
+              </select>
+            </div>
+            <div class="form-group"><label>rating</label>
+              <select id="b-rating">
+                <option value="0">no rating</option>
+                <option value="5">★★★★★</option>
+                <option value="4">★★★★☆</option>
+                <option value="3">★★★☆☆</option>
+                <option value="2">★★☆☆☆</option>
+                <option value="1">★☆☆☆☆</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row2">
+            <div class="form-group"><label>start date</label><input id="b-start" type="date" /></div>
+            <div class="form-group"><label>spine colour</label>
+              <div class="inline-flex" style="margin-top:4px">
+                <input type="color" id="b-color" value="#c9a96e" class="color-picker-inline" />
+                <div class="color-swatches" id="quick-swatches"></div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="addBook()">add book</button>
+        </div>
+
+        <div class="order-controls">
+          <label>sort by:</label>
+          <select id="lib-sort" onchange="renderLibrary()" style="width:auto">
+            <option value="added">date added</option>
+            <option value="title">title</option>
+            <option value="author">author</option>
+            <option value="rating">rating ↓</option>
+            <option value="pages">pages ↓</option>
+            <option value="progress">progress</option>
+          </select>
+        </div>
+
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="libTab('reading',this)">reading</button>
+          <button class="tab-btn" onclick="libTab('want',this)">want to read</button>
+          <button class="tab-btn" onclick="libTab('done',this)">finished</button>
+          <button class="tab-btn" onclick="libTab('all',this)">all</button>
+        </div>
+        <div id="lib-list"></div>
+      </div>
+
+      <!-- LOG -->
+      <div id="page-log" class="page">
+        <div class="page-header"><h1 class="page-title">log a session</h1><p class="page-sub ui-text">track time and pages</p></div>
+        <div class="card">
+          <div class="form-group"><label>book *</label><select id="log-book"><option value="">select a book...</option></select></div>
+          <div class="form-row2">
+            <div class="form-group"><label>pages read *</label><input id="log-pages" type="number" placeholder="45" min="1" /></div>
+            <div class="form-group"><label>minutes spent</label><input id="log-mins" type="number" placeholder="60" min="1" /></div>
+          </div>
+          <div class="form-row2">
+            <div class="form-group"><label>date</label><input id="log-date" type="date" /></div>
+            <div class="form-group"><label>mark as finished?</label>
+              <select id="log-finish"><option value="no">no, still reading</option><option value="yes">yes, finished!</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label>notes</label><textarea id="log-notes" rows="2" placeholder="omg like this rlly craaazy thing happened.."></textarea></div>
+          <button class="btn btn-primary btn-full" onclick="logSession()">save session</button>
+        </div>
+        <div class="card"><div class="card-title">recent sessions</div><div id="log-recent"></div></div>
+      </div>
+
+      <!-- SERIES -->
+      <div id="page-series" class="page">
+        <div class="page-header"><h1 class="page-title">series</h1><p class="page-sub ui-text">track multi-book series</p></div>
+        <div class="card">
+          <div class="card-title">add a series</div>
+          <div class="form-row2">
+            <div class="form-group"><label>series name *</label><input id="ser-name" placeholder="Arc of a Scythe" /></div>
+            <div class="form-group"><label>total books (if known)</label><input id="ser-total" type="number" placeholder="10" min="1" /></div>
+          </div>
+          <div class="form-row2">
+            <div class="form-group"><label>author</label><input id="ser-author" placeholder="Neal Shusterman" /></div>
+            <div class="form-group"><label>genre</label><input id="ser-genre" placeholder="Dystopian Fantasy" /></div>
+          </div>
+          <button class="btn btn-primary" onclick="addSeries()">add series</button>
+        </div>
+        <div id="series-list"></div>
+      </div>
+
+      <!-- STATS -->
+      <div id="page-stats" class="page">
+        <div class="page-header"><h1 class="page-title">stats</h1><p class="page-sub ui-text">deep dive</p></div>
+        <div class="metrics-row" id="stats-metrics"></div>
+        <div class="card"><div class="card-title">books finished by month</div><div class="chart-wrap" style="height:170px"><canvas id="monthly-chart" role="img" aria-label="Books per month">monthly</canvas></div></div>
+        <div class="card"><div class="card-title">pages per day: last 30 days</div><div class="chart-wrap" style="height:150px"><canvas id="daily30-chart" role="img" aria-label="Daily pages 30d">daily30</canvas></div></div>
+        <div class="card-grid2">
+          <div class="card"><div class="card-title">by genre</div><div class="chart-wrap" style="height:150px"><canvas id="genre-chart" role="img" aria-label="By genre">genre</canvas></div></div>
+          <div class="card"><div class="card-title">by day of week</div><div class="chart-wrap" style="height:150px"><canvas id="dow-chart" role="img" aria-label="Day of week">dow</canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">finished books: sorted by rating</div>
+          <div id="stats-done-list"></div>
+        </div>
+      </div>
+
+      <!-- GOALS -->
+      <div id="page-goals" class="page">
+        <div class="page-header"><h1 class="page-title">goals</h1><p class="page-sub ui-text">track ur reading!</p></div>
+        <div class="card">
+          <div class="card-title">annual reading goal</div>
+          <div class="goal-wrap">
+            <canvas id="goal-donut" width="96" height="96" role="img" aria-label="Annual goal donut">goal</canvas>
+            <div class="goal-text"><div class="g-big" id="g-pct">0%</div><div class="g-sub" id="g-desc">0 of 0 books</div></div>
+          </div>
+          <div class="form-row2" style="margin-top:14px">
+            <div class="form-group"><label>books this year</label><input id="goal-in" type="number" placeholder="24" min="1" /></div>
+            <div style="display:flex;align-items:flex-end;padding-bottom:12px"><button class="btn btn-primary" onclick="setGoal()">save</button></div>
+          </div>
+        </div>
+        <div class="card-grid2">
+          <div class="card"><div class="card-title">daily page goal</div>
+            <div class="form-group"><label>pages per day</label><input id="daily-g-in" type="number" placeholder="30" /></div>
+            <button class="btn btn-primary btn-full" onclick="setDailyGoal()">save</button>
+            <div id="daily-g-status" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+          </div>
+          <div class="card"><div class="card-title">weekly page goal</div>
+            <div class="form-group"><label>pages per week</label><input id="weekly-g-in" type="number" placeholder="200" /></div>
+            <button class="btn btn-primary btn-full" onclick="setWeeklyGoal()">save</button>
+            <div id="weekly-g-status" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">pace analysis</div><div id="pace-info" style="font-size:13px;color:var(--text2);line-height:1.8"></div></div>
+        <div style="flex:1;min-width:180px">
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">missed a day? use a freeze to protect your streak. earn one every time you finish a book.</div>
+            <button class="btn btn-ghost" onclick="useStreakFreeze()" style="border-color:var(--blue);color:var(--blue)">🧊 use a freeze</button>
+          </div>
+
+        <!-- Custom theme designer: unlocks when annual goal is met -->
+        <div class="card" id="custom-theme-card" style="display:none;border-color:rgba(var(--accent-rgb),0.3)">
+          <div class="card-title" style="color:var(--accent)">🎨 goal reward: design your theme <span style="color:var(--green);font-size:10px">· unlocked!</span></div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7">you smashed your reading goal! as a reward, you can design a completely custom colour scheme. it'll apply across the whole app.</p>
+          <div class="form-row3" style="margin-bottom:14px">
+            <div class="form-group">
+              <label>background colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-bg" value="#0d0b09" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-bg-hex" style="font-size:11px;color:var(--text3)">#0d0b09</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>text colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-text" value="#ede8e1" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-text-hex" style="font-size:11px;color:var(--text3)">#ede8e1</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>accent colour</label>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <input type="color" id="custom-accent" value="#c9a96e" class="color-picker-inline" style="width:42px;height:42px" oninput="previewCustomTheme()" />
+                <span id="custom-accent-hex" style="font-size:11px;color:var(--text3)">#c9a96e</span>
+              </div>
+            </div>
+          </div>
+          <!-- live mini preview -->
+          <div id="custom-theme-preview" style="border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid rgba(128,128,128,0.2);font-size:12px;transition:all .2s">
+            <div style="font-size:15px;font-weight:500;margin-bottom:6px" id="prev-title">readtracker</div>
+            <div style="height:3px;border-radius:2px;width:60%;margin-bottom:8px" id="prev-bar"></div>
+            <div style="font-size:11px;opacity:0.6" id="prev-sub">reading progress · 2025</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="applyCustomTheme()">✓ apply my theme</button>
+            <button class="btn btn-ghost" onclick="resetCustomTheme()">↺ reset to default</button>
+          </div>
+        </div>
+        <!-- locked hint shown before goal is met -->
+        <div class="card" id="custom-theme-locked" style="border-style:dashed;border-color:var(--border2)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:24px">🔒</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--text2)">custom theme designer</div>
+              <div style="font-size:12px;color:var(--text3)" id="theme-lock-hint">meet your annual reading goal to unlock</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FRIENDS -->
+      <div id="page-friends" class="page">
+        <div class="page-header"><h1 class="page-title">friends</h1><p class="page-sub ui-text">see what others are reading</p></div>
+        <div class="card">
+          <div class="card-title">add a friend</div>
+          <div class="inline-flex">
+            <input id="friend-username" placeholder="their username" style="flex:1" />
+            <button class="btn btn-primary" onclick="sendFriendRequest()">send request</button>
+          </div>
+          <div id="friend-req-status" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
+        </div>
+        <div class="card"><div class="card-title">pending requests <span class="pending-chip" id="pending-count" style="display:none"></span></div><div id="pending-list"></div></div>
+        <div class="card"><div class="card-title">friends</div><div id="friends-list"></div></div>
+      </div>
+
+      <!-- SHARE -->
+      <div id="page-share" class="page">
+        <div class="page-header"><h1 class="page-title">share</h1><p class="page-sub ui-text">show off your progress</p></div>
+        <div class="card"><div class="card-title">reading card</div><div class="share-pre" id="share-pre"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="copyShareText()">copy as text</button>
+            <button class="btn btn-ghost" onclick="copyEmbed()">copy embed code</button>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">embed widget</div>
+          <textarea id="embed-code" rows="5" style="font-family:monospace;font-size:11px" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- IMPORT -->
+      <div id="page-import" class="page">
+        <div class="page-header"><h1 class="page-title">import & export</h1></div>
+        <div class="card">
+          <div class="card-title">import from goodreads</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7">Goodreads -> My Books -> Import and export -> Export Library CSV</p>
+          <label class="drop-zone" for="gr-file"><div class="dz-icon">📥</div><div class="dz-label">drop goodreads CSV</div><div class="dz-sub">or click to browse</div></label>
+          <input type="file" id="gr-file" accept=".csv" style="display:none" onchange="importGoodreads(this)">
+          <div id="gr-status" style="margin-top:10px;font-size:12px;color:var(--green)"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">import custom CSV</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Format: <code style="color:var(--accent);font-size:11px">Title, Author, Pages, Status, Genre, Series, SeriesNum</code></p>
+          <label class="drop-zone" for="csv-file"><div class="dz-icon">📄</div><div class="dz-label">drop custom CSV</div><div class="dz-sub">Title, Author, Pages, Status, Genre, Series, SeriesNum</div></label>
+          <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="importCSV(this)">
+        </div>
+        <div class="card"><div class="card-title">export data</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="exportJSON()">JSON backup</button>
+            <button class="btn btn-ghost" onclick="exportCSV()">books CSV</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('restore-file').click()">restore JSON</button>
+          </div>
+          <input type="file" id="restore-file" accept=".json" style="display:none" onchange="restoreJSON(this)">
+        </div>
+        <div class="card" style="border-color:rgba(224,112,112,0.2)">
+          <div class="card-title" style="color:var(--red)">danger zone</div>
+          <button class="btn btn-danger" onclick="clearAll()">clear all data</button>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page">
+        <div class="page-header"><h1 class="page-title">settings</h1></div>
+        <div class="card">
+          <div class="card-title">account</div>
+          <div id="account-info" style="font-size:13px;color:var(--text2);margin-bottom:12px"></div>
+          <button class="btn btn-ghost btn-sm" onclick="doSignOut()" id="signout-btn">sign out</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">theme</div>
+          <label style="margin-bottom:8px">colour scheme</label>
+          <div class="color-row" id="theme-swatches">
+            <div class="theme-swatch" data-theme="dark" onclick="setTheme('dark',this)" style="background:linear-gradient(135deg,#0d0b09,#252118)" title="dark"></div>
+            <div class="theme-swatch active" data-theme="light" onclick="setTheme('light',this)" style="background:linear-gradient(135deg,#faf8f5,#e8e2da)" title="light"></div>
+            <div class="theme-swatch" data-theme="warm" onclick="setTheme('warm',this)" style="background:linear-gradient(135deg,#1a1008,#3a240f)" title="warm"></div>
+            <div class="theme-swatch" data-theme="slate" onclick="setTheme('slate',this)" style="background:linear-gradient(135deg,#0a0d12,#202434)" title="slate"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">accent colour</div>
+          <div class="color-swatches" id="accent-swatches">
+            <div class="swatch active" data-accent="gold"    style="background:#c9a96e" onclick="setAccent('gold',this)"></div>
+            <div class="swatch" data-accent="rose"      style="background:#e8a0b0" onclick="setAccent('rose',this)"></div>
+            <div class="swatch" data-accent="sage"      style="background:#88c4a0" onclick="setAccent('sage',this)"></div>
+            <div class="swatch" data-accent="sky"       style="background:#7ab8e8" onclick="setAccent('sky',this)"></div>
+            <div class="swatch" data-accent="lavender"  style="background:#b0a0e0" onclick="setAccent('lavender',this)"></div>
+            <div class="swatch" data-accent="coral"     style="background:#e89070" onclick="setAccent('coral',this)"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">background texture</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap" id="texture-btns">
+            <button class="btn btn-ghost btn-sm active-texture" onclick="setTexture('none',this)">none</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('paper',this)">paper</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('dots',this)">dots</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('lines',this)">lines</button>
+            <button class="btn btn-ghost btn-sm" onclick="setTexture('grid',this)">grid</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">density</div>
+          <div style="display:flex;gap:8px" id="density-btns">
+            <button class="btn btn-ghost btn-sm" onclick="setDensity('compact',this)">compact</button>
+            <button class="btn btn-ghost btn-sm active-density" onclick="setDensity('normal',this)">normal</button>
+            <button class="btn btn-ghost btn-sm" onclick="setDensity('spacious',this)">spacious</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">text case</div>
+          <div style="display:flex;gap:8px" id="case-btns">
+            <button class="btn btn-ghost btn-sm active-case" onclick="setCase('lower',this)">lowercase everything</button>
+            <button class="btn btn-ghost btn-sm" onclick="setCase('proper',this)">Proper Case</button>
+          </div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">applies to UI labels: book titles always keep their original casing</p>
+        </div>
+      </div>
+
+      <!-- DISCOVER -->
+      <div id="page-discover" class="page">
+        <div class="page-header"><h1 class="page-title">discover</h1><p class="page-sub ui-text">find books &amp; music for your reading sessions</p></div>
+
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>✨ recommended for you</span>
+            <button class="btn btn-ghost btn-sm" onclick="refreshRecommendations()" style="font-size:11px">↻ refresh</button>
+          </div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:8px" id="rec-why">based on your library</p>
+          <div id="rec-list"><div class="empty"><p>add some books first and we'll suggest more!</p></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🔍 find books</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">search OpenLibrary for any book and add it straight to your library</p>
+          <div class="inline-flex" style="margin-bottom:4px">
+            <input id="book-search-input" placeholder="title, author, or ISBN…" style="flex:1" onkeydown="if(event.key==='Enter')searchBooks()" />
+            <button class="btn btn-primary" onclick="searchBooks()">search</button>
+          </div>
+          <div id="book-search-status" style="font-size:11px;color:var(--text3);margin-bottom:8px;min-height:16px"></div>
+          <div id="book-search-results"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🎵 reading playlists</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">curated spotify playlists for every reading mood: pick one or paste your own link</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('deep-focus')"><div class="playlist-preset-icon">🎹</div><div class="playlist-preset-name">deep focus</div><div class="playlist-preset-sub">piano &amp; strings</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('cozy')"><div class="playlist-preset-icon">☕</div><div class="playlist-preset-name">cozy reading</div><div class="playlist-preset-sub">warm &amp; calm</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('epic')"><div class="playlist-preset-icon">⚔️</div><div class="playlist-preset-name">epic &amp; dramatic</div><div class="playlist-preset-sub">orchestral power</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('night')"><div class="playlist-preset-icon">🌙</div><div class="playlist-preset-name">late night</div><div class="playlist-preset-sub">ambient &amp; slow</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('baroque')"><div class="playlist-preset-icon">🎻</div><div class="playlist-preset-name">baroque</div><div class="playlist-preset-sub">bach &amp; vivaldi</div></button>
+            <button class="playlist-preset-btn" onclick="loadPresetPlaylist('lofi')"><div class="playlist-preset-icon">📻</div><div class="playlist-preset-name">lo-fi study</div><div class="playlist-preset-sub">chill beats</div></button>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input id="spotify-url-input" placeholder="or paste your own spotify link…" style="flex:1" onkeydown="if(event.key==='Enter')loadSpotifyEmbed()" />
+            <button class="btn btn-ghost" onclick="loadSpotifyEmbed()">load</button>
+          </div>
+          <div id="spotify-embed-wrap">
+            <iframe id="spotify-iframe" style="border-radius:12px;display:none" src="" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            <div id="spotify-placeholder" style="background:var(--bg3);border-radius:10px;padding:20px;text-align:center;color:var(--text3);font-size:13px">pick a mood above or paste a spotify link 🎵</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORMS -->
+      <div id="page-worms" class="page">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div>
+            <h1 class="page-title">my bookworms 🐛</h1>
+            <p class="page-sub ui-text">earn food every 10 pages + read 100 pages in a day to unlock custom pixel worms</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="worm-crawl-toggle" onclick="toggleCrawlBar()" style="flex-shrink:0;margin-top:6px">🐛 hide worms</button>
+        </div>
+
+        <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="metric hi">
+            <div class="metric-label">food bank 🍎</div>
+            <div class="metric-val" id="worm-food-count">0</div>
+            <div class="metric-sub">+1 per 10 pages</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">worms</div>
+            <div class="metric-val" id="worm-count">0</div>
+            <div class="metric-sub">crawling around</div>
+          </div>
+          <div class="metric" id="pixel-unlock-metric">
+            <div class="metric-label">today's pages</div>
+            <div class="metric-val" id="worm-today-pages">0</div>
+            <div class="metric-sub" id="pixel-unlock-sub">100 to unlock pixel art</div>
+          </div>
+        </div>
+
+        <!-- Hatch from template -->
+      <div class="card" id="worm-hatch-card">
+          <div class="card-title">hatch a bookworm</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px">customize your worm, then give it a name</p>
+        
+          <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px">
+            <div id="worm-live-preview" style="width:180px;flex-shrink:0">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:6px">preview</div>
+              <div id="worm-preview-svg" style="background:var(--bg3);border-radius:10px;padding:10px;min-height:60px;display:flex;align-items:center;justify-content:center"></div>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <div class="form-group">
+                <label>body colour</label>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="worm-body-swatches"></div>
+              </div>
+              <div class="form-group">
+                <label>hat / accessory</label>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="worm-hat-swatches"></div>
+              </div>
+              <div class="form-group">
+                <label>eyes</label>
+                <select id="worm-eyes-select" onchange="updateWormPreview()" style="width:auto"></select>
+              </div>
+              <div class="form-group">
+                <label>length (segments)</label>
+                <div style="display:flex;gap:6px;margin-top:4px" id="worm-length-swatches"></div>
+              </div>
+            </div>
+          </div>
+        
+          <div class="form-row2">
+            <div class="form-group"><label>name your worm</label><input id="worm-name" placeholder="pagie, wormy, reedy…" /></div>
+            <div style="display:flex;align-items:flex-end;padding-bottom:12px">
+              <button class="btn btn-primary" onclick="addWorm()">🐛 hatch!</button>
+            </div>
+          </div>
+      </div>
+
+        <!-- Pixel art editor (unlocked at 100 pages/day) -->
+        <div class="card" id="pixel-editor-card" style="display:none">
+          <div class="card-title">🎨 pixel worm editor <span style="color:var(--green);font-size:10px">· unlocked!</span></div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">you read 100 pages today: draw your own worm! use the palette then click pixels to paint.</p>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+            <div>
+              <div id="pixel-palette" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;max-width:160px"></div>
+              <canvas id="pixel-canvas" width="160" height="80" style="border:1px solid var(--border2);border-radius:6px;cursor:crosshair;image-rendering:pixelated"></canvas>
+              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="clearPixelCanvas()">clear</button>
+                <button class="btn btn-ghost btn-sm" onclick="fillPixelCanvas()">fill</button>
+                <button class="btn btn-ghost btn-sm" id="eraser-btn" onclick="toggleEraser()">eraser</button>
+              </div>
+            </div>
+            <div style="flex:1;min-width:160px">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:8px">preview (animated)</div>
+              <canvas id="pixel-preview" width="96" height="48" style="border:1px solid var(--border2);border-radius:6px;image-rendering:pixelated"></canvas>
+              <div class="form-group" style="margin-top:10px"><label>worm name</label><input id="pixel-worm-name" placeholder="my custom worm" /></div>
+              <button class="btn btn-primary btn-full" onclick="savePixelWorm()">🐛 hatch pixel worm</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Worm list -->
+        <div id="worm-list"></div>
+      </div>
+
+    <!-- FORUM -->
+      <div id="page-forum" class="page">
+        <div class="page-header"><h1 class="page-title">forum</h1><p class="page-sub ui-text">share thoughts, reviews & recommendations</p></div>
+        <div class="card">
+          <div class="card-title">new post</div>
+          <div class="form-group"><label>title</label><input id="forum-new-title" placeholder="e.g. just finished ACOTAR and i'm not ok" /></div>
+          <div class="form-group"><label>tag</label>
+            <select id="forum-new-tag" style="width:auto">
+              <option value="discussion">💬 discussion</option>
+              <option value="review">⭐ review</option>
+              <option value="recommendation">📚 recommendation</option>
+              <option value="question">❓ question</option>
+              <option value="rant">🔥 rant</option>
+            </select>
+          </div>
+          <div class="form-group"><label>body</label><textarea id="forum-new-body" rows="4" placeholder="what's on your mind..."></textarea></div>
+          <button class="btn btn-primary" onclick="submitForumPost()">post</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="forum-tag-filters">
+          <button class="forum-tag-btn active" data-tag="all" onclick="filterForum('all',this)">all</button>
+          <button class="forum-tag-btn" data-tag="discussion" onclick="filterForum('discussion',this)">💬 discussion</button>
+          <button class="forum-tag-btn" data-tag="review" onclick="filterForum('review',this)">⭐ review</button>
+          <button class="forum-tag-btn" data-tag="recommendation" onclick="filterForum('recommendation',this)">📚 recs</button>
+          <button class="forum-tag-btn" data-tag="question" onclick="filterForum('question',this)">❓ questions</button>
+          <button class="forum-tag-btn" data-tag="rant" onclick="filterForum('rant',this)">🔥 rants</button>
+        </div>
+        <div id="forum-posts-list"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="page-profile" class="page">
+        <div class="page-header"><h1 class="page-title">my profile</h1><p class="page-sub ui-text">your public reading identity</p></div>
+        <div class="card" style="padding:20px">
+          <div class="profile-cover"><div class="profile-cover-inner"></div></div>
+          <div class="profile-av-large" id="profile-av-display">?</div>
+          <div class="profile-username" id="profile-username-display">bookworm</div>
+          <div class="profile-bio" id="profile-bio-display">no bio yet</div>
+          <div class="profile-stats-row">
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-books-read">0</div><div class="profile-stat-label">books read</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-pages-read">0</div><div class="profile-stat-label">pages read</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-post-count">0</div><div class="profile-stat-label">posts</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="profile-worm-count">0</div><div class="profile-stat-label">worms</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">edit profile</div>
+          <div class="form-group"><label>display name</label><input id="profile-name-in" placeholder="bookworm2000" /></div>
+          <div class="form-group"><label>bio</label><textarea id="profile-bio-in" rows="3" placeholder="i read therefore i am..."></textarea></div>
+          <div class="form-group"><label>favourite genre</label><input id="profile-fav-genre-in" placeholder="dark academia, fantasy..." /></div>
+          <button class="btn btn-primary" onclick="saveProfile()">save profile</button>
+        </div>
+        <div class="card">
+          <div class="card-title">my posts</div>
+          <div id="profile-posts-list"></div>
+        </div>
+      </div>
+
+      
+      <!-- GRAVEYARD -->
+      <div id="page-graveyard" class="page">
+        <div class="page-header"><h1 class="page-title">🪦 worm graveyard</h1><p class="page-sub ui-text">rest in peace, little ones</p></div>
+        <div id="graveyard-list"></div>
+      </div>
+
+      <!-- PDF READER -->
+      <div id="page-reader" class="page">
+        <div class="page-header"><h1 class="page-title">📖 pdf reader</h1><p class="page-sub ui-text">upload and read PDFs right here</p></div>
+        <div class="card" id="reader-upload-card">
+          <div class="card-title">upload a PDF</div>
+          <label class="drop-zone" for="pdf-file-input" id="pdf-drop-zone">
+            <div class="dz-icon">📄</div>
+            <div class="dz-label">drop a PDF here</div>
+            <div class="dz-sub">or click to browse</div>
+          </label>
+          <input type="file" id="pdf-file-input" accept=".pdf" style="display:none" onchange="loadPDF(this)" />
+        </div>
+        <div id="reader-controls" style="display:none;margin-bottom:10px">
+          <div class="card" style="padding:12px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="pdfPrevPage()">← prev</button>
+              <span style="font-size:13px;color:var(--text2)">page <span id="pdf-page-num">1</span> of <span id="pdf-page-total">?</span></span>
+              <button class="btn btn-ghost btn-sm" onclick="pdfNextPage()">next →</button>
+              <button class="btn btn-ghost btn-sm" onclick="pdfZoomOut()">−</button>
+              <span style="font-size:12px;color:var(--text3)" id="pdf-zoom-label">100%</span>
+              <button class="btn btn-ghost btn-sm" onclick="pdfZoomIn()">+</button>
+              <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="closePDF()">close PDF</button>
+            </div>
+          </div>
+        </div>
+        <div id="pdf-canvas-wrap" style="overflow:auto;background:var(--bg3);border-radius:10px;display:none">
+          <canvas id="pdf-canvas" style="display:block;margin:0 auto"></canvas>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <div class="mobile-nav">
+    <div class="mob-inner">
+      <button class="mob-btn active" onclick="nav('dashboard',this)" data-p="dashboard"><span class="mob-icon">◈</span>home</button>
+      <button class="mob-btn" onclick="nav('library',this)" data-p="library"><span class="mob-icon">◫</span>library</button>
+      <button class="mob-btn" onclick="nav('log',this)" data-p="log"><span class="mob-icon">◎</span>log</button>
+      <button class="mob-btn" onclick="nav('stats',this)" data-p="stats"><span class="mob-icon">◉</span>stats</button>
+      <button class="mob-btn" onclick="nav('goals',this)" data-p="goals"><span class="mob-icon">◌</span>goals</button>
+      <button class="mob-btn" onclick="nav('discover',this)" data-p="discover"><span class="mob-icon">✦</span>discover</button>
+      <button class="mob-btn" onclick="nav('worms',this)" data-p="worms"><span class="mob-icon">🐛</span>worms</button>
+      <button class="mob-btn" onclick="nav('graveyard',this)" data-p="graveyard"><span class="mob-icon">🪦</span>graveyard</button>
+      <button class="mob-btn" onclick="nav('series',this)" data-p="series"><span class="mob-icon">◧</span>series</button>
+      <button class="mob-btn" onclick="nav('reader',this)" data-p="reader"><span class="mob-icon">📖</span>reader</button>
+      <button class="mob-btn" onclick="nav('friends',this)" data-p="friends"><span class="mob-icon">◑</span>reader</button>
+      <button class="mob-btn" onclick="nav('forum',this)" data-p="forum"><span class="mob-icon">✉</span>forum</button>
+      <button class="mob-btn" onclick="nav('profile',this)" data-p="profile"><span class="mob-icon">◑</span>profile</button>
+      <button class="mob-btn" onclick="nav('share',this)" data-p="share"><span class="mob-icon">◐</span>profile</button>
+      <button class="mob-btn" onclick="nav('import',this)" data-p="import"><span class="mob-icon">◒</span>profile</button>
+      <button class="mob-btn" onclick="nav('settings',this)" data-p="settings"><span class="mob-icon">◓</span>settings</button>
+
+    </div>
+  </div>
+</div>
+
+<!-- WORM CRAWL BAR -->
+<div id="worm-crawl-bar" style="position:fixed;bottom:0;left:0;right:0;height:44px;pointer-events:none;z-index:90;overflow:hidden;transition:bottom .2s"></div>
+  
+<div class="toast" id="toast"></div>
+
+<!-- colour picker modal for book spine -->
+<div id="color-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:260px">
+    <div style="font-size:13px;font-weight:500;margin-bottom:14px">pick spine colour</div>
+    <input type="color" id="modal-color-picker" style="width:100%;height:44px;border:none;background:none;cursor:pointer;border-radius:8px" />
+    <div class="color-swatches" style="margin-top:12px" id="modal-swatches"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="applySpineColor()">apply</button>
+      <button class="btn btn-ghost" onclick="closeColorModal()">cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- full book edit modal -->
+<div id="edit-book-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:501;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:500;margin-bottom:16px">✎ edit book</div>
+    <input type="hidden" id="edit-book-id" />
+    <div class="form-row2">
+      <div class="form-group"><label>title</label><input id="edit-b-title" /></div>
+      <div class="form-group"><label>author</label><input id="edit-b-author" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>pages</label><input id="edit-b-pages" type="number" min="1" /></div>
+      <div class="form-group"><label>pages read</label><input id="edit-b-pagesread" type="number" min="0" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>primary genre</label>
+        <select id="edit-b-genre">
+          <option value=""> none </option>
+          <option value="Classic Literature">Classic Literature</option>
+          <option value="Contemporary Fiction">Contemporary Fiction</option>
+          <option value="Historical Fiction">Historical Fiction</option>
+          <option value="Literary Fiction">Literary Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Epic Fantasy">Epic Fantasy</option>
+          <option value="Dark Fantasy">Dark Fantasy</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Horror">Horror</option>
+          <option value="Gothic Horror">Gothic Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Crime">Crime</option>
+          <option value="Romance">Romance</option>
+          <option value="Young Adult">Young Adult</option>
+          <option value="Middle Grade">Middle Grade</option>
+          <option value="Children's">Children's</option>
+          <option value="Dystopian">Dystopian</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Mythology">Mythology</option>
+          <option value="Graphic Novel">Graphic Novel</option>
+          <option value="Short Stories">Short Stories</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Memoir">Memoir</option>
+          <option value="Biography">Biography</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+          <option value="Self-Help">Self-Help</option>
+          <option value="Philosophy">Philosophy</option>
+          <option value="History">History</option>
+          <option value="Science">Science</option>
+          <option value="True Crime">True Crime</option>
+        </select>
+      </div>
+      <div class="form-group"><label>secondary genre</label>
+        <select id="edit-b-genre2">
+          <option value=""> none </option>
+          <option value="Classic Literature">Classic Literature</option>
+          <option value="Contemporary Fiction">Contemporary Fiction</option>
+          <option value="Historical Fiction">Historical Fiction</option>
+          <option value="Literary Fiction">Literary Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Epic Fantasy">Epic Fantasy</option>
+          <option value="Dark Fantasy">Dark Fantasy</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Horror">Horror</option>
+          <option value="Gothic Horror">Gothic Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Crime">Crime</option>
+          <option value="Romance">Romance</option>
+          <option value="Young Adult">Young Adult</option>
+          <option value="Middle Grade">Middle Grade</option>
+          <option value="Children's">Children's</option>
+          <option value="Dystopian">Dystopian</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Mythology">Mythology</option>
+          <option value="Graphic Novel">Graphic Novel</option>
+          <option value="Short Stories">Short Stories</option>
+          <option value="Poetry">Poetry</option>
+          <option value="Memoir">Memoir</option>
+          <option value="Biography">Biography</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+          <option value="Self-Help">Self-Help</option>
+          <option value="Philosophy">Philosophy</option>
+          <option value="History">History</option>
+          <option value="Science">Science</option>
+          <option value="True Crime">True Crime</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>series</label><input id="edit-b-series" /></div>
+      <div class="form-group"><label>series #</label><input id="edit-b-seriesnum" type="number" min="1" /></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>status</label>
+        <select id="edit-b-status">
+          <option value="reading">currently reading</option>
+          <option value="want">want to read</option>
+          <option value="done">finished</option>
+        </select>
+      </div>
+      <div class="form-group"><label>rating</label>
+        <select id="edit-b-rating">
+          <option value="0">no rating</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★☆</option>
+          <option value="3">★★★☆☆</option>
+          <option value="2">★★☆☆☆</option>
+          <option value="1">★☆☆☆☆</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group"><label>start date</label><input id="edit-b-start" type="date" /></div>
+      <div class="form-group"><label>finished date</label><input id="edit-b-finished" type="date" /></div>
+    </div>
+    <div class="form-group"><label>spine colour</label>
+      <div class="inline-flex" style="margin-top:4px">
+        <input type="color" id="edit-b-color" value="#c9a96e" class="color-picker-inline" />
+        <div class="color-swatches" id="edit-quick-swatches"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveEditBook()">save changes</button>
+      <button class="btn btn-ghost" onclick="closeEditBook()">cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- worm edit modal -->
+<div id="edit-worm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:501;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:500;margin-bottom:16px">✎ edit worm</div>
+    <input type="hidden" id="edit-worm-id" />
+    <div class="form-group"><label>name</label><input id="edit-worm-name" /></div>
+    <div class="form-group"><label>body colour</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="edit-worm-body-swatches"></div>
+    </div>
+    <div class="form-group"><label>hat</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="edit-worm-hat-swatches"></div>
+    </div>
+    <div class="form-group"><label>eyes</label>
+      <select id="edit-worm-eyes"></select>
+    </div>
+    <div class="form-group"><label>length</label>
+      <div style="display:flex;gap:6px;margin-top:4px" id="edit-worm-length-swatches"></div>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center" id="edit-worm-preview"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveEditWorm()">save worm</button>
+      <button class="btn btn-ghost" onclick="closeEditWorm()">cancel</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
