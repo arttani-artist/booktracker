@@ -1213,5 +1213,9 @@ textarea { resize: vertical; line-height: 1.5; }
   </div>
 </div>
 
+<script>
+  buildSwatches('quick-swatches', (c) => `document.getElementById('b-color').value='${c}'`);
+  boot();
+</script>
 </body>
 </html>
